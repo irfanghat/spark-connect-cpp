@@ -43,3 +43,7 @@
 # Editor files
 .vscode
 .idea
+
+# Output directories
+/build/
+/*.pb.*
