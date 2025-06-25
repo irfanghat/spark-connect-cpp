@@ -1,6 +1,6 @@
 #include <iostream>
 
-int main(int argc, char *argv[])
+void client(int val)
 {
-    std::cout << "Hello world!" << std::endl;
+    std::cout << val << std::endl;
 }
