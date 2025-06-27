@@ -1,7 +1,3 @@
-##########################################
-# Makefile for Spark Connect C++ client
-##########################################
-
 CXX = g++
 CXXFLAGS = -std=c++17 -Wall -O2
 LDFLAGS = -lprotobuf -lpthread -lgrpc++ -lgrpc
