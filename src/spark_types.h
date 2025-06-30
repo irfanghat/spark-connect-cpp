@@ -8,15 +8,18 @@
 #include <optional>
 #include <stdexcept> // For exceptions
 
-// Always include the full Protobuf definition here
+//--------------------------------------------
+// Include the full Protobuf definition here
+//--------------------------------------------
 #include "spark/connect/types.pb.h"
 
 namespace spark
 {
     namespace client
     {
-
+        //-------------------------------------------------------------
         // Forward declarations for all concrete SparkDataType types
+        //-------------------------------------------------------------
         class SparkDataType;
         class BooleanType;
         class ByteType;
@@ -82,26 +85,41 @@ namespace spark
                 UNPARSED
             };
 
+            //-------------------------------------------------------------
             // Constructor can directly initialize the proto_
+            //-------------------------------------------------------------
             SparkDataType() = default;
+
+            //-------------------------------------------------------------------------
             // Constructor to create from an existing Protobuf message (for FromProto)
+            //-------------------------------------------------------------------------
             explicit SparkDataType(const spark::connect::DataType &proto) : proto_(proto) {}
             virtual ~SparkDataType() = default;
 
+            //-------------------------------------------------------------------------
             // Factory method to create a SparkDataType from a Protobuf DataType
+            //-------------------------------------------------------------------------
             static std::shared_ptr<SparkDataType> FromProto(const spark::connect::DataType &proto_type);
 
+            //-------------------------------------------------------------------------
             // Get the underlying Protobuf message
+            //-------------------------------------------------------------------------
             const spark::connect::DataType &ToProto() const { return proto_; }
             spark::connect::DataType *MutableProto() { return &proto_; } // For internal use by derived classes
 
+            //-------------------------------------------------------------------------
             // Pure virtual method to get the specific TypeId
+            //-------------------------------------------------------------------------
             virtual TypeId GetTypeId() const = 0;
 
+            //-------------------------------------------------------------------------
             // Common type_variation_reference accessor (accesses from internal proto_)
+            //-------------------------------------------------------------------------
             uint32_t type_variation_reference() const;
 
+            //-------------------------------------------------------------------------
             // Convenience methods to check the type
+            //-------------------------------------------------------------------------
             bool isNull() const { return GetTypeId() == TypeId::NULL_TYPE; }
             bool isBinary() const { return GetTypeId() == TypeId::BINARY; }
             bool isBoolean() const { return GetTypeId() == TypeId::BOOLEAN; }
@@ -132,8 +150,9 @@ namespace spark
             spark::connect::DataType proto_; // The underlying Protobuf message
         };
 
-        // --- Concrete Simple Data Type Implementations ---
-
+        //-------------------------------------------------------------------------
+        // Concrete Simple Data Type Implementations
+        //-------------------------------------------------------------------------
         class NullType : public SparkDataType
         {
         public:
@@ -282,7 +301,9 @@ namespace spark
             std::optional<int32_t> end_field() const;
         };
 
-        // --- StructField Definition (not a DataType, but nested) ---
+        //-------------------------------------------------------------------------
+        // StructField Definition (not a DataType, but nested)
+        //-------------------------------------------------------------------------
         class StructField
         {
         public:
@@ -304,7 +325,9 @@ namespace spark
             std::shared_ptr<SparkDataType> data_type_; // Wrapped SparkDataType
         };
 
-        // --- StructType Implementation ---
+        //-------------------------------------------------------------------------
+        // StructType Implementation
+        //-------------------------------------------------------------------------
         class StructType : public SparkDataType
         {
         public:
@@ -316,7 +339,9 @@ namespace spark
             std::vector<StructField> fields_; // Store C++ wrappers for convenience
         };
 
-        // --- ArrayType Implementation ---
+        //-------------------------------------------------------------------------
+        // ArrayType Implementation
+        //-------------------------------------------------------------------------
         class ArrayType : public SparkDataType
         {
         public:
@@ -329,7 +354,9 @@ namespace spark
             std::shared_ptr<SparkDataType> element_type_;
         };
 
-        // --- MapType Implementation ---
+        //-------------------------------------------------------------------------
+        // MapType Implementation
+        //-------------------------------------------------------------------------
         class MapType : public SparkDataType
         {
         public:
@@ -344,7 +371,9 @@ namespace spark
             std::shared_ptr<SparkDataType> value_type_;
         };
 
-        // --- VariantType Implementation ---
+        //-------------------------------------------------------------------------
+        // VariantType Implementation
+        //-------------------------------------------------------------------------
         class VariantType : public SparkDataType
         {
         public:
@@ -352,7 +381,9 @@ namespace spark
             TypeId GetTypeId() const override { return TypeId::VARIANT; }
         };
 
-        // --- UDTType Implementation ---
+        //-------------------------------------------------------------------------
+        // UDTType Implementation
+        //-------------------------------------------------------------------------
         class UDTType : public SparkDataType
         {
         public:
@@ -371,7 +402,9 @@ namespace spark
             std::shared_ptr<SparkDataType> sql_type_;
         };
 
-        // --- UnparsedType Implementation ---
+        //-------------------------------------------------------------------------
+        // UnparsedType Implementation
+        //-------------------------------------------------------------------------
         class UnparsedType : public SparkDataType
         {
         public:
@@ -380,8 +413,9 @@ namespace spark
             const std::string &data_type_string() const;
         };
 
-        // --- Global Convenience Functions ---
-
+        //-------------------------------------------------------------------------
+        // Global Convenience Functions
+        //-------------------------------------------------------------------------
         std::shared_ptr<NullType> Null();
         std::shared_ptr<BooleanType> Boolean();
         std::shared_ptr<ByteType> Byte();
