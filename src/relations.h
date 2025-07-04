@@ -17,7 +17,7 @@
 #include <google/protobuf/repeated_field.h>
 
 #include "expressions.h"
-#include "spark_types.h"
+#include "types.h"
 
 namespace spark
 {

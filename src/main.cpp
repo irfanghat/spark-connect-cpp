@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 
-#include "spark_types.h"
+#include "types.h"
 
 //----------------------------------------------------------------
 // Include the protobuf generated header for direct manipulation

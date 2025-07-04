@@ -17,7 +17,7 @@
 
 #include "relations.h"
 #include "expressions.h" // Need full definition for SparkExpression::FromProto placeholder
-#include "spark_types.h" // For SparkDataType::FromProto if needed (e.g. for ToSchema relation)
+#include "types.h" // For SparkDataType::FromProto if needed (e.g. for ToSchema relation)
 #include <utility>       // For std::move
 
 namespace spark
