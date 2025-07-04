@@ -13,7 +13,7 @@
 #include "spark/connect/types.pb.h"  // For DataType in CastExpression
 #include "spark/connect/common.pb.h" // For common things like errors, etc.
 
-#include "spark_types.h" // For SparkDataType, especially for CastExpression
+#include "types.h" // For SparkDataType, especially for CastExpression
 
 namespace spark
 {

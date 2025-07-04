@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-#include "spark_types.h"
+#include "types.h"
 #include <utility> // For std::move
 
 namespace spark

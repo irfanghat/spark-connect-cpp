@@ -1,5 +1,5 @@
-#ifndef SPARK_CONNECT_CPP_SPARK_TYPES_H
-#define SPARK_CONNECT_CPP_SPARK_TYPES_H
+#ifndef SPARK_CONNECT_CPP_TYPES_H
+#define SPARK_CONNECT_CPP_TYPES_H
 
 #include <memory>
 #include <string>
@@ -434,4 +434,4 @@ namespace spark
     } // namespace client
 } // namespace spark
 
-#endif // SPARK_CONNECT_CPP_SPARK_TYPES_H
+#endif // SPARK_CONNECT_CPP_TYPES_H
