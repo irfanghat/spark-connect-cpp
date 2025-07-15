@@ -1,51 +1,143 @@
-## Build Instructions
+# Setup Guide for Spark Connect C++ Client
 
-### Prerequisites
+This guide will walk you through setting up your development environment.
 
-Before building the project, ensure the following dependencies are installed on your system:
+## Prerequisites
 
-* `protobuf-compiler`
-* `libprotobuf-dev`
-* `protobuf-compiler-grpc`
-* `libgrpc-dev`
-* `libgrpc++-dev`
-* `build-essential` (for C++ compilation)
+Before you begin, make sure you have the following tools and libraries installed:
 
-You can install them on Ubuntu-based systems using:
+- **g++**
+- **pkg-config** (for checking library dependencies)
+- **Protobuf** (for generating Protobuf files)
+- **gRPC** (for remote procedure calls)
+- **Apache Arrow** (for data transfer and serialization)
+
+Additionally, make sure that you have **make** installed on your system to run the build process.
+
+## Dependencies
+
+### System Dependencies
+
+The project relies on several external libraries which can be installed via `pkg-config`. These libraries are:
+
+- **Apache Arrow**: Provides efficient in-memory data storage.
+- **gRPC**: A high-performance RPC framework.
+- **Protobuf**: Serialization library for structured data.
+- **Abseil**: A collection of C++ libraries used by gRPC.
+
+### Install Required Packages
+
+To check if the required packages are available, you can run:
 
 ```bash
-sudo apt update
-sudo apt install -y build-essential protobuf-compiler libprotobuf-dev \
-                    libgrpc-dev libgrpc++-dev protobuf-compiler-grpc
-```
+make check-deps
+````
 
-### Generating Protocol Buffers
-
-To generate the required C++ source files from `.proto` definitions, run:
+If any dependencies are missing, you can install them using the following script:
 
 ```bash
-make proto
+make install-deps
 ```
 
-This will generate `.pb.cc` and `.grpc.pb.cc` files in the `build/gen/` directory based on the `.proto` files in `src/spark/connect/`.
+This will automatically install all necessary system dependencies.
 
-### Building the Project
+### Install Apache Arrow
 
-To compile the source code and link the generated files:
+The C++ client requires **Apache Arrow** to efficiently process and transfer data. Ensure that you have Arrow installed. On Debian/Ubuntu, you can install it using:
+
+```bash
+sudo apt-get install libarrow-dev libparquet-dev
+```
+
+For other operating systems, follow the Arrow installation instructions from the official [Apache Arrow website](https://arrow.apache.org/install/).
+
+### Install Protobuf and gRPC
+
+Install **Protobuf** and **gRPC** using your system package manager or from the official sources:
+
+#### On Debian/Ubuntu:
+
+```bash
+sudo apt-get install libprotobuf-dev protobuf-compiler libgrpc++-dev
+```
+
+#### From Source:
+
+If you prefer to install from source, follow these guides:
+
+* [Install Protobuf](https://developers.google.com/protocol-buffers/docs/cpptutorial)
+* [Install gRPC](https://grpc.io/docs/languages/cpp/quickstart/)
+
+---
+
+## Building the Project
+
+### 1. Clone the Repository
+
+Clone this repository to your local machine:
+
+```bash
+git clone https://github.com/irfanghat/spark-connect-cpp.git
+cd spark-connect-cpp
+```
+
+### 2. Install Dependencies
+
+You can install the necessary system dependencies using:
+
+```bash
+chmod +x install_deps.sh
+make install-deps
+```
+
+This will run the `install_deps.sh` script, which installs the required libraries for building the project.
+
+### 3. Compile the Project
+
+The project uses a `Makefile` to manage the build process. To compile the project, run:
 
 ```bash
 make
 ```
 
-This will build the final binary in the `build/` directory. The entry point is defined in `main.cpp`.
+This will compile the C++ source files, generate the necessary Protobuf and gRPC files, and produce the final executable.
 
-### Cleaning Build Artifacts
+### 4. Run the Client
 
-To remove all generated and compiled files:
+Once the build process is complete, you can run the compiled client example:
+
+```bash
+make run
+```
+
+This will execute the client using the generated binary. Make sure you have the Spark server running and accessible at the specified address.
+
+---
+
+## Cleaning Up
+
+To remove the compiled files and clean the build directory, you can use:
 
 ```bash
 make clean
 ```
+
+---
+
+## Troubleshooting
+
+### Missing Dependencies
+
+If you encounter issues with missing dependencies, ensure that you have the necessary libraries installed. You can also use the `pkg-config` tool to verify the installed libraries:
+
+```bash
+pkg-config --cflags --libs arrow protobuf grpc++
+```
+
+If any dependencies are missing, the `make check-deps` command will alert you.
+
+---
+
 
 ## VS Code Configuration
 
@@ -62,13 +154,26 @@ The settings below are located in `.vscode/c_cpp_properties.json`:
                 "${workspaceFolder}/src",
                 "${workspaceFolder}/build/gen",
                 "/usr/include",
-                "/usr/local/include"
+                "/usr/local/include",
+                "/usr/include/arrow",
+                "/usr/include/x86_64-linux-gnu"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/g++",
             "cStandard": "c11",
             "cppStandard": "c++17",
-            "intelliSenseMode": "linux-gcc-x64"
+            "intelliSenseMode": "linux-gcc-x64",
+            "browse": {
+                "path": [
+                    "${workspaceFolder}/src",
+                    "${workspaceFolder}/build/gen",
+                    "/usr/include",
+                    "/usr/local/include",
+                    "/usr/include/arrow",
+                    "/usr/include/x86_64-linux-gnu"
+                ],
+                "limitSymbolsToIncludedHeaders": true
+            }
         }
     ],
     "version": 4
@@ -93,3 +198,15 @@ The settings below are located in `.vscode/c_cpp_properties.json`:
 1. Make sure the [C/C++ extension for VS Code](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools) is installed.
 2. Open the project folder in VS Code.
 3. IntelliSense should automatically pick up this configuration.
+
+## Contributing
+
+If you wish to contribute to the project, feel free to fork the repository and create a pull request. For any issues, open an issue on the GitHub repository.
+
+---
+
+## License
+
+This project is licensed under the **Apache License 2.0**.
+
+**Repository:** [https://github.com/irfanghat/spark-connect-cpp](https://github.com/irfanghat/spark-connect-cpp)

@@ -6,7 +6,7 @@
 #include <vector>
 #include <map>
 #include <optional>
-#include <stdexcept> // For exceptions
+#include <stdexcept>
 
 //--------------------------------------------
 // Include the full Protobuf definition here
