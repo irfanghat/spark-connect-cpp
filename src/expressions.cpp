@@ -33,10 +33,6 @@ namespace spark
         // This provides the concrete implementation for the base class, making it compilable and testable.
         //------------------------------------------------------------------------------------------------------
 
-        //------------------------------------------------------------------------------------------------------
-        // Constructor: Initializes the internal Protobuf message with the provided one.
-        //------------------------------------------------------------------------------------------------------
-        SparkExpression::SparkExpression(const spark::connect::Expression &proto) : proto_(proto) {}
 
         //------------------------------------------------------------------------------------------------------
         // Static FromProto method: Factory function to create specific SparkExpression

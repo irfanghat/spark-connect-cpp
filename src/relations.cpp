@@ -6,7 +6,7 @@
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,30 +16,15 @@
  */
 
 #include "relations.h"
-#include "expressions.h" // Need full definition for SparkExpression::FromProto placeholder
-#include "types.h" // For SparkDataType::FromProto if needed (e.g. for ToSchema relation)
-#include <utility>       // For std::move
+#include "expressions.h"
+#include "types.h"       // For SparkDataType::FromProto if needed (e.g. for ToSchema relation)
+#include <utility>
+#include <stdexcept>
 
 namespace spark
 {
     namespace client
     {
-
-        // Dummy implementation for SparkExpression::ToProto to allow compilation
-        const spark::connect::Expression &SparkExpression::ToProto() const
-        {
-            static spark::connect::Expression dummy_expr;
-            return dummy_expr; // Return an empty expression
-        }
-        // Dummy implementation for SparkExpression::FromProto
-        std::shared_ptr<SparkExpression> SparkExpression::FromProto(const spark::connect::Expression &proto)
-        {
-            // In a real implementation, this would parse the expression oneof
-            // For now, return a nullptr or throw an error.
-            throw std::runtime_error("SparkExpression::FromProto not implemented yet. Expression proto kind: " + std::to_string(proto.expr_type_case()));
-            return nullptr;
-        }
-
         // --- SparkRelation Base Class Implementation ---
 
         std::shared_ptr<SparkRelation> SparkRelation::FromProto(const spark::connect::Relation &proto)
@@ -54,7 +39,7 @@ namespace spark
                 return std::make_shared<FilterRelation>(proto);
             case spark::connect::Relation::kLocalRelation:
                 return std::make_shared<LocalRelation>(proto);
-            case spark::connect::Relation::kRange: // <--- RangeRelation factory creation
+            case spark::connect::Relation::kRange:
                 return std::make_shared<RangeRelation>(proto);
             // TODO: Add more cases as relations are implemented
             case spark::connect::Relation::REL_TYPE_NOT_SET:
@@ -68,7 +53,6 @@ namespace spark
         ReadRelation::NamedTable::NamedTable(std::string unparsed_identifier, std::map<std::string, std::string> options)
         {
             proto_.set_unparsed_identifier(std::move(unparsed_identifier));
-            // Directly use mutable_options() which returns google::protobuf::Map*
             auto mutable_map = proto_.mutable_options();
             for (const auto &pair : options)
             {
@@ -90,18 +74,15 @@ namespace spark
             {
                 proto_.set_schema(std::move(schema.value()));
             }
-            // Directly use mutable_options()
             auto mutable_options = proto_.mutable_options();
             for (const auto &pair : options)
             {
                 (*mutable_options)[pair.first] = pair.second;
             }
-            // Directly use add_paths()
             for (const auto &path : paths)
             {
                 proto_.add_paths(path);
             }
-            // Directly use add_predicates()
             for (const auto &predicate : predicates)
             {
                 proto_.add_predicates(predicate);
@@ -153,14 +134,12 @@ namespace spark
             }
             for (const auto &expr : expressions_)
             {
-                // Ensure expr is not null before calling ToProto()
                 if (expr)
                 {
                     *project_proto->add_expressions() = expr->ToProto();
                 }
                 else
                 {
-                    // Handle null expression, e.g., by skipping or throwing an error
                     throw std::runtime_error("Attempted to add a null SparkExpression to ProjectRelation.");
                 }
             }
@@ -169,12 +148,10 @@ namespace spark
         ProjectRelation::ProjectRelation(const spark::connect::Relation &proto)
             : SparkRelation(proto)
         {
-            // Deserialize input
             if (proto_.project().has_input())
             {
                 input_ = SparkRelation::FromProto(proto_.project().input());
             }
-            // Deserialize expressions
             for (const auto &expr_proto : proto_.project().expressions())
             {
                 expressions_.push_back(SparkExpression::FromProto(expr_proto));
@@ -203,9 +180,7 @@ namespace spark
         FilterRelation::FilterRelation(const spark::connect::Relation &proto)
             : SparkRelation(proto)
         {
-            // Deserialize input
             input_ = SparkRelation::FromProto(proto_.filter().input());
-            // Deserialize condition
             condition_ = SparkExpression::FromProto(proto_.filter().condition());
         }
 
@@ -246,7 +221,6 @@ namespace spark
         {
             auto range_proto = proto_.mutable_range();
             range_proto->set_end(end);
-            // For optional fields, only set if value is present
             if (start.has_value())
             {
                 range_proto->set_start(start.value());
