@@ -2,70 +2,121 @@
 
 ## Overview
 
-This repository hosts a native C++ client for **Apache Spark Connect**. Spark Connect introduces a decoupled client-server architecture for Apache Spark, allowing remote execution of Spark operations.
+This repository hosts a **native C++ client** for **Apache Spark Connect**.  
+Spark Connect introduces a **decoupled client-server architecture** for Apache Spark, allowing remote execution of Spark operations.
 
-This C++ client provides a high-performance interface for building Spark applications in C++, leveraging efficient data transfer through **Apache Arrow**.
+This client provides a **high-performance, idiomatic C++ interface** for interacting with Spark, leveraging **Apache Arrow** for efficient columnar data transfer.
 
-The goal is to offer a robust, idiomatic C++ experience for interacting with Spark—suitable for performance-critical applications and integration into existing C++ ecosystems.
-
----
+----------
 
 ## Features
 
-- **Native C++ Client**  
-  A dedicated client implementation for Spark Connect, designed for performance and direct integration into C++ projects.
+**Native C++ Client** – Built from scratch for Spark Connect.  
+**Arrow Integration** – Efficient Arrow-based serialization/deserialization.  
 
-- **Apache Arrow Integration**  
-  Seamless deserialization of Apache Arrow data streams received from Spark Connect responses, enabling efficient columnar data processing directly within your C++ application.
-
-- **Modular Architecture**  
-  Clean separation of logic for improved code organization, readability, and maintainability.
-
----
+----------
 
 ## Getting Started
 
-To build and run the client, refer to our detailed setup guide:
+### **1. Prerequisites**
 
-- **[SETUP.md](SETUP.md)** – Provides comprehensive instructions for setting up your development environment, installing dependencies, building the client, and configuring VS Code.
+-   **Apache Spark 3.5/4.x** with Spark Connect enabled.
+    
+-   **C++17 or later**.
+    
+-   Dependencies:
+    
+    -   `gRPC`
+    -   `Protobuf`
+    -   `Apache Arrow`
+    -   `uuid` (for session IDs)
+        
+### **2. Build**
 
----
+```bash
+make clean && make run
+```
+
+----------
 
 ## Usage Example
 
-The `main.cpp` file provides a basic example demonstrating how to:
+Here’s how you can run a simple Spark query:
 
-- Initialize the client
-- Construct a simple Spark plan (e.g., a `RangeRelation`)
-- Execute it
-- Process the returned Apache Arrow `RecordBatch` data
-
-### Example Snippet (from `main.cpp`)
+### **main.cpp**
 
 ```cpp
 #include "client.h"
-#include "spark/connect/base.pb.h"
-#include "relations.h"
+#include "config.h"
+#include <iostream>
 
 int main() {
-    std::string server_address("localhost:15002");
-    std::shared_ptr<grpc::Channel> channel = grpc::CreateChannel(server_address, grpc::InsecureChannelCredentials());
-    SparkConnectClient client(channel);
+    // Auto-managed config (similar to SparkSession.builder in PySpark)
+    Config config;
+    config.setHost("localhost").setPort(15002);
 
-    spark::connect::UserContext user_context;
-    // ... set user context ...
+    SparkClient client(config);
 
-    std::string session_id = "your-session-id";
+    auto df = client.sql("SELECT * FROM range(5)");
+    df.show();
 
-    std::shared_ptr<spark::client::RangeRelation> range_relation =
-        spark::client::Range(10, std::optional<int64_t>{0}, std::optional<int64_t>{1}, std::optional<int32_t>{4});
-
-    spark::connect::Plan plan;
-    *plan.mutable_root() = range_relation->ToProto();
-
-    std::vector<std::shared_ptr<arrow::RecordBatch>> results =
-        client.ExecutePlan(plan, user_context, session_id);
-
-    // Process results...
     return 0;
 }
+```
+
+### **Output**
+
+```
+id:   [
+    0,
+    1,
+    2,
+    3,
+    4
+  ]
+id:   [
+    0,
+    0,
+    0,
+    0,
+    0
+  ]
+```
+
+----------
+
+## API Overview
+
+### **Creating a Client**
+
+```cpp
+Config config;
+config.setHost("remote-spark-host").setPort(15002);
+SparkClient client(config);
+```
+
+### **SQL Queries**
+
+```cpp
+auto df = client.sql("SELECT name, age FROM people");
+df.show(20); // show first 20 rows
+```
+
+### **Programmatic Ranges**
+
+```cpp
+auto df = client.range(100);
+df.show(5); // prints first 5 rows
+```
+
+_(More transformations like `select`, `filter`, `limit` are coming soon.)_
+
+----------
+
+## Roadmap
+
+-   Pretty printing (PySpark-style)
+-   Chained transformations (`df.select().filter().limit().show()`)
+-   Full Arrow-to-Arrow zero-copy conversions for analytics workloads
+-   Support for authentication and custom headers
+-   Full test suite
