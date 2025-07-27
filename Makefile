@@ -15,8 +15,14 @@ ARROW_LIBS := $(shell pkg-config --libs arrow parquet arrow-dataset arrow-flight
 GRPC_CFLAGS := $(shell pkg-config --cflags protobuf grpc++)
 GRPC_LIBS := $(shell pkg-config --libs protobuf grpc++)
 
+#########################################
+# Fetch UUID flags
+#########################################
+UUID_CFLAGS := $(shell pkg-config --cflags uuid)
+UUID_LIBS := $(shell pkg-config --libs uuid)
 
-CXXFLAGS = $(BASE_CXXFLAGS) $(ARROW_CFLAGS) $(GRPC_CFLAGS)
+
+CXXFLAGS = $(BASE_CXXFLAGS) $(ARROW_CFLAGS) $(GRPC_CFLAGS) $(UUID_CFLAGS)
 
 ########################################################################################################################
 #   -labsl_synchronization, is often needed by gRPC components
@@ -28,7 +34,7 @@ CXXFLAGS = $(BASE_CXXFLAGS) $(ARROW_CFLAGS) $(GRPC_CFLAGS)
 #   A more comprehensive (and sometimes necessary) list for gRPC could be:
 #   LDFLAGS = -lprotobuf -lgrpc++ -lgrpc -lgpr -labsl_synchronization -labsl_base -labsl_core_headers -lpthread -ldl
 #######################################################################################################################
-LDFLAGS = $(BASE_LDFLAGS) $(GRPC_LIBS) $(ARROW_LIBS) -labsl_synchronization
+LDFLAGS = $(BASE_LDFLAGS) $(GRPC_LIBS) $(ARROW_LIBS) $(UUID_LIBS) -labsl_synchronization
 
 
 
