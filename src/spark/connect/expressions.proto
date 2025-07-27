@@ -19,7 +19,6 @@ syntax = 'proto3';
 
 import "google/protobuf/any.proto";
 import "spark/connect/types.proto";
-import "spark/connect/common.proto";
 
 package spark.connect;
 
@@ -31,7 +30,6 @@ option go_package = "internal/generated";
 // expressions in SQL appear.
 message Expression {
 
-  ExpressionCommon common = 18;
   oneof expr_type {
     Literal literal = 1;
     UnresolvedAttribute unresolved_attribute = 2;
@@ -49,9 +47,6 @@ message Expression {
     UnresolvedNamedLambdaVariable unresolved_named_lambda_variable = 14;
     CommonInlineUserDefinedFunction common_inline_user_defined_function = 15;
     CallFunction call_function = 16;
-    NamedArgumentExpression named_argument_expression = 17;
-    MergeAction merge_action = 19;
-    TypedAggregateExpression typed_aggregate_expression = 20;
 
     // This field is used to mark extensions to the protocol. When plugins generate arbitrary
     // relations they can add them here. During the planning the correct resolution is done.
@@ -151,16 +146,6 @@ message Expression {
       // If this is set, Server will use Catalyst parser to parse this string to DataType.
       string type_str = 3;
     }
-
-    // (Optional) The expression evaluation mode.
-    EvalMode eval_mode = 4;
-
-    enum EvalMode {
-      EVAL_MODE_UNSPECIFIED = 0;
-      EVAL_MODE_LEGACY = 1;
-      EVAL_MODE_ANSI = 2;
-      EVAL_MODE_TRY = 3;
-    }
   }
 
   message Literal {
@@ -237,9 +222,6 @@ message Expression {
 
     // (Optional) The id of corresponding connect plan.
     optional int64 plan_id = 2;
-
-    // (Optional) The requested column is a metadata column.
-    optional bool is_metadata_column = 3;
   }
 
   // An unresolved function is not explicitly bound to one explicit function, but the function
@@ -275,9 +257,6 @@ message Expression {
     // If set, it should end with '.*' and will be parsed by 'parseAttributeName'
     // in the server side.
     optional string unparsed_target = 1;
-
-    // (Optional) The id of corresponding connect plan.
-    optional int64 plan_id = 2;
   }
 
   // Represents all of the input attributes to a given relational operator, for example in
@@ -346,11 +325,6 @@ message Expression {
   }
 }
 
-message ExpressionCommon {
-  // (Required) Keep the information of the origin for this expression such as stacktrace.
-  Origin origin = 1;
-}
-
 message CommonInlineUserDefinedFunction {
   // (Required) Name of the user-defined function.
   string function_name = 1;
@@ -375,8 +349,6 @@ message PythonUDF {
   bytes command = 3;
   // (Required) Python version being used in the client.
   string python_ver = 4;
-  // (Optional) Additional includes for the Python UDF.
-  repeated string additional_includes = 5;
 }
 
 message ScalarScalaUDF {
@@ -388,8 +360,6 @@ message ScalarScalaUDF {
   DataType outputType = 3;
   // (Required) True if the UDF can return null value
   bool nullable = 4;
-  // (Required) Indicate if the UDF is an aggregate function
-  bool aggregate = 5;
 }
 
 message JavaUDF {
@@ -403,51 +373,10 @@ message JavaUDF {
   bool aggregate = 3;
 }
 
-message TypedAggregateExpression {
-  // (Required) The aggregate function object packed into bytes.
-  ScalarScalaUDF scalar_scala_udf = 1;
-}
-
 message CallFunction {
   // (Required) Unparsed name of the SQL function.
   string function_name = 1;
 
   // (Optional) Function arguments. Empty arguments are allowed.
   repeated Expression arguments = 2;
-}
-
-message NamedArgumentExpression {
-  // (Required) The key of the named argument.
-  string key = 1;
-
-  // (Required) The value expression of the named argument.
-  Expression value = 2;
-}
-
-message MergeAction {
-  // (Required) The action type of the merge action.
-  ActionType action_type = 1;
-
-  // (Optional) The condition expression of the merge action.
-  optional Expression condition = 2;
-
-  // (Optional) The assignments of the merge action. Required for ActionTypes INSERT and UPDATE.
-  repeated Assignment assignments = 3;
-
-  enum ActionType {
-    ACTION_TYPE_INVALID = 0;
-    ACTION_TYPE_DELETE = 1;
-    ACTION_TYPE_INSERT = 2;
-    ACTION_TYPE_INSERT_STAR = 3;
-    ACTION_TYPE_UPDATE = 4;
-    ACTION_TYPE_UPDATE_STAR = 5;
-  }
-
-  message Assignment {
-    // (Required) The key of the assignment.
-    Expression key = 1;
-
-    // (Required) The value of the assignment.
-    Expression value = 2;
-  }
 }
