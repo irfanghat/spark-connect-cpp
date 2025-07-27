@@ -39,7 +39,7 @@ make clean && make run
 
 ----------
 
-## Usage Example
+## Usage Examples
 
 Here’s how you can run a simple Spark query:
 
@@ -66,7 +66,7 @@ int main() {
 
 ### **Output**
 
-```
+```sh
 id:   [
     0,
     1,
@@ -82,6 +82,21 @@ id:   [
     0
   ]
 ```
+
+
+```cpp
+  auto df = client.sql("SELECT 'John' AS name");
+  df.show();
+```
+
+### **Output**
+
+```sh
+name:   [
+    "John"
+  ]
+```
+
 
 ----------
 
