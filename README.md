@@ -270,13 +270,13 @@ df.show();
 
 ---
 
-## Roadmap
+## Items currently in progress
 
-* [ ] Pretty printed `show()` output with alignment
-* [ ] Chained DataFrame transformations (e.g., `df.select().filter().show()`)
-* [ ] Full Arrow-to-Arrow zero-copy conversions
-* [ ] Authentication and custom headers support
-* [ ] CI and test suite
+- [x] Pretty printed `show()` output with alignment
+- [ ] Chained DataFrame transformations (e.g., `df.select().filter().show()`)
+- [ ] Full Arrow-to-Arrow zero-copy conversions
+- [ ] Authentication and custom headers support
+- [ ] CI and test suite
 
 ---
 
