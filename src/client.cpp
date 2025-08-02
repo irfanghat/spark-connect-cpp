@@ -57,7 +57,7 @@ DataFrame SparkClient::range(int64_t end)
  * and formats it for terminal output.
  * 
  * @param limit The maximum number of rows to display. If not provided, all rows are shown.
- *              Defaults to 20 if available.
+ *              Defaults to 10 if available.
  * 
  * @note Supports pretty-printing of various data types including:
  *       - Integers and floating-point values
