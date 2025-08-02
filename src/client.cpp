@@ -49,6 +49,28 @@ DataFrame SparkClient::range(int64_t end)
     return DataFrame(stub_, plan, config_.session_id, config_.user_id);
 }
 
+/**
+ * @brief Displays the contents of the DataFrame in a tabular format.
+ * 
+ * This method prints the data returned from a Spark SQL query or transformation.
+ * Internally, it deserializes the Arrow RecordBatch received from the Spark server
+ * and formats it for terminal output.
+ * 
+ * @param limit The maximum number of rows to display. If not provided, all rows are shown.
+ *              Defaults to 20 if available.
+ * 
+ * @note Supports pretty-printing of various data types including:
+ *       - Integers and floating-point values
+ *       - Strings
+ *       - Booleans
+ *       - Dates and timestamps (with formatting)
+ *       - Nulls (displayed as "null")
+ * 
+ * @example
+ * SparkClient client(...);
+ * auto df = client.sql("SELECT * FROM range(10)");
+ * df.show(5);  // Display first 5 rows
+ */
 void DataFrame::show(int max_rows)
 {
     ExecutePlanRequest request;
