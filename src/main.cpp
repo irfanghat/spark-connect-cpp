@@ -1,4 +1,4 @@
-#include "client.h"
+#include "session.h"
 #include "config.h"
 
 int main()
@@ -6,7 +6,7 @@ int main()
     Config conf;
     conf.setHost("localhost").setPort(15002);
 
-    SparkClient client(conf);
+    SparkSession client(conf);
 
     //------------------------
     // Basic int
