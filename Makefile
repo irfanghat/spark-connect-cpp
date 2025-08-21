@@ -47,7 +47,9 @@ PROTO_GEN_DIR = $(BUILD_DIR)/gen
 
 ARROW_DIR = /usr/include/arrow
 
-SRCS = $(wildcard $(SRC_DIR)/*.cpp)
+SUBDIRS := $(shell find $(SRC_DIR) -type d)
+
+SRCS := $(foreach dir,$(SUBDIRS),$(wildcard $(dir)/*.cpp))
 OBJS = $(patsubst $(SRC_DIR)/%.cpp,$(BUILD_DIR)/%.o,$(SRCS))
 
 

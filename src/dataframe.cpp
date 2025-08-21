@@ -3,69 +3,48 @@
 #include <sstream>
 #include <chrono>
 #include <ctime>
+
 #include <arrow/pretty_print.h>
-#include "client.h"
+#include <arrow/api.h>
+#include <arrow/ipc/api.h>
+#include <arrow/io/memory.h>
+
+#include <grpcpp/grpcpp.h>
+#include <spark/connect/base.grpc.pb.h>
+#include <spark/connect/commands.pb.h>
+
+#include "dataframe.h"
 
 using namespace spark::connect;
 
-/**
- * @brief Executes a SQL query on the Spark backend and returns the result as a DataFrame.
- *
- * This function constructs a plan representing the SQL query,
- * serializes it, and sends it to the Spark backend using the client stub.
- *
- * @param query The SQL query to be executed.
- * @return DataFrame The resulting data from executing the query.
- *
- * @note This method requires an active session. The session ID and user ID
- *       are obtained from the client's configuration.
- *
- * @throws std::runtime_error if the execution fails on the backend.
- */
-DataFrame SparkClient::sql(const std::string &query)
+DataFrame::DataFrame(std::shared_ptr<spark::connect::SparkConnectService::Stub> stub,
+                     spark::connect::Plan plan,
+                     std::string session_id,
+                     std::string user_id)
+    : stub_(stub),
+      plan_(plan),
+      session_id_(session_id),
+      user_id_(user_id)
 {
-    Plan plan;
-    plan.mutable_root()->mutable_sql()->set_query(query);
-    return DataFrame(stub_, plan, config_.session_id, config_.user_id);
-}
-
-/**
- * @brief Generates a range of integers [0, end) on the Spark backend and returns it as a DataFrame.
- *
- * This method is typically used for generating synthetic data or testing pipelines.
- * It constructs a plan that describes a range operation.
- *
- * @param end The exclusive upper bound of the range.
- * @return DataFrame A DataFrame representing the range [0, end).
- *
- * @note This method also depends on an active session managed by the client.
- *
- * @throws std::runtime_error if the backend plan execution fails.
- */
-DataFrame SparkClient::range(int64_t end)
-{
-    Plan plan;
-    plan.mutable_root()->mutable_range()->set_end(end);
-    return DataFrame(stub_, plan, config_.session_id, config_.user_id);
 }
 
 /**
  * @brief Displays the contents of the DataFrame in a tabular format.
- * 
+ *
  * This method prints the data returned from a Spark SQL query or transformation.
  * Internally, it deserializes the Arrow RecordBatch received from the Spark server
  * and formats it for terminal output.
- * 
+ *
  * @param limit The maximum number of rows to display. If not provided, all rows are shown.
  *              Defaults to 10 if available.
- * 
+ *
  * @note Supports pretty-printing of various data types including:
  *       - Integers and floating-point values
  *       - Strings
  *       - Booleans
  *       - Dates and timestamps (with formatting)
  *       - Nulls (displayed as "null")
- * 
+ *
  * @example
  * SparkClient client(...);
  * auto df = client.sql("SELECT * FROM range(10)");
