@@ -1,8 +1,53 @@
 #include "session.h"
 #include "dataframe.h"
+#include "dataframe_reader.h"
 #include <spark/connect/relations.pb.h>
 #include <spark/connect/commands.pb.h>
+#include <iostream>
 
+SparkSession *SparkSession::instance_ = nullptr;
+std::once_flag SparkSession::once_flag_;
+
+/**
+ * @brief Private constructor for SparkSession.
+ * @param config Configuration for the session.
+ */
+SparkSession::SparkSession(const Config &config)
+    : config_(config)
+{   
+    //--------------------------------------------------------
+    // Build the gRPC channel and stub based on the config
+    //--------------------------------------------------------
+    std::string target = config_.host + ":" + std::to_string(config_.port);
+    if (config_.use_ssl)
+    {
+        grpc::SslCredentialsOptions ssl_opts;
+        stub_ = spark::connect::SparkConnectService::NewStub(
+            grpc::CreateChannel(target, grpc::SslCredentials(ssl_opts)));
+    }
+    else
+    {
+        stub_ = spark::connect::SparkConnectService::NewStub(
+            grpc::CreateChannel(target, grpc::InsecureChannelCredentials()));
+    }
+}
+
+/**
+ * @brief Gets or creates a new SparkSession with the specified configurations.
+ * @return The singleton SparkSession instance.
+ */
+SparkSession &SparkSession::Builder::getOrCreate()
+{
+    std::call_once(SparkSession::once_flag_, [this]()
+                   { SparkSession::instance_ = new SparkSession(this->config_); });
+    return *SparkSession::instance_;
+}
+
+/**
+ * @brief Returns a DataFrame representing the result of the given query.
+ * @param query The SQL query string.
+ * @return A new DataFrame instance.
+ */
 DataFrame SparkSession::sql(const std::string &query)
 {
     spark::connect::Plan plan;
@@ -10,9 +55,76 @@ DataFrame SparkSession::sql(const std::string &query)
     return DataFrame(stub_, plan, config_.session_id, config_.user_id);
 }
 
+/**
+ * @brief Creates a DataFrame with a single column containing elements in a range.
+ * @param end The end value of the range (exclusive).
+ * @return A new DataFrame instance.
+ */
 DataFrame SparkSession::range(int64_t end)
 {
     spark::connect::Plan plan;
     plan.mutable_root()->mutable_range()->set_end(end);
     return DataFrame(stub_, plan, config_.session_id, config_.user_id);
+}
+
+/**
+ * @brief Creates a new SparkSession with an isolated session ID.
+ * @return A new SparkSession instance.
+ */
+SparkSession SparkSession::newSession()
+{
+    std::cout << "[INFO] Creating a new isolated session..." << std::endl;
+    Config newConfig = this->config_;
+    newConfig.session_id = "new_session_" + std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(
+                                                               std::chrono::system_clock::now().time_since_epoch())
+                                                               .count());
+    return SparkSession(newConfig);
+}
+
+/**
+ * @brief Stops the underlying Spark session.
+ */
+void SparkSession::stop()
+{
+    //------------------------------------------------
+    // Build the request to release the session.
+    //------------------------------------------------
+    spark::connect::ReleaseExecuteRequest request;
+    request.set_session_id(config_.session_id);
+    
+    //------------------------------------------------------
+    // Create a new UserContext and set it in the request.
+    //------------------------------------------------------
+    spark::connect::UserContext *user_context = request.mutable_user_context();
+    user_context->set_user_id(config_.user_id);
+    
+    //------------------------------------------------------
+    // Set the release type to ReleaseAll.
+    //------------------------------------------------------
+    request.mutable_release_all();
+    
+    //------------------------------------------------------
+    // Call the gRPC method and check the status.
+    //------------------------------------------------------
+    grpc::ClientContext context;
+    spark::connect::ReleaseExecuteResponse response;
+    grpc::Status status = stub_->ReleaseExecute(&context, request, &response);
+
+    if (status.ok())
+    {
+        std::cout << "[INFO] SparkSession stopped successfully." << std::endl;
+    }
+    else
+    {
+        std::cout << "[ERROR] Failed to stop SparkSession: " << status.error_message() << std::endl;
+    }
+}
+
+/**
+ * @brief Returns a DataFrameReader that can be used to read data in as a DataFrame.
+ * @return A new DataFrameReader instance.
+ */
+DataFrameReader SparkSession::read()
+{
+    return DataFrameReader(stub_, config_);
 }
