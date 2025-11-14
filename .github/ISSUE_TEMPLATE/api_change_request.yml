@@ -1,0 +1,58 @@
+name: API Change Request
+description: Propose modifications or additions to the public API
+title: "[API] "
+labels: ["api-change"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form to propose changes to the public API.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      placeholder: Describe the API change you propose.
+    validations:
+      required: true
+
+  - type: textarea
+    id: current
+    attributes:
+      label: Current Behavior
+      render: cpp
+      placeholder: |
+        // How the API works today
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed
+    attributes:
+      label: Proposed API
+      render: cpp
+      placeholder: |
+        // New API proposal
+    validations:
+      required: true
+
+  - type: dropdown
+    id: breaking
+    attributes:
+      label: Does this introduce breaking changes?
+      options:
+        - "No"
+        - "Yes"
+    validations:
+      required: true
+
+  - type: textarea
+    id: rationale
+    attributes:
+      label: Rationale
+      placeholder: Explain the reasoning behind this change.
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context

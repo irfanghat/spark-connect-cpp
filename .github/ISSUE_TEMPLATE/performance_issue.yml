@@ -1,0 +1,52 @@
+name: Performance Issue
+description: Report slow performance, memory problems, or inefficiencies
+title: "[PERF] "
+labels: ["performance"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Help us diagnose performance issues by completing the details below.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      placeholder: Describe the performance problem.
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro-steps
+    attributes:
+      label: Steps to Reproduce
+      placeholder: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+
+  - type: textarea
+    id: benchmark
+    attributes:
+      label: Measurements / Benchmarks
+      render: shell
+      placeholder: Paste profiling output, timing logs, or benchmark data.
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Performance
+      placeholder: What performance did you expect?
+
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: e.g., Linux, GCC 12, Arrow 16.0, 32-core CPU
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context

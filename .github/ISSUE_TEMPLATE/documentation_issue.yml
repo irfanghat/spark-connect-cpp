@@ -1,0 +1,37 @@
+name: Documentation Issue
+description: Report missing, incorrect, or confusing documentation
+title: "[DOC] "
+labels: ["documentation"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Help improve the documentation by sharing the details below.
+
+  - type: input
+    id: location
+    attributes:
+      label: Documentation Location
+      placeholder: File, URL, or section name.
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Description
+      placeholder: What's missing, incorrect, or unclear?
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested Improvements
+      placeholder: Suggested replacement text, clarifications, or examples.
+      render: markdown
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
