@@ -1,0 +1,57 @@
+name: Feature Request
+description: Suggest an enhancement or new capability
+title: "[FEATURE] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a feature! Please provide the details below.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      placeholder: Short description of the requested feature.
+    validations:
+      required: true
+
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation
+      description: Why is this feature needed? What problem does it solve?
+      placeholder: Explain the motivation...
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed Solution
+      render: cpp
+      placeholder: |
+        // Example API or behavior
+    validations:
+      required: false
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      placeholder: Describe any alternatives that were considered.
+    validations:
+      required: false
+
+  - type: textarea
+    id: benefits
+    attributes:
+      label: Expected Benefits
+      placeholder: Who benefits and how?
+    validations:
+      required: false
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
