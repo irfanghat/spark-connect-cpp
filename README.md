@@ -2,6 +2,8 @@
 
 ## Overview
 
+* This is a sample _issue_ for SC-CPP-issue-name.
+
 This repository hosts a **native C++ client** for **Apache Spark Connect**.
 
 Spark Connect introduces a **decoupled client-server architecture** for Apache Spark, enabling remote execution of Spark operations. This client offers a **high-performance, idiomatic C++ interface** to Spark SQL, with efficient **Apache Arrow-based columnar serialization**.
