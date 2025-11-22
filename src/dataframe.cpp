@@ -204,11 +204,13 @@ void DataFrame::show(int max_rows)
 
     auto batch = batches[0];
     int num_columns = batch->num_columns();
-    int64_t num_rows = std::min(batch->num_rows(), static_cast<int64_t>(max_rows));
-
+    int64_t num_rows = batch->num_rows();
+    if (max_rows > 0)
+    {
+        num_rows = std::min(num_rows, static_cast<int64_t>(max_rows));
+    }
     std::vector<std::string> headers;
     std::vector<int> col_widths(num_columns);
-
     std::vector<std::vector<std::string>> string_data(num_rows, std::vector<std::string>(num_columns));
     
     for (int i = 0; i < num_columns; ++i)
