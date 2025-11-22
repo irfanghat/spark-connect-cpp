@@ -259,7 +259,7 @@ void DataFrame::show(int max_rows)
             std::cout << " " << std::setfill(' ') << std::left << std::setw(col_widths[col] - 1) << string_data[row][col] << "|";
         }
         std::cout << std::endl;
-        if(row < num_rows - 1)
+        if (row < num_rows - 1)
             print_separator();
     }
 
