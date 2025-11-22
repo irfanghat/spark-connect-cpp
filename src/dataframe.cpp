@@ -117,11 +117,7 @@ static std::string arrayValueToString(std::shared_ptr<arrow::Array> array, int64
                     tp = std::chrono::system_clock::time_point(std::chrono::microseconds(ts));
                     break;
                 case arrow::TimeUnit::NANO:
-                    tp = std::chrono::system_clock::time_point(
-                        std::chrono::duration_cast<std::chrono::system_clock::duration>(
-                            std::chrono::nanoseconds(ts)
-                        )
-                    );
+                    tp = std::chrono::system_clock::time_point(std::chrono::nanoseconds(ts));
                     break;
                 default:
                     return "(unknown unit)";
