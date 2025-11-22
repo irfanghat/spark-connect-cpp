@@ -235,7 +235,7 @@ void DataFrame::show(int max_rows)
     // Separator line
     auto print_separator = [&]() {
         std::cout << "+";
-        for (size_t w : col_widths)
+        for (int w : col_widths)
             std::cout << std::string(w, '-') << "+";
         std::cout << std::endl;
     };
