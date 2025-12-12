@@ -198,6 +198,7 @@ The settings below are located in `.vscode/c_cpp_properties.json`:
 1. Make sure the [C/C++ extension for VS Code](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools) is installed.
 2. Open the project folder in VS Code.
 3. IntelliSense should automatically pick up this configuration.
+4. Building Apache Arrow from source: https://arrow.apache.org/docs/developers/cpp/building.html#building-arrow-cpp
 
 ## Contributing
 
