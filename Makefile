@@ -126,11 +126,11 @@ $(BUILD_DIR)/spark/connect/%.o: $(PROTO_GEN_DIR)/spark/connect/%.cc
 # Output directories reflect the package structure
 $(PROTO_GEN_DIR)/spark/connect/%.pb.cc $(PROTO_GEN_DIR)/spark/connect/%.pb.h: $(PROTO_DIR)/%.proto
 	@mkdir -p $(dir $@)
-	protoc -I=$(SRC_DIR) --cpp_out=$(PROTO_GEN_DIR) $<
+	protoc -I=$(SRC_DIR) --experimental_allow_proto3_optional --cpp_out=$(PROTO_GEN_DIR) $<
 
 $(PROTO_GEN_DIR)/spark/connect/%.grpc.pb.cc $(PROTO_GEN_DIR)/spark/connect/%.grpc.pb.h: $(PROTO_DIR)/%.proto
 	@mkdir -p $(dir $@)
-	protoc -I=$(SRC_DIR) --grpc_out=$(PROTO_GEN_DIR) --plugin=protoc-gen-grpc=$(shell which grpc_cpp_plugin) $<
+	protoc -I=$(SRC_DIR) --grpc_out=$(PROTO_GEN_DIR) --experimental_allow_proto3_optional --plugin=protoc-gen-grpc=$(shell which grpc_cpp_plugin) $<
 
 
 PROTO_GEN_FILES = $(PROTO_GEN_CC_FILES)
@@ -140,6 +140,9 @@ PROTO_GEN_FILES = $(PROTO_GEN_CC_FILES)
 ##########################################
 
 proto: $(PROTO_GEN_FILES)
+
+$(PROTO_OBJS): $(PROTO_GEN_FILES)
+
 
 ##########################################
 # Run the main executable
@@ -167,5 +170,20 @@ check-deps:
 install-deps:
 	@echo "Installing dependencies using install_deps.sh..."
 	@./install_deps.sh
+
+##########################################
+# Test for DataFrame columns
+##########################################
+build/dataframe_columns_test: tests/dataframe_columns.cpp $(PROTO_OBJS) $(OBJS)	
+	@mkdir -p build	
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -o $@ tests/dataframe_columns.cpp $(filter-out build/main.o, $(OBJS)) $(PROTO_OBJS) $(LDFLAGS)
+
+test_columns: build/dataframe_columns_test	./build/dataframe_columns_test
+
+run_tests: build/dataframe_columns_test
+	@echo "========================================="
+	@echo "Running DataFrame::columns() Unit Tests"
+	@echo "========================================="
+	./build/dataframe_columns_test
 
 .PHONY: all clean proto install-deps run check-deps
