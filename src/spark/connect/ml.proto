@@ -50,6 +50,12 @@ message MlCommand {
     Relation dataset = 3;
   }
 
+  // Command to fetch a cached ML object (model or summary)
+  message Fetch {
+    // (Required) Reference to the cached object
+    ObjectRef obj_ref = 1;
+  }
+
   // Command to delete the cached objects which could be a model
   // or summary evaluated by a model
   message Delete {
