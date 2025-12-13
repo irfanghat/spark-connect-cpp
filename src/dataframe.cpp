@@ -286,3 +286,42 @@ void DataFrame::show(int max_rows)
         std::cout << std::setw(col_widths[i]) << std::setfill('-') << "" << "+";
     std::cout << std::endl;
 }
+
+std::vector<std::string> DataFrame::columns() const 
+{
+    std::vector<std::string> col_names;
+    
+    // Create AnalyzePlan request to get schema
+    AnalyzePlanRequest request;
+    request.set_session_id(session_id_);
+    request.mutable_user_context()->set_user_id(user_id_);
+    
+    // Set the schema analysis type
+    auto* schema_request = request.mutable_schema();
+    *schema_request->mutable_plan() = plan_;
+    
+    // Make the gRPC call
+    grpc::ClientContext context;
+    AnalyzePlanResponse response;
+    
+    grpc::Status status = stub_->AnalyzePlan(&context, request, &response);
+    
+    if (!status.ok()) {
+        throw std::runtime_error("Failed to analyze plan for schema: " + status.error_message());
+    }
+    
+    // Extract column names from the schema
+    if (response.has_schema()) {
+        const auto& schema = response.schema().schema();
+        if (schema.has_struct_()) {
+            for (const auto& field : schema.struct_().fields()) {
+                col_names.push_back(field.name());
+            }
+        } else {
+            throw std::runtime_error("DataFrame Schema is not a struct type.");
+        }
+    } else {
+        throw std::runtime_error("No schema found in AnalyzePlanResponse.");
+    }
+    return col_names;
+}
