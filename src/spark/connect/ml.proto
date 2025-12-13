@@ -50,10 +50,18 @@ message MlCommand {
     Relation dataset = 3;
   }
 
-  // Command to fetch a cached ML object (model or summary)
+  // Command to fetch attributes or parameters from ML operators
+  // This can be used to retrieve specific attributes from estimators, evaluators, or cached models
   message Fetch {
-    // (Required) Reference to the cached object
-    ObjectRef obj_ref = 1;
+    // ML operator information - can be an estimator/evaluator or a cached model
+    oneof type {
+      // Estimator or evaluator
+      MlOperator operator = 1;
+      // The cached model
+      ObjectRef obj_ref = 2;
+    }
+    // (Required) The name of the attribute to fetch
+    string attribute = 3;
   }
 
   // Command to delete the cached objects which could be a model

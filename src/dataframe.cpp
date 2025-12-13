@@ -29,6 +29,110 @@ DataFrame::DataFrame(std::shared_ptr<spark::connect::SparkConnectService::Stub> 
 }
 
 /**
+ * @brief Converts a value from an Arrow Array at a specific row index to a string.
+ *
+ * This helper function handles the type-specific extraction of values from
+ * Apache Arrow arrays. It supports various Arrow types and formats them
+ * into human-readable strings for display purposes.
+ *
+ * @param array The shared pointer to the Arrow Array containing the data.
+ * @param row The zero-based index of the row to extract.
+ * @return A string representation of the value. Returns "null" if the value is null.
+ *
+ * @note Supported types:
+ *       - STRING, BOOL
+ *       - INT32, INT64
+ *       - FLOAT, DOUBLE
+ *       - DECIMAL128
+ *       - DATE32, DATE64 (formatted as YYYY-MM-DD)
+ *       - TIMESTAMP (formatted as YYYY-MM-DD HH:MM:SS)
+ */
+static std::string arrayValueToString(std::shared_ptr<arrow::Array> array, int64_t row) {
+    switch (array->type_id()) {
+        case arrow::Type::STRING: {
+            auto str_array = std::static_pointer_cast<arrow::StringArray>(array);
+            return str_array->IsNull(row) ? "null" : str_array->GetString(row);
+        }
+        case arrow::Type::BOOL: {
+            auto bool_array = std::static_pointer_cast<arrow::BooleanArray>(array);
+            return bool_array->IsNull(row) ? "null" : (bool_array->Value(row) ? "true" : "false");
+        }
+        case arrow::Type::INT32: {
+            auto int_array = std::static_pointer_cast<arrow::Int32Array>(array);
+            return int_array->IsNull(row) ? "null" : std::to_string(int_array->Value(row));
+        }
+        case arrow::Type::INT64: {
+            auto int_array = std::static_pointer_cast<arrow::Int64Array>(array);
+            return int_array->IsNull(row) ? "null" : std::to_string(int_array->Value(row));
+        }
+        case arrow::Type::FLOAT: {
+            auto float_array = std::static_pointer_cast<arrow::FloatArray>(array);
+            return float_array->IsNull(row) ? "null" : std::to_string(float_array->Value(row));
+        }
+        case arrow::Type::DOUBLE: {
+            auto dbl_array = std::static_pointer_cast<arrow::DoubleArray>(array);
+            return dbl_array->IsNull(row) ? "null" : std::to_string(dbl_array->Value(row));
+        }
+        case arrow::Type::DECIMAL128: {
+            auto dec_array = std::static_pointer_cast<arrow::Decimal128Array>(array);
+            return dec_array->IsNull(row) ? "null" : dec_array->FormatValue(row);
+        }
+        case arrow::Type::DATE32: {
+            auto date_array = std::static_pointer_cast<arrow::Date32Array>(array);
+            if (date_array->IsNull(row)) return "null";
+            int32_t days = date_array->Value(row);
+            std::chrono::system_clock::time_point tp = std::chrono::system_clock::from_time_t(0) + std::chrono::hours(days * 24);
+            std::time_t tt = std::chrono::system_clock::to_time_t(tp);
+            std::ostringstream oss;
+            oss << std::put_time(std::gmtime(&tt), "%Y-%m-%d");
+            return oss.str();
+        }
+        case arrow::Type::DATE64: {
+            auto date_array = std::static_pointer_cast<arrow::Date64Array>(array);
+            if (date_array->IsNull(row)) return "null";
+            int64_t ms = date_array->Value(row);
+            std::chrono::milliseconds dur(ms);
+            std::chrono::system_clock::time_point tp(dur);
+            std::time_t tt = std::chrono::system_clock::to_time_t(tp);
+            std::ostringstream oss;
+            oss << std::put_time(std::gmtime(&tt), "%Y-%m-%d");
+            return oss.str();
+        }
+        case arrow::Type::TIMESTAMP: {
+            auto ts_array = std::static_pointer_cast<arrow::TimestampArray>(array);
+            if (ts_array->IsNull(row)) return "null";
+            
+            int64_t ts = ts_array->Value(row);
+            auto unit = std::static_pointer_cast<arrow::TimestampType>(ts_array->type())->unit();
+            std::chrono::system_clock::time_point tp;
+
+            switch (unit) {
+                case arrow::TimeUnit::SECOND:
+                    tp = std::chrono::system_clock::time_point(std::chrono::seconds(ts));
+                    break;
+                case arrow::TimeUnit::MILLI:
+                    tp = std::chrono::system_clock::time_point(std::chrono::milliseconds(ts));
+                    break;
+                case arrow::TimeUnit::MICRO:
+                    tp = std::chrono::system_clock::time_point(std::chrono::microseconds(ts));
+                    break;
+                case arrow::TimeUnit::NANO:
+                    tp = std::chrono::system_clock::time_point(std::chrono::nanoseconds(ts));
+                    break;
+                default:
+                    return "(unknown unit)";
+            }
+            std::time_t tt = std::chrono::system_clock::to_time_t(tp);
+            std::ostringstream oss;
+            oss << std::put_time(std::gmtime(&tt), "%Y-%m-%d %H:%M:%S");
+            return oss.str();
+        }
+        default:
+            return "(unsupported)";
+    }
+}
+
+/**
  * @brief Displays the contents of the DataFrame in a tabular format.
  *
  * This method prints the data returned from a Spark SQL query or transformation.
@@ -100,191 +204,68 @@ void DataFrame::show(int max_rows)
 
     auto batch = batches[0];
     int num_columns = batch->num_columns();
-    int64_t num_rows = std::min(batch->num_rows(), static_cast<int64_t>(max_rows));
-
+    int64_t num_rows = batch->num_rows();
+    if (max_rows > 0)
+    {
+        num_rows = std::min(num_rows, static_cast<int64_t>(max_rows));
+    }
     std::vector<std::string> headers;
-    std::vector<int> col_widths(num_columns, 12); // Default width
-
+    std::vector<int> col_widths(num_columns);
+    std::vector<std::vector<std::string>> string_data(num_rows, std::vector<std::string>(num_columns));
+    
     for (int i = 0; i < num_columns; ++i)
     {
         headers.push_back(batch->schema()->field(i)->name());
+        col_widths[i] = static_cast<int>(headers[i].length());
     }
+
+    for (int64_t row = 0; row < num_rows; ++row) {
+        for (int col = 0; col < num_columns; ++col) {
+            std::string val = arrayValueToString(batch->column(col), row);
+            string_data[row][col] = val;
+            col_widths[col] = std::max(col_widths[col], static_cast<int>(val.length()));
+        }
+    }
+
+    // Add padding (2 spaces)
+    for (auto& w : col_widths) w += 2;
+
+    // Separator line
+    auto print_separator = [&]() {
+        std::cout << "+";
+        for (int w : col_widths)
+            std::cout << std::string(w, '-') << "+";
+        std::cout << std::endl;
+    };
 
     //-----------------------------------------------------------------------
     // Header
     //-----------------------------------------------------------------------
-    std::cout << "+";
+    print_separator();
+    std::cout << "|";
     for (int i = 0; i < num_columns; ++i)
-        std::cout << std::setw(col_widths[i]) << std::setfill('-') << "" << "+";
-
-    std::cout << "\n|";
-    for (int i = 0; i < num_columns; ++i)
-        std::cout << std::setw(col_widths[i]) << std::setfill(' ') << std::left << headers[i] << "|";
-
-    std::cout << "\n+";
-    for (int i = 0; i < num_columns; ++i)
-        std::cout << std::setw(col_widths[i]) << std::setfill('-') << "" << "+";
-
+        std::cout << " " << std::setfill(' ') << std::left << std::setw(col_widths[i] - 1) << headers[i] << "|";
     std::cout << std::endl;
+    print_separator();
 
     //-----------------------------------------------------------------------
     // Rows
     //-----------------------------------------------------------------------
-    for (int64_t row = 0; row < num_rows; ++row)
-    {
+    for (int64_t row = 0; row < num_rows; ++row) {
         std::cout << "|";
-        for (int col = 0; col < num_columns; ++col)
-        {
-            auto array = batch->column(col);
-            std::string value;
-
-            switch (array->type_id())
-            {
-            case arrow::Type::STRING:
-            {
-                auto str_array = std::static_pointer_cast<arrow::StringArray>(array);
-                value = str_array->IsNull(row) ? "null" : str_array->GetString(row);
-                break;
-            }
-            case arrow::Type::BOOL:
-            {
-                auto bool_array = std::static_pointer_cast<arrow::BooleanArray>(array);
-                value = bool_array->IsNull(row) ? "null" : (bool_array->Value(row) ? "true" : "false");
-                break;
-            }
-            case arrow::Type::INT32:
-            {
-                auto int_array = std::static_pointer_cast<arrow::Int32Array>(array);
-                value = int_array->IsNull(row) ? "null" : std::to_string(int_array->Value(row));
-                break;
-            }
-            case arrow::Type::INT64:
-            {
-                auto int_array = std::static_pointer_cast<arrow::Int64Array>(array);
-                value = int_array->IsNull(row) ? "null" : std::to_string(int_array->Value(row));
-                break;
-            }
-            case arrow::Type::FLOAT:
-            {
-                auto float_array = std::static_pointer_cast<arrow::FloatArray>(array);
-                value = float_array->IsNull(row) ? "null" : std::to_string(float_array->Value(row));
-                break;
-            }
-            case arrow::Type::DOUBLE:
-            {
-                auto dbl_array = std::static_pointer_cast<arrow::DoubleArray>(array);
-                value = dbl_array->IsNull(row) ? "null" : std::to_string(dbl_array->Value(row));
-                break;
-            }
-            case arrow::Type::DECIMAL128:
-            {
-                auto dec_array = std::static_pointer_cast<arrow::Decimal128Array>(array);
-                if (dec_array->IsNull(row))
-                {
-                    value = "null";
-                }
-                else
-                {
-                    value = dec_array->FormatValue(row);
-                }
-                break;
-            }
-            case arrow::Type::DATE32:
-            {
-                auto date_array = std::static_pointer_cast<arrow::Date32Array>(array);
-                if (date_array->IsNull(row))
-                {
-                    value = "null";
-                }
-                else
-                {
-                    int32_t days = date_array->Value(row);
-                    std::chrono::system_clock::time_point tp = std::chrono::system_clock::from_time_t(0) + std::chrono::hours(days * 24);
-                    std::time_t tt = std::chrono::system_clock::to_time_t(tp);
-                    std::ostringstream oss;
-                    oss << std::put_time(std::gmtime(&tt), "%Y-%m-%d");
-                    value = oss.str();
-                }
-                break;
-            }
-            case arrow::Type::DATE64:
-            {
-                auto date_array = std::static_pointer_cast<arrow::Date64Array>(array);
-                if (date_array->IsNull(row))
-                {
-                    value = "null";
-                }
-                else
-                {
-                    int64_t ms = date_array->Value(row);
-                    std::chrono::milliseconds dur(ms);
-                    std::chrono::system_clock::time_point tp(dur);
-                    std::time_t tt = std::chrono::system_clock::to_time_t(tp);
-                    std::ostringstream oss;
-                    oss << std::put_time(std::gmtime(&tt), "%Y-%m-%d");
-                    value = oss.str();
-                }
-                break;
-            }
-            case arrow::Type::TIMESTAMP:
-            {
-                auto ts_array = std::static_pointer_cast<arrow::TimestampArray>(array);
-                if (ts_array->IsNull(row))
-                {
-                    value = "null";
-                }
-                else
-                {
-                    int64_t ts = ts_array->Value(row);
-                    auto unit = std::static_pointer_cast<arrow::TimestampType>(ts_array->type())->unit();
-
-                    std::chrono::system_clock::time_point tp;
-
-                    switch (unit)
-                    {
-                    case arrow::TimeUnit::SECOND:
-                        tp = std::chrono::system_clock::time_point(std::chrono::seconds(ts));
-                        break;
-                    case arrow::TimeUnit::MILLI:
-                        tp = std::chrono::system_clock::time_point(std::chrono::milliseconds(ts));
-                        break;
-                    case arrow::TimeUnit::MICRO:
-                        tp = std::chrono::system_clock::time_point(std::chrono::microseconds(ts));
-                        break;
-                    case arrow::TimeUnit::NANO:
-                        tp = std::chrono::system_clock::time_point(std::chrono::nanoseconds(ts));
-                        break;
-                    default:
-                        value = "(unknown unit)";
-                        break;
-                    }
-
-                    if (value.empty())
-                    {
-                        std::time_t tt = std::chrono::system_clock::to_time_t(tp);
-                        std::ostringstream oss;
-                        oss << std::put_time(std::gmtime(&tt), "%Y-%m-%d %H:%M:%S");
-                        value = oss.str();
-                    }
-                }
-                break;
-            }
-            default:
-                value = "(unsupported)";
-            }
-
-            std::cout << std::setw(col_widths[col]) << std::setfill(' ') << std::left << value << "|";
+        for (int col = 0; col < num_columns; ++col) {
+            std::cout << " " << std::setfill(' ') << std::left << std::setw(col_widths[col] - 1) << string_data[row][col] << "|";
         }
         std::cout << std::endl;
+        if (row < num_rows - 1)
+            print_separator();
     }
 
     //-----------------------------------------------------------------------
     // Footer
     //-----------------------------------------------------------------------
-    std::cout << "+";
-    for (int i = 0; i < num_columns; ++i)
-        std::cout << std::setw(col_widths[i]) << std::setfill('-') << "" << "+";
-    std::cout << std::endl;
+    print_separator();
+
 }
 
 std::vector<std::string> DataFrame::columns() const 
