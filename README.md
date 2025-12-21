@@ -10,10 +10,10 @@ Spark Connect introduces a **decoupled client-server architecture** for Apache S
 
 ## Features
 
-- Native C++ interface for Spark SQL  
-- Zero-copy **Apache Arrow** data transfer  
-- Human-readable DataFrame display via `show()`  
-- Supports a wide range of types: integers, floats, strings, booleans, dates, timestamps, decimals, binary  
+- Native C++ interface for Spark SQL
+- Zero-copy **Apache Arrow** data transfer
+- Human-readable DataFrame display via `show()`
+- Supports a wide range of types: integers, floats, strings, booleans, dates, timestamps, decimals, binary
 - Minimal dependencies and build setup
 
 ---
@@ -22,8 +22,8 @@ Spark Connect introduces a **decoupled client-server architecture** for Apache S
 
 ### 1. Prerequisites
 
-- **Apache Spark 3.5+** with Spark Connect enabled  
-- **C++17 or later**  
+- **Apache Spark 3.5+** with Spark Connect enabled
+- **C++17 or later**
 - Libraries:
   - `gRPC`
   - `Protobuf`
@@ -34,7 +34,7 @@ Spark Connect introduces a **decoupled client-server architecture** for Apache S
 
 ```bash
 make clean && make run
-````
+```
 
 ---
 
@@ -104,7 +104,7 @@ df2.show();
 
 ```cpp
 auto df3 = client.sql(R"(
-    SELECT id, 
+    SELECT id,
            CASE WHEN id % 2 = 0 THEN 'Alice' ELSE 'Bob' END AS name,
            id * 1.5 AS score,
            id % 3 = 0 AS is_active
@@ -138,7 +138,7 @@ df3.show(10);
 
 ```cpp
 auto df4 = client.sql(R"(
-    SELECT 
+    SELECT
         CAST('2024-01-01' AS DATE) AS date_col,
         CAST('2024-01-01 12:34:56' AS TIMESTAMP) AS ts_col,
         CAST(12345.6789 AS DECIMAL(20, 4)) AS decimal_col
@@ -162,7 +162,7 @@ df4.show();
 
 ```cpp
 auto df5 = client.sql(R"(
-    SELECT 
+    SELECT
         CAST(date_sub(current_date(), CAST(id AS INT)) AS DATE) AS date32_col,
         CAST(date_add(current_timestamp(), CAST(id AS INT)) AS TIMESTAMP) AS ts_col
     FROM range(5)
@@ -190,7 +190,7 @@ df5.show();
 
 ```cpp
 auto df6 = client.sql(R"(
-    SELECT 
+    SELECT
         IF(id % 2 = 0, null, id) AS maybe_null,
         id % 2 = 0 AS is_even
     FROM range(6)
@@ -219,7 +219,7 @@ df6.show();
 
 ```cpp
 auto df7 = client.sql(R"(
-    SELECT 
+    SELECT
         CAST(id AS FLOAT) / 3.0 AS float_val,
         CAST(id AS DOUBLE) * 2.5 AS double_val,
         encode(CAST(id AS STRING), 'utf-8') AS bin_val
@@ -266,6 +266,42 @@ df.show(10);
 ```cpp
 auto df = client.range(100);
 df.show();
+```
+
+## DataFrame API
+
+### Retrieve Column Names
+
+```cpp
+auto df = spark.sql("SELECT age, name, state FROM people");
+auto cols = df.columns();
+// Returns: {"age", "name", "state"}
+```
+
+### Example: Filter Columns
+
+```cpp
+auto df = spark.sql("SELECT * FROM table");
+auto cols = df.columns();
+
+// Select all columns except 'age'
+std::vector<std::string> selected;
+for (const auto& col : cols) {
+    if (col != "age") selected.push_back(col);
+}
+```
+
+### Example: Check Column Existence
+
+```cpp
+auto cols = df.columns();
+bool has_state = std::find(cols.begin(), cols.end(), "state") != cols.end();
+```
+
+### Example: Schema Comparison
+
+```cpp
+bool same_schema = df1.columns() == df2.columns();
 ```
 
 ---

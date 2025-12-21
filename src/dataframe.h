@@ -39,6 +39,20 @@ public:
      */
     void show(int max_rows = 10);
 
+    /**
+     * @brief Return the column names of the DataFrame.
+     * 
+     * This method retrieves the schema of the DataFrame from the Spark server
+     * and extracts the names of all columns in their original order.
+     * @return A vector of strings representing the column names.
+     *  
+     * @throws std::runtime_error If the schema cannot be retrieved from the server.
+     *
+     * @note This operation requires a round-trip to the Spark server via AnalyzePlan RPC.
+     * @note Column order is preserved as defined in the DataFrame schema.
+     */
+    std::vector<std::string> columns() const;
+
 private:
     std::shared_ptr<spark::connect::SparkConnectService::Stub> stub_;
     spark::connect::Plan plan_;
