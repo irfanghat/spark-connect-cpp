@@ -395,7 +395,7 @@ int main()
     {
         // Create SparkSession
         SparkSession& spark = SparkSession::builder()
-                                  .master("localhost")
+                                  .master("spark")
                                   .appName("DataFrameColumnsTest")
                                   .getOrCreate();
 

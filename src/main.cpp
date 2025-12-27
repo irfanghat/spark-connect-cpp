@@ -8,7 +8,7 @@ int main()
     try
     {
         SparkSession &spark = SparkSession::builder()
-                                  .master("localhost")
+                                  .master("spark")
                                   .appName("SparkConnectCppClient")
                                   .getOrCreate();
 
