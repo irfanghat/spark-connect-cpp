@@ -28,7 +28,11 @@ services:
       - -c
       - |
         echo "Waiting for Spark Connect Server to start..."
-        sleep 20
+        until nc -z spark 15002; do
+          echo "Spark Connect Server is not ready yet. Retrying in 1 second..."
+          sleep 1
+        done
+        echo "Spark Connect Server is ready."
         make all
         make run
         make test_columns
