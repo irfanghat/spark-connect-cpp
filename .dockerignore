@@ -1,6 +1,6 @@
 # Ignore version control directories
-git
-gitignore
+.git
+.gitignore
 .github 
 
 # Ignore Docker-related files
