@@ -14,3 +14,30 @@ services:
       - "15002:15002"
     volumes:
       - ./datasets:/opt/spark/work-dir/datasets
+    networks:
+      - default
+
+  spark_client:
+    build: 
+      context: .
+    depends_on:
+      - spark
+      
+    command:
+      - /bin/sh
+      - -c
+      - |
+        echo "Waiting for Spark Connect Server to start..."
+        sleep 20
+        make all
+        make run
+        make test_columns
+        make run_tests
+    networks:
+      - default
+
+networks:
+  default:
+    driver: bridge
+    name: spark_connect_cpp
+    
