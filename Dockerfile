@@ -12,6 +12,7 @@ RUN apt-get update && apt-get install -y \
     ca-certificates \
     lsb-release \
     wget \
+    netcat-traditional \
     gnupg \
     && rm -rf /var/lib/apt/lists/*
 
