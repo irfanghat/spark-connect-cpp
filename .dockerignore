@@ -1,0 +1,32 @@
+# Ignore version control directories
+git
+gitignore
+.github 
+
+# Ignore Docker-related files
+dockerignore
+Dockerfile*
+
+# Ignore Python artifacts
+*.pyc
+*.pyo
+__pycache__/
+
+# Ignore virtual environments
+venv/
+env/
+
+# Ignore logs and temporary files
+*.log
+*.tmp
+*.swp
+
+# Ignore build artifacts
+build/
+dist/
+*.egg-info/
+
+# Ignore compiled assets
+*.out
+*.class
+*.o

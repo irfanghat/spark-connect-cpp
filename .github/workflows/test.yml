@@ -1,0 +1,29 @@
+name: C++ CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        build_type: [Release, Debug]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install dependencies
+      if: runner.os == 'Linux'
+      run: chmod +x install_deps.sh && ./install_deps.sh
+
+    - name: Build Spark Connect Client
+      run: make all
+
+    - name: Run tests
+      run: make run && make test_columns && make run_tests
