@@ -1,0 +1,99 @@
+#!/bin/bash
+
+# -----------------------------------------------------------
+# Pre-push hook for Spark Connect C++ Client
+# This hook runs all tests before allowing a push to remote
+#
+# To bypass this hook (not recommended):
+#   git push --no-verify
+# -----------------------------------------------------------
+
+set -e
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+echo -e "${BLUE}*********************************************${NC}"
+echo -e "${BLUE}  Pre-Push Hook: Running Tests${NC}"
+echo -e "${BLUE}*********************************************${NC}"
+echo ""
+
+current_branch=$(git symbolic-ref --short HEAD 2>/dev/null || echo "detached")
+
+echo -e "${YELLOW}Branch:${NC} $current_branch"
+echo -e "${YELLOW}Remote:${NC} $1"
+echo ""
+
+if [ ! -f "Makefile" ]; then
+    echo -e "${RED}Error: Makefile not found. Are you in the project root?${NC}"
+    exit 1
+fi
+
+# -----------------------------------------------------------
+# Check dependencies
+# -----------------------------------------------------------
+echo -e "${BLUE}[1/4] Checking dependencies...${NC}"
+if ! make check-deps > /dev/null 2>&1; then
+    echo -e "${RED}Dependencies check failed...${NC}"
+    echo -e "${YELLOW}Run: make install-deps${NC}"
+    exit 1
+fi
+echo -e "${GREEN}Dependencies OK${NC}"
+echo ""
+
+# -----------------------------------------------------------
+# Build the library
+# -----------------------------------------------------------
+echo -e "${BLUE}[2/4] Building library...${NC}"
+if ! make all; then
+    echo -e "${RED}Library build failed...${NC}"
+    echo ""
+    echo -e "${YELLOW}Fix build errors before pushing...${NC}"
+    exit 1
+fi
+echo -e "${GREEN}Library built successfully...${NC}"
+echo ""
+
+# -----------------------------------------------------------
+# Build tests
+# -----------------------------------------------------------
+echo -e "${BLUE}[3/4] Building tests...${NC}"
+if ! make build-tests; then
+    echo -e "${RED}Test build failed...${NC}"
+    echo ""
+    echo -e "${YELLOW}Fix test build errors before pushing${NC}"
+    exit 1
+fi
+echo -e "${GREEN}Tests built successfully${NC}"
+echo ""
+
+# -----------------------------------------------------------
+# Run tests
+# -----------------------------------------------------------
+echo -e "${BLUE}[4/4] Running tests...${NC}"
+echo ""
+
+if ! make test; then
+    echo ""
+    echo -e "${RED}*********************************************${NC}"
+    echo -e "${RED} TESTS FAILED${NC}"
+    echo -e "${RED}*********************************************${NC}"
+    echo ""
+    echo -e "${YELLOW}Please fix the failing tests before pushing...${NC}"
+    echo -e "${YELLOW}To push anyway (not recommended):${NC}"
+    echo -e "${YELLOW}  git push --no-verify${NC}"
+    echo ""
+    exit 1
+fi
+
+echo ""
+echo -e "${GREEN}*********************************************${NC}"
+echo -e "${GREEN} ALL TESTS PASSED${NC}"
+echo -e "${GREEN}*********************************************${NC}"
+echo -e "${GREEN}Proceeding with push...${NC}"
+echo ""
+
+exit 0
