@@ -34,9 +34,7 @@ services:
         done
         echo "Spark Connect Server is ready."
         make all
-        make run
-        make test_columns
-        make run_tests
+        make test
     networks:
       - default
 
