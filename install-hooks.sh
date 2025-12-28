@@ -43,7 +43,7 @@ install_hook() {
     local dest_file=".git/hooks/$hook_name"
     
     if [ ! -f "$source_file" ]; then
-        echo -e "${RED}✗ $source_file not found${NC}"
+        echo -e "${RED}$source_file not found${NC}"
         return 1
     fi
     
