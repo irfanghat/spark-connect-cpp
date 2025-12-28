@@ -16,7 +16,7 @@ jobs:
         ports:
           - 15002:15002
         options: >-
-          --name spark_server
+          --name spark
           --health-cmd "nc -z localhost 15002"
           --health-interval 10s
           --health-timeout 5s
