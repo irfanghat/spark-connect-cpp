@@ -1,4 +1,3 @@
-// session.h
 #pragma once
 
 #include <string>
@@ -11,9 +10,8 @@
 #include <spark/connect/base.grpc.pb.h>
 #include "config.h"
 #include "dataframe.h"
-#include "dataframe_reader.h" // New include
+#include "dataframe_reader.h"
 
-// Forward declarations
 class DataFrameReader;
 
 /**
@@ -82,17 +80,15 @@ public:
         Config config_;
     };
 
-    // Public static methods for the builder pattern
     static Builder builder()
     {
         return Builder();
     }
 
-    // Core methods to interact with Spark
     DataFrame sql(const std::string &query);
     DataFrame range(int64_t end);
     DataFrameReader read();
-    // Placeholder for a more complex method
+    // Placeholder for a more complex method (Review PySpark implementation)
     // DataFrame createDataFrame(const std::vector<std::vector<std::string>>& data, const std::vector<std::string>& schema);
 
     /**
@@ -106,19 +102,21 @@ public:
      */
     void stop();
 
-    // Property-like methods
     std::string session_id() const { return config_.session_id; }
     std::string user_id() const { return config_.user_id; }
 
 private:
-    // Make the constructor private to enforce the builder pattern
     explicit SparkSession(const Config &config);
 
+    // -----------------------------------------------------
     // Singleton instance and mutex for thread-safe access
+    // -----------------------------------------------------
     static SparkSession *instance_;
     static std::once_flag once_flag_;
 
+    // -----------------------------------------------------
     // Member variables
+    // -----------------------------------------------------
     Config config_;
     std::shared_ptr<spark::connect::SparkConnectService::Stub> stub_;
 };
