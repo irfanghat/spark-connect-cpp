@@ -1,4 +1,4 @@
-name: "Run Tests"
+name: "Build and Test"
 
 on:
   push:
@@ -7,23 +7,40 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest]
-        build_type: [Release, Debug]
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    services:
+      spark:
+        image: apache/spark:4.0.0-scala2.13-java21-r-ubuntu
+        ports:
+          - 15002:15002
+        options: >-
+          --name spark_server
+          --health-cmd "nc -z localhost 15002"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        env:
+          SPARK_NO_DAEMONIZE: "true"
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
     - name: Install dependencies
-      if: runner.os == 'Linux'
-      run: chmod +x install_deps.sh && ./install_deps.sh
+      run: |
+        chmod +x install_deps.sh
+        sudo ./install_deps.sh
 
-    - name: Build Spark Connect Client
+    - name: Check dependencies
+      run: make check-deps
+
+    - name: Build Spark Connect Client Library
       run: make all
 
-    - name: Run tests
-      run: make run && make test_columns && make run_tests
+    - name: Build Tests
+      run: make build-tests
+
+    - name: Run Tests
+      run: make test
