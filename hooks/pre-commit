@@ -32,7 +32,7 @@ fi
 cpp_files=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(cpp|h|hpp)$' || true)
 
 if [ -z "$cpp_files" ]; then
-    echo -e "${GREEN}✓ No C++ files to check${NC}"
+    echo -e "${GREEN}No C++ files to check${NC}"
     echo ""
     exit 0
 fi
@@ -52,7 +52,7 @@ if ! make all > /dev/null 2>&1; then
     echo -e "${YELLOW}To commit anyway: git commit --no-verify${NC}"
     exit 1
 fi
-echo -e "${GREEN}✓ Build OK${NC}"
+echo -e "${GREEN}Build OK${NC}"
 echo ""
 
 # --------------------------------------------------------
