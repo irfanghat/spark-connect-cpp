@@ -14,6 +14,7 @@
 #include <spark/connect/commands.pb.h>
 
 #include "dataframe.h"
+#include "types.h"
 
 using namespace spark::connect;
 
@@ -47,113 +48,107 @@ DataFrame::DataFrame(std::shared_ptr<spark::connect::SparkConnectService::Stub> 
  *       - DATE32, DATE64 (formatted as YYYY-MM-DD)
  *       - TIMESTAMP (formatted as YYYY-MM-DD HH:MM:SS)
  */
-static std::string arrayValueToString(std::shared_ptr<arrow::Array> array, int64_t row) {
-    switch (array->type_id()) {
-        case arrow::Type::STRING: {
-            auto str_array = std::static_pointer_cast<arrow::StringArray>(array);
-            return str_array->IsNull(row) ? "null" : str_array->GetString(row);
-        }
-        case arrow::Type::BOOL: {
-            auto bool_array = std::static_pointer_cast<arrow::BooleanArray>(array);
-            return bool_array->IsNull(row) ? "null" : (bool_array->Value(row) ? "true" : "false");
-        }
-        case arrow::Type::INT32: {
-            auto int_array = std::static_pointer_cast<arrow::Int32Array>(array);
-            return int_array->IsNull(row) ? "null" : std::to_string(int_array->Value(row));
-        }
-        case arrow::Type::INT64: {
-            auto int_array = std::static_pointer_cast<arrow::Int64Array>(array);
-            return int_array->IsNull(row) ? "null" : std::to_string(int_array->Value(row));
-        }
-        case arrow::Type::FLOAT: {
-            auto float_array = std::static_pointer_cast<arrow::FloatArray>(array);
-            return float_array->IsNull(row) ? "null" : std::to_string(float_array->Value(row));
-        }
-        case arrow::Type::DOUBLE: {
-            auto dbl_array = std::static_pointer_cast<arrow::DoubleArray>(array);
-            return dbl_array->IsNull(row) ? "null" : std::to_string(dbl_array->Value(row));
-        }
-        case arrow::Type::DECIMAL128: {
-            auto dec_array = std::static_pointer_cast<arrow::Decimal128Array>(array);
-            return dec_array->IsNull(row) ? "null" : dec_array->FormatValue(row);
-        }
-        case arrow::Type::DATE32: {
-            auto date_array = std::static_pointer_cast<arrow::Date32Array>(array);
-            if (date_array->IsNull(row)) return "null";
-            int32_t days = date_array->Value(row);
-            std::chrono::system_clock::time_point tp = std::chrono::system_clock::from_time_t(0) + std::chrono::hours(days * 24);
-            std::time_t tt = std::chrono::system_clock::to_time_t(tp);
-            std::ostringstream oss;
-            oss << std::put_time(std::gmtime(&tt), "%Y-%m-%d");
-            return oss.str();
-        }
-        case arrow::Type::DATE64: {
-            auto date_array = std::static_pointer_cast<arrow::Date64Array>(array);
-            if (date_array->IsNull(row)) return "null";
-            int64_t ms = date_array->Value(row);
-            std::chrono::milliseconds dur(ms);
-            std::chrono::system_clock::time_point tp(dur);
-            std::time_t tt = std::chrono::system_clock::to_time_t(tp);
-            std::ostringstream oss;
-            oss << std::put_time(std::gmtime(&tt), "%Y-%m-%d");
-            return oss.str();
-        }
-        case arrow::Type::TIMESTAMP: {
-            auto ts_array = std::static_pointer_cast<arrow::TimestampArray>(array);
-            if (ts_array->IsNull(row)) return "null";
-            
-            int64_t ts = ts_array->Value(row);
-            auto unit = std::static_pointer_cast<arrow::TimestampType>(ts_array->type())->unit();
-            std::chrono::system_clock::time_point tp;
+static std::string arrayValueToString(std::shared_ptr<arrow::Array> array, int64_t row)
+{
+    switch (array->type_id())
+    {
+    case arrow::Type::STRING:
+    {
+        auto str_array = std::static_pointer_cast<arrow::StringArray>(array);
+        return str_array->IsNull(row) ? "null" : str_array->GetString(row);
+    }
+    case arrow::Type::BOOL:
+    {
+        auto bool_array = std::static_pointer_cast<arrow::BooleanArray>(array);
+        return bool_array->IsNull(row) ? "null" : (bool_array->Value(row) ? "true" : "false");
+    }
+    case arrow::Type::INT32:
+    {
+        auto int_array = std::static_pointer_cast<arrow::Int32Array>(array);
+        return int_array->IsNull(row) ? "null" : std::to_string(int_array->Value(row));
+    }
+    case arrow::Type::INT64:
+    {
+        auto int_array = std::static_pointer_cast<arrow::Int64Array>(array);
+        return int_array->IsNull(row) ? "null" : std::to_string(int_array->Value(row));
+    }
+    case arrow::Type::FLOAT:
+    {
+        auto float_array = std::static_pointer_cast<arrow::FloatArray>(array);
+        return float_array->IsNull(row) ? "null" : std::to_string(float_array->Value(row));
+    }
+    case arrow::Type::DOUBLE:
+    {
+        auto dbl_array = std::static_pointer_cast<arrow::DoubleArray>(array);
+        return dbl_array->IsNull(row) ? "null" : std::to_string(dbl_array->Value(row));
+    }
+    case arrow::Type::DECIMAL128:
+    {
+        auto dec_array = std::static_pointer_cast<arrow::Decimal128Array>(array);
+        return dec_array->IsNull(row) ? "null" : dec_array->FormatValue(row);
+    }
+    case arrow::Type::DATE32:
+    {
+        auto date_array = std::static_pointer_cast<arrow::Date32Array>(array);
+        if (date_array->IsNull(row))
+            return "null";
+        int32_t days = date_array->Value(row);
+        std::chrono::system_clock::time_point tp = std::chrono::system_clock::from_time_t(0) + std::chrono::hours(days * 24);
+        std::time_t tt = std::chrono::system_clock::to_time_t(tp);
+        std::ostringstream oss;
+        oss << std::put_time(std::gmtime(&tt), "%Y-%m-%d");
+        return oss.str();
+    }
+    case arrow::Type::DATE64:
+    {
+        auto date_array = std::static_pointer_cast<arrow::Date64Array>(array);
+        if (date_array->IsNull(row))
+            return "null";
+        int64_t ms = date_array->Value(row);
+        std::chrono::milliseconds dur(ms);
+        std::chrono::system_clock::time_point tp(dur);
+        std::time_t tt = std::chrono::system_clock::to_time_t(tp);
+        std::ostringstream oss;
+        oss << std::put_time(std::gmtime(&tt), "%Y-%m-%d");
+        return oss.str();
+    }
+    case arrow::Type::TIMESTAMP:
+    {
+        auto ts_array = std::static_pointer_cast<arrow::TimestampArray>(array);
+        if (ts_array->IsNull(row))
+            return "null";
 
-            switch (unit) {
-                case arrow::TimeUnit::SECOND:
-                    tp = std::chrono::system_clock::time_point(std::chrono::seconds(ts));
-                    break;
-                case arrow::TimeUnit::MILLI:
-                    tp = std::chrono::system_clock::time_point(std::chrono::milliseconds(ts));
-                    break;
-                case arrow::TimeUnit::MICRO:
-                    tp = std::chrono::system_clock::time_point(std::chrono::microseconds(ts));
-                    break;
-                case arrow::TimeUnit::NANO:
-                    tp = std::chrono::system_clock::time_point(std::chrono::nanoseconds(ts));
-                    break;
-                default:
-                    return "(unknown unit)";
-            }
-            std::time_t tt = std::chrono::system_clock::to_time_t(tp);
-            std::ostringstream oss;
-            oss << std::put_time(std::gmtime(&tt), "%Y-%m-%d %H:%M:%S");
-            return oss.str();
-        }
+        int64_t ts = ts_array->Value(row);
+        auto unit = std::static_pointer_cast<arrow::TimestampType>(ts_array->type())->unit();
+        std::chrono::system_clock::time_point tp;
+
+        switch (unit)
+        {
+        case arrow::TimeUnit::SECOND:
+            tp = std::chrono::system_clock::time_point(std::chrono::seconds(ts));
+            break;
+        case arrow::TimeUnit::MILLI:
+            tp = std::chrono::system_clock::time_point(std::chrono::milliseconds(ts));
+            break;
+        case arrow::TimeUnit::MICRO:
+            tp = std::chrono::system_clock::time_point(std::chrono::microseconds(ts));
+            break;
+        case arrow::TimeUnit::NANO:
+            tp = std::chrono::system_clock::time_point(std::chrono::nanoseconds(ts));
+            break;
         default:
-            return "(unsupported)";
+            return "(unknown unit)";
+        }
+        std::time_t tt = std::chrono::system_clock::to_time_t(tp);
+        std::ostringstream oss;
+        oss << std::put_time(std::gmtime(&tt), "%Y-%m-%d %H:%M:%S");
+        return oss.str();
+    }
+    default:
+        return "(unsupported)";
     }
 }
 
-/**
- * @brief Displays the contents of the DataFrame in a tabular format.
- *
- * This method prints the data returned from a Spark SQL query or transformation.
- * Internally, it deserializes the Arrow RecordBatch received from the Spark server
- * and formats it for terminal output.
- *
- * @param limit The maximum number of rows to display. If not provided, all rows are shown.
- *              Defaults to 10 if available.
- *
- * @note Supports pretty-printing of various data types including:
- *       - Integers and floating-point values
- *       - Strings
- *       - Booleans
- *       - Dates and timestamps (with formatting)
- *       - Nulls (displayed as "null")
- *
- * @example
- * SparkClient client(...);
- * auto df = client.sql("SELECT * FROM range(10)");
- * df.show(5);  // Display first 5 rows
- */
 void DataFrame::show(int max_rows)
 {
     ExecutePlanRequest request;
@@ -212,15 +207,17 @@ void DataFrame::show(int max_rows)
     std::vector<std::string> headers;
     std::vector<int> col_widths(num_columns);
     std::vector<std::vector<std::string>> string_data(num_rows, std::vector<std::string>(num_columns));
-    
+
     for (int i = 0; i < num_columns; ++i)
     {
         headers.push_back(batch->schema()->field(i)->name());
         col_widths[i] = static_cast<int>(headers[i].length());
     }
 
-    for (int64_t row = 0; row < num_rows; ++row) {
-        for (int col = 0; col < num_columns; ++col) {
+    for (int64_t row = 0; row < num_rows; ++row)
+    {
+        for (int col = 0; col < num_columns; ++col)
+        {
             std::string val = arrayValueToString(batch->column(col), row);
             string_data[row][col] = val;
             col_widths[col] = std::max(col_widths[col], static_cast<int>(val.length()));
@@ -228,10 +225,12 @@ void DataFrame::show(int max_rows)
     }
 
     // Add padding (2 spaces)
-    for (auto& w : col_widths) w += 2;
+    for (auto &w : col_widths)
+        w += 2;
 
     // Separator line
-    auto print_separator = [&]() {
+    auto print_separator = [&]()
+    {
         std::cout << "+";
         for (int w : col_widths)
             std::cout << std::string(w, '-') << "+";
@@ -251,9 +250,11 @@ void DataFrame::show(int max_rows)
     //-----------------------------------------------------------------------
     // Rows
     //-----------------------------------------------------------------------
-    for (int64_t row = 0; row < num_rows; ++row) {
+    for (int64_t row = 0; row < num_rows; ++row)
+    {
         std::cout << "|";
-        for (int col = 0; col < num_columns; ++col) {
+        for (int col = 0; col < num_columns; ++col)
+        {
             std::cout << " " << std::setfill(' ') << std::left << std::setw(col_widths[col] - 1) << string_data[row][col] << "|";
         }
         std::cout << std::endl;
@@ -265,44 +266,106 @@ void DataFrame::show(int max_rows)
     // Footer
     //-----------------------------------------------------------------------
     print_separator();
-
 }
 
-std::vector<std::string> DataFrame::columns() const 
+std::vector<std::string> DataFrame::columns() const
 {
     std::vector<std::string> col_names;
-    
+
+    // ---------------------------------------------
     // Create AnalyzePlan request to get schema
+    // ---------------------------------------------
     AnalyzePlanRequest request;
     request.set_session_id(session_id_);
     request.mutable_user_context()->set_user_id(user_id_);
-    
+
+    // ------------------------------
     // Set the schema analysis type
-    auto* schema_request = request.mutable_schema();
+    // ------------------------------
+    auto *schema_request = request.mutable_schema();
     *schema_request->mutable_plan() = plan_;
-    
+
+    // ------------------------------
     // Make the gRPC call
+    // ------------------------------
     grpc::ClientContext context;
     AnalyzePlanResponse response;
-    
+
     grpc::Status status = stub_->AnalyzePlan(&context, request, &response);
-    
-    if (!status.ok()) {
+
+    if (!status.ok())
+    {
         throw std::runtime_error("Failed to analyze plan for schema: " + status.error_message());
     }
-    
+
+    // ------------------------------------------
     // Extract column names from the schema
-    if (response.has_schema()) {
-        const auto& schema = response.schema().schema();
-        if (schema.has_struct_()) {
-            for (const auto& field : schema.struct_().fields()) {
+    // ------------------------------------------
+    if (response.has_schema())
+    {
+        const auto &schema = response.schema().schema();
+        if (schema.has_struct_())
+        {
+            for (const auto &field : schema.struct_().fields())
+            {
                 col_names.push_back(field.name());
             }
-        } else {
+        }
+        else
+        {
             throw std::runtime_error("DataFrame Schema is not a struct type.");
         }
-    } else {
+    }
+    else
+    {
         throw std::runtime_error("No schema found in AnalyzePlanResponse.");
     }
     return col_names;
+}
+
+spark::sql::types::StructType DataFrame::schema() const
+{
+    AnalyzePlanRequest request;
+    request.set_session_id(session_id_);
+    request.mutable_user_context()->set_user_id(user_id_);
+
+    // ------------------------------
+    // Set schema analysis type
+    // ------------------------------
+    auto *schema_request = request.mutable_schema();
+    *schema_request->mutable_plan() = plan_;
+
+    grpc::ClientContext context;
+    AnalyzePlanResponse response;
+
+    grpc::Status status = stub_->AnalyzePlan(&context, request, &response);
+
+    if (!status.ok())
+    {
+        throw std::runtime_error("Failed to analyze plan for schema: " + status.error_message());
+    }
+
+    if (response.has_schema())
+    {
+        // -------------------------------------
+        // Convert the proto to C++ DataType
+        // -------------------------------------
+        spark::sql::types::DataType dt = spark::sql::types::DataType::from_proto(response.schema().schema());
+
+        // ------------------------------------------------------------
+        // A DataFrame schema is always a StructType at the root
+        // ------------------------------------------------------------
+        if (std::holds_alternative<spark::sql::types::StructType>(dt.kind))
+        {
+            return std::get<spark::sql::types::StructType>(dt.kind);
+        }
+        else
+        {
+            throw std::runtime_error("Internal Error: Spark returned a non-struct root schema.");
+        }
+    }
+    else
+    {
+        throw std::runtime_error("No schema found in AnalyzePlanResponse.");
+    }
 }
