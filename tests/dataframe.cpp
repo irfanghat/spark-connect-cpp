@@ -133,3 +133,28 @@ TEST_F(SparkIntegrationTest, SchemaIntrospection)
 
     std::cout << "StructType([" << schema_json << "])" << std::endl;
 }
+
+TEST_F(SparkIntegrationTest, AssertPrintSchema)
+{
+    // --------------------------------------------------------
+    // Explicit casts to ensure the test is deterministic
+    // --------------------------------------------------------
+    auto df = spark->sql("SELECT CAST(1 AS INT) AS id, array(CAST(1.1 AS DOUBLE), CAST(2.2 AS DOUBLE)) AS vals");
+
+    std::ostringstream oss;
+    df.schema().print_tree(oss);
+    std::string actual_tree = oss.str();
+
+    // --------------------------------------------------------------------
+    // The expected output matches Spark's specific tree formatting
+    // Array nullability is on the field line
+    // Indentation for nested elements uses 3 spaces after the pipe
+    // --------------------------------------------------------------------
+    std::string expected_tree =
+        "root\n"
+        " |-- id: integer (nullable = false)\n"
+        " |-- vals: array\n"
+        " |   |-- element: double (nullable = false)\n";
+
+    EXPECT_EQ(actual_tree, expected_tree);
+}
