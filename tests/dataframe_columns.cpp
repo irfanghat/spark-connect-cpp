@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
+#include <gmock/gmock-matchers.h>
 #include <algorithm>
 #include <memory>
 #include <string>
@@ -9,6 +10,7 @@
 #include "dataframe.h"
 
 using ::testing::ElementsAre;
+using ::testing::HasSubstr;
 using ::testing::UnorderedElementsAre;
 
 class ColumnTest : public ::testing::Test
@@ -37,7 +39,8 @@ SparkSession *ColumnTest::spark = nullptr;
 // The following suite validates Basic Column Retrieval (Single & Multiple),
 // Column Order Preservation, Schema Preservation on empty DataFrames,
 // Column Existence, Schema Comparison, Special Characters in Names,
-// Column validation after Transformation, Error Handling (Invalid Plans).
+// Column validation after Transformation, Error Handling (Invalid Plans),
+// Column Data Type validation, as well as Complex Type detection.
 // ----------------------------------------------------------------
 TEST_F(ColumnTest, BasicColumnRetrieval)
 {
@@ -117,42 +120,46 @@ TEST_F(ColumnTest, ErrorHandlingInvalidPlan)
         auto cols = df.columns(); }, std::exception);
 }
 
-// TEST_F(ColumnTest, ColumnDataTypesValidation)
-// {
-//     auto df = spark->sql(R"(
-//         SELECT 
-//             CAST(1 AS INT) AS int_col,
-//             CAST('hello' AS STRING) AS str_col,
-//             CAST(3.14 AS DOUBLE) AS double_col,
-//             CAST('2024-01-01' AS DATE) AS date_col,
-//             CAST(id % 2 = 0 AS BOOLEAN) AS bool_col
-//         FROM range(1)
-//     )");
+TEST_F(ColumnTest, ColumnDataTypesValidation)
+{
+    auto df = spark->sql(R"(
+        SELECT 
+            CAST(1 AS INT) AS int_col,
+            CAST('hello' AS STRING) AS str_col,
+            CAST(3.14 AS DOUBLE) AS double_col,
+            CAST('2024-01-01' AS DATE) AS date_col,
+            CAST(1 = 1 AS BOOLEAN) AS bool_col
+    )");
 
-//     // Assuming your DataFrame class has a schema() or printSchema()
-//     // that returns a string or a structured object.
-//     std::string schema_str = df.schema().ToString();
+    std::string schema_str = df.schema().json();
 
-//     // Verify types exist in the schema
-//     EXPECT_THAT(schema_str, HasSubstr("int_col: IntegerType"));
-//     EXPECT_THAT(schema_str, HasSubstr("str_col: StringType"));
-//     EXPECT_THAT(schema_str, HasSubstr("double_col: DoubleType"));
-//     EXPECT_THAT(schema_str, HasSubstr("date_col: DateType"));
-//     EXPECT_THAT(schema_str, HasSubstr("bool_col: BooleanType"));
-// }
+    EXPECT_THAT(schema_str, HasSubstr(R"("name":"int_col","type":"integer")"));
+    EXPECT_THAT(schema_str, HasSubstr(R"("name":"str_col","type":"string")"));
+    EXPECT_THAT(schema_str, HasSubstr(R"("name":"double_col","type":"double")"));
+    EXPECT_THAT(schema_str, HasSubstr(R"("name":"date_col","type":"date")"));
+    EXPECT_THAT(schema_str, HasSubstr(R"("name":"bool_col","type":"boolean")"));
+}
 
-// TEST_F(ColumnTest, ComplexTypeDetection)
-// {
-//     // Test Arrays and Maps
-//     auto df = spark->sql("SELECT array(1, 2, 3) AS int_array, map('key', 1) AS string_int_map");
+TEST_F(ColumnTest, ComplexTypeDetection)
+{
+    // ---------------------------
+    // Test Arrays and Maps
+    // ---------------------------
+    auto df = spark->sql("SELECT array(1, 2, 3) AS int_array, map('key', 1) AS string_int_map");
 
-//     auto schema = df.schema();
+    auto schema = df.schema();
 
-//     // Verify complex structure mapping
-//     EXPECT_EQ(schema.fields().size(), 2);
-//     EXPECT_EQ(schema.fields()[0].name(), "int_array");
-//     EXPECT_TRUE(schema.fields()[0].type().is_array());
+    ASSERT_EQ(schema.fields.size(), 2);
 
-//     EXPECT_EQ(schema.fields()[1].name(), "string_int_map");
-//     EXPECT_TRUE(schema.fields()[1].type().is_map());
-// }
+    // ---------------------------
+    // Check Array
+    // ---------------------------
+    EXPECT_EQ(schema.fields[0].name, "int_array");
+    EXPECT_TRUE(std::holds_alternative<spark::sql::types::ArrayType>(schema.fields[0].data_type.kind));
+
+    // ---------------------------
+    // Check Map
+    // ---------------------------
+    EXPECT_EQ(schema.fields[1].name, "string_int_map");
+    EXPECT_TRUE(std::holds_alternative<spark::sql::types::MapType>(schema.fields[1].data_type.kind));
+}
