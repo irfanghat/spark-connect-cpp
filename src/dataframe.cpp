@@ -374,3 +374,34 @@ void DataFrame::printSchema() const
 {
     this->schema().print_tree(std::cout);
 }
+
+DataFrame DataFrame::select(const std::vector<std::string> &cols)
+{
+    spark::connect::Plan new_plan;
+
+    // ---------------------------------
+    // Create the Project relation
+    // ---------------------------------
+    auto *project = new_plan.mutable_root()->mutable_project();
+
+    // ------------------------------------------------------------------
+    // Set the input of the Project to current plan's root relation
+    // We assume plan_.root() is always populated for a valid DataFrame
+    // ------------------------------------------------------------------
+    *project->mutable_input() = this->plan_.root();
+
+    // ---------------------------------------------------------------
+    // Add each column name as an UnresolvedAttribute expression
+    // ---------------------------------------------------------------
+    for (const auto &col_name : cols)
+    {
+        auto *expr = project->add_expressions();
+        auto *unresolved = expr->mutable_unresolved_attribute();
+        unresolved->set_unparsed_identifier(col_name);
+    }
+
+    // -----------------------------------------------------------------------
+    // Return a new DataFrame with the same gRPC stub but the updated plan
+    // -----------------------------------------------------------------------
+    return DataFrame(stub_, new_plan, session_id_, user_id_);
+}
