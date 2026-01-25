@@ -1,149 +1,228 @@
-# Setup Guide for Spark Connect C++ Client
+# Setup Guide for the Spark Connect C++ Client
 
-This guide will walk you through setting up your development environment.
+This guide walks you through setting up a development environment for the **Spark Connect C++ Client** using **CMake**.
+
+---
 
 ## Prerequisites
 
-Before you begin, make sure you have the following tools and libraries installed:
+Before you begin, ensure the following tools are installed:
 
-- **g++**
-- **pkg-config** (for checking library dependencies)
-- **Protobuf** (for generating Protobuf files)
-- **gRPC** (for remote procedure calls)
-- **Apache Arrow** (for data transfer and serialization)
+### Build Tools
 
-Additionally, make sure that you have **make** installed on your system to run the build process.
+* **CMake** (≥ 3.16 recommended)
+* **g++** (C++17 support required)
+* **pkg-config**
+* **make** (used by CMake generators)
 
-## Dependencies
+### Core Dependencies
 
-### System Dependencies
+* **Protobuf**
+* **gRPC**
+* **Apache Arrow**
+* **Abseil**
 
-The project relies on several external libraries which can be installed via `pkg-config`. These libraries are:
+### Runtime Dependencies
 
-- **Apache Arrow**: Provides efficient in-memory data storage.
-- **gRPC**: A high-performance RPC framework.
-- **Protobuf**: Serialization library for structured data.
-- **Abseil**: A collection of C++ libraries used by gRPC.
+* **Docker**
+* **Docker Compose** (v2 recommended)
 
-### Install Required Packages
+> Tests and some runtime functionality require **Spark to be running via Docker Compose**.
 
-To check if the required packages are available, you can run:
+---
 
-```bash
-make check-deps
-````
+## Repository Structure
 
-If any dependencies are missing, you can install them using the following script:
+The project uses an **out-of-source CMake build**:
 
-```bash
-make install-deps
+```
+spark-connect-cpp/
+├── CMakeLists.txt
+├── src/
+├── tests/
+├── build/              # generated (not committed)
+├── docker-compose.yaml
+├── install_deps.sh
+├── hooks/
+└── .vscode/
 ```
 
-This will automatically install all necessary system dependencies.
+---
 
-### Install Apache Arrow
+## Installing Dependencies
 
-The C++ client requires **Apache Arrow** to efficiently process and transfer data. Ensure that you have Arrow installed. On Debian/Ubuntu, you can install it using:
+### System Dependencies (Linux / Ubuntu)
+
+You can install all required system dependencies using the provided script:
+
+```bash
+chmod +x install_deps.sh
+./install_deps.sh
+```
+
+This installs:
+
+* Protobuf
+* gRPC
+* Apache Arrow
+* Abseil
+* Other required system libraries
+
+> The script is the **recommended** way to set up dependencies.
+
+---
+
+### Manual Installation (Optional)
+
+If you prefer manual installation:
+
+#### Apache Arrow
 
 ```bash
 sudo apt-get install libarrow-dev libparquet-dev
 ```
 
-For other operating systems, follow the Arrow installation instructions from the official [Apache Arrow website](https://arrow.apache.org/install/).
-
-### Install Protobuf and gRPC
-
-Install **Protobuf** and **gRPC** using your system package manager or from the official sources:
-
-#### On Debian/Ubuntu:
+#### Protobuf & gRPC
 
 ```bash
 sudo apt-get install libprotobuf-dev protobuf-compiler libgrpc++-dev
 ```
 
-#### From Source:
+For other platforms, see:
 
-If you prefer to install from source, follow these guides:
-
-* [Install Protobuf](https://developers.google.com/protocol-buffers/docs/cpptutorial)
-* [Install gRPC](https://grpc.io/docs/languages/cpp/quickstart/)
+* [https://arrow.apache.org/install/](https://arrow.apache.org/install/)
+* [https://grpc.io/docs/languages/cpp/](https://grpc.io/docs/languages/cpp/)
 
 ---
 
-## Building the Project
+## Building the Project (CMake)
 
 ### 1. Clone the Repository
-
-Clone this repository to your local machine:
 
 ```bash
 git clone https://github.com/irfanghat/spark-connect-cpp.git
 cd spark-connect-cpp
 ```
 
-### 2. Install Dependencies
+---
 
-You can install the necessary system dependencies using:
+### 2. Configure the Build
 
-```bash
-chmod +x install_deps.sh
-make install-deps
-```
-
-This will run the `install_deps.sh` script, which installs the required libraries for building the project.
-
-### 3. Compile the Project
-
-The project uses a `Makefile` to manage the build process. To compile the project, run:
+Create a build directory and configure the project:
 
 ```bash
-make
+mkdir build
+cd build
+cmake ..
 ```
 
-This will compile the C++ source files, generate the necessary Protobuf and gRPC files, and produce the final executable.
+This step:
 
-### 4. Run the Client
-
-Once the build process is complete, you can run the compiled client example:
-
-```bash
-make run
-```
-
-This will execute the client using the generated binary. Make sure you have the Spark server running and accessible at the specified address.
+* Detects system dependencies
+* Generates build files
+* Configures targets and tests
 
 ---
 
-## Cleaning Up
+### 3. Build
 
-To remove the compiled files and clean the build directory, you can use:
+Compile the project:
 
 ```bash
-make clean
+make -j$(nproc)
+```
+
+or (generator-agnostic):
+
+```bash
+cmake --build . -j$(nproc)
+```
+
+Build artifacts (libraries, test binaries, generated code) will be placed in `build/`.
+
+---
+
+### 4. Run Tests
+
+Before running tests, **ensure Spark is running**:
+
+```bash
+docker compose up spark --build
+```
+
+Then run:
+
+```bash
+ctest --output-on-failure
 ```
 
 ---
 
-## Troubleshooting
+## Running Spark (Required for Tests)
 
-### Missing Dependencies
+Many tests require a running Spark backend.
 
-If you encounter issues with missing dependencies, ensure that you have the necessary libraries installed. You can also use the `pkg-config` tool to verify the installed libraries:
+From the project root:
 
 ```bash
-pkg-config --cflags --libs arrow protobuf grpc++
+docker compose up spark --build
 ```
 
-If any dependencies are missing, the `make check-deps` command will alert you.
+This:
+
+* Builds the Spark container
+* Starts Spark Connect
+* Exposes required ports for tests
+
+Leave this running while executing tests.
 
 ---
 
+## Cleaning the Build
+
+To clean build artifacts:
+
+```bash
+rm -rf build
+```
+
+(CMake encourages deleting the build directory instead of in-place cleaning.)
+
+---
+
+## Git Hooks (Recommended)
+
+The repository includes **pre-commit** and **pre-push** hooks.
+
+Install them with:
+
+```bash
+./install_hooks.sh
+```
+
+### Hook Behavior
+
+* **pre-commit**: Ensures the CMake build succeeds
+* **pre-push**: Builds + runs tests (requires Docker / Spark)
+
+To bypass (not recommended):
+
+```bash
+git commit --no-verify
+git push --no-verify
+```
+
+---
 
 ## VS Code Configuration
 
-If you're using Visual Studio Code (VS Code) as your development environment, a workspace-specific configuration is provided to enable full IntelliSense support, including code completion, error checking, and navigation.
+VS Code settings are provided in `.vscode/c_cpp_properties.json` to enable:
 
-The settings below are located in `.vscode/c_cpp_properties.json`:
+* IntelliSense
+* Go-to-definition
+* Error diagnostics
+
+Here's a sample configuration:
 
 ```json
 {
@@ -151,8 +230,9 @@ The settings below are located in `.vscode/c_cpp_properties.json`:
         {
             "name": "Linux",
             "includePath": [
-                "${workspaceFolder}/src",
+                "${workspaceFolder}/**",
                 "${workspaceFolder}/build/gen",
+                "${workspaceFolder}/build/gen/spark",
                 "/usr/include",
                 "/usr/local/include",
                 "/usr/include/arrow",
@@ -165,8 +245,9 @@ The settings below are located in `.vscode/c_cpp_properties.json`:
             "intelliSenseMode": "linux-gcc-x64",
             "browse": {
                 "path": [
-                    "${workspaceFolder}/src",
+                    "${workspaceFolder}/**",
                     "${workspaceFolder}/build/gen",
+                    "${workspaceFolder}/build/gen/spark",
                     "/usr/include",
                     "/usr/local/include",
                     "/usr/include/arrow",
@@ -180,34 +261,61 @@ The settings below are located in `.vscode/c_cpp_properties.json`:
 }
 ```
 
-### Explanation
+### Recommended Setup
 
-* **includePath**: Lists all the directories where header files may be found. This includes:
+1. Install the **C/C++** extension:
+   [https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools)
+2. Open the repository root in VS Code
+3. Build the project once (`cmake .. && make`) to generate headers
+4. IntelliSense will pick up:
 
-  * Your project’s source code (`src`)
-  * Generated protobuf/grpc files (`build/gen`)
-  * Standard system include paths (`/usr/include`, `/usr/local/include`)
-* **compilerPath**: Specifies the path to the C++ compiler used by IntelliSense (`/usr/bin/g++`).
-* **cStandard / cppStandard**: Defines the C and C++ standards used (`C11` and `C++17` respectively).
-* **intelliSenseMode**: Configures the IntelliSense engine to match the compiler and system (`linux-gcc-x64`).
+   * `build/gen`
+   * Generated Protobuf / gRPC files
+   * System headers
 
-> ⚠️ **Note:** This configuration is used by VS Code for development assistance only. Actual compilation is handled by the `Makefile`.
+> VS Code configuration is **for development only**.
+> Actual compilation is controlled by **CMake**.
 
-### Setting Up
+---
 
-1. Make sure the [C/C++ extension for VS Code](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools) is installed.
-2. Open the project folder in VS Code.
-3. IntelliSense should automatically pick up this configuration.
-4. Building Apache Arrow from source: https://arrow.apache.org/docs/developers/cpp/building.html#building-arrow-cpp
+## Troubleshooting
+
+### Build Fails
+
+* Ensure dependencies are installed
+* Re-run:
+
+  ```bash
+  rm -rf build && mkdir build && cd build && cmake ..
+  ```
+
+### Tests Fail
+
+* Verify Spark is running:
+
+  ```bash
+  docker compose up spark --build
+  ```
+* Check container logs if needed
+
+### Missing Dependencies
+
+```bash
+pkg-config --cflags --libs arrow protobuf grpc++
+```
+
+---
 
 ## Contributing
 
-If you wish to contribute to the project, feel free to fork the repository and create a pull request. For any issues, open an issue on the GitHub repository.
+Contributions are welcome!
+Fork the repo, create a branch, and open a pull request.
 
 ---
 
 ## License
 
-This project is licensed under the **Apache License 2.0**.
+Licensed under the **Apache License 2.0**
 
-**Repository:** [https://github.com/irfanghat/spark-connect-cpp](https://github.com/irfanghat/spark-connect-cpp)
+**Repository:**
+[https://github.com/irfanghat/spark-connect-cpp](https://github.com/irfanghat/spark-connect-cpp)

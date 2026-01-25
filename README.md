@@ -1,20 +1,12 @@
-# Spark Connect C++ Client
+# Spark Connect C++ spark
 
 ## Overview
 
-This repository hosts a **native C++ client** for **Apache Spark Connect**.
+This repository hosts a **native C++ spark** for **Apache Spark Connect**.
 
-Spark Connect introduces a **decoupled client-server architecture** for Apache Spark, enabling remote execution of Spark operations. This client offers a **high-performance, idiomatic C++ interface** to Spark SQL, with efficient **Apache Arrow-based columnar serialization**.
+Spark Connect introduces a **decoupled spark-server architecture** for Apache Spark, enabling remote execution of Spark operations. This spark offers a **high-performance, idiomatic C++ interface** to Spark SQL, with efficient **Apache Arrow-based columnar serialization**.
 
----
-
-## Features
-
-- Native C++ interface for Spark SQL
-- Zero-copy **Apache Arrow** data transfer
-- Human-readable DataFrame display via `show()`
-- Supports a wide range of types: integers, floats, strings, booleans, dates, timestamps, decimals, binary
-- Minimal dependencies and build setup
+* Status: _WIP_
 
 ---
 
@@ -47,9 +39,9 @@ make clean && make run
 int main() {
     Config conf;
     conf.setHost("localhost").setPort(15002);
-    SparkClient client(conf);
+    SparkSession spark(conf);
 
-    auto df = client.sql("SELECT * FROM range(100)");
+    auto df = spark.sql("SELECT * FROM range(100)");
     df.show(5);
 }
 ```
@@ -61,7 +53,7 @@ int main() {
 ### Basic Integers
 
 ```cpp
-auto df1 = client.sql("SELECT * FROM range(1000)");
+auto df1 = spark.sql("SELECT * FROM range(1000)");
 df1.show(5);
 ```
 
@@ -84,7 +76,7 @@ df1.show(5);
 ### String Column
 
 ```cpp
-auto df2 = client.sql("SELECT 'John' AS name");
+auto df2 = spark.sql("SELECT 'John' AS name");
 df2.show();
 ```
 
@@ -103,7 +95,7 @@ df2.show();
 ### Mixed Types
 
 ```cpp
-auto df3 = client.sql(R"(
+auto df3 = spark.sql(R"(
     SELECT id,
            CASE WHEN id % 2 = 0 THEN 'Alice' ELSE 'Bob' END AS name,
            id * 1.5 AS score,
@@ -137,7 +129,7 @@ df3.show(10);
 ### Decimal, Date, Timestamp
 
 ```cpp
-auto df4 = client.sql(R"(
+auto df4 = spark.sql(R"(
     SELECT
         CAST('2024-01-01' AS DATE) AS date_col,
         CAST('2024-01-01 12:34:56' AS TIMESTAMP) AS ts_col,
@@ -161,7 +153,7 @@ df4.show();
 ### Date and Timestamp Ranges
 
 ```cpp
-auto df5 = client.sql(R"(
+auto df5 = spark.sql(R"(
     SELECT
         CAST(date_sub(current_date(), CAST(id AS INT)) AS DATE) AS date32_col,
         CAST(date_add(current_timestamp(), CAST(id AS INT)) AS TIMESTAMP) AS ts_col
@@ -189,7 +181,7 @@ df5.show();
 ### Nulls and Booleans
 
 ```cpp
-auto df6 = client.sql(R"(
+auto df6 = spark.sql(R"(
     SELECT
         IF(id % 2 = 0, null, id) AS maybe_null,
         id % 2 = 0 AS is_even
@@ -218,7 +210,7 @@ df6.show();
 ### Float, Double, Binary
 
 ```cpp
-auto df7 = client.sql(R"(
+auto df7 = spark.sql(R"(
     SELECT
         CAST(id AS FLOAT) / 3.0 AS float_val,
         CAST(id AS DOUBLE) * 2.5 AS double_val,
@@ -251,20 +243,20 @@ df7.show();
 ```cpp
 Config config;
 config.setHost("remote-spark-host").setPort(15002);
-SparkClient client(config);
+SparkSession spark(config);
 ```
 
 ### Executing SQL
 
 ```cpp
-auto df = client.sql("SELECT name, age FROM people");
+auto df = spark.sql("SELECT name, age FROM people");
 df.show(10);
 ```
 
 ### Programmatic Ranges
 
 ```cpp
-auto df = client.range(100);
+auto df = spark.range(100);
 df.show();
 ```
 
@@ -303,16 +295,6 @@ bool has_state = std::find(cols.begin(), cols.end(), "state") != cols.end();
 ```cpp
 bool same_schema = df1.columns() == df2.columns();
 ```
-
----
-
-## Items currently in progress
-
-- [x] Pretty printed `show()` output with alignment
-- [ ] Chained DataFrame transformations (e.g., `df.select().filter().show()`)
-- [ ] Full Arrow-to-Arrow zero-copy conversions
-- [ ] Authentication and custom headers support
-- [ ] CI and test suite
 
 ---
 

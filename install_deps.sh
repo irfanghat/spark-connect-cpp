@@ -40,7 +40,9 @@ sudo apt install -y -V \
     libgandiva-dev \
     libgandiva-glib-dev \
     libparquet-dev \
-    libparquet-glib-dev
+    libparquet-glib-dev \
+    libgtest-dev \
+    libgmock-dev
 
 echo "[spark-connect-cpp]::[install_deps] ==> Cleaning up downloaded package..."
 rm -f "./${ARROW_PKG}"
