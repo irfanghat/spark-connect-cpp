@@ -369,3 +369,8 @@ spark::sql::types::StructType DataFrame::schema() const
         throw std::runtime_error("No schema found in AnalyzePlanResponse.");
     }
 }
+
+void DataFrame::printSchema() const
+{
+    this->schema().print_tree(std::cout);
+}

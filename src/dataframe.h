@@ -62,6 +62,11 @@ public:
     spark::sql::types::StructType schema() const;
 
     /**
+     * @brief Prints out the schema in the tree format.
+     */
+    void printSchema() const;
+
+    /**
      * @brief Return the column names of the DataFrame.
      *
      * This method retrieves the schema of the DataFrame from the Spark server
