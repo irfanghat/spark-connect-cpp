@@ -5,6 +5,8 @@
 #include "config.h"
 #include "dataframe.h"
 
+using ::testing::ElementsAre;
+
 class SparkIntegrationTest : public ::testing::Test
 {
 protected:
@@ -157,4 +159,24 @@ TEST_F(SparkIntegrationTest, AssertPrintSchema)
         " |   |-- element: double (nullable = false)\n";
 
     EXPECT_EQ(actual_tree, expected_tree);
+}
+
+TEST_F(SparkIntegrationTest, SelectSubset)
+{
+    auto df = spark->sql(R"(SELECT 1 AS a, 2 AS b, 3 AS c)");
+
+    // ------------------------------------------------------------
+    // Select only 'b' and 'a' (Reordering them)
+    // ------------------------------------------------------------
+    auto df_subset = df.select({"b", "a"});
+
+    // ------------------------------------------------------------
+    // Verify column names and order
+    // ------------------------------------------------------------
+    EXPECT_THAT(df_subset.columns(), ElementsAre("b", "a"));
+
+    // ------------------------------------------------------------
+    // Verify show() still works on the new plan
+    // ------------------------------------------------------------
+    df_subset.show();
 }
