@@ -80,6 +80,12 @@ public:
      */
     std::vector<std::string> columns() const;
 
+    /**
+     * @brief Projects a set of expressions and returns a new DataFrame.
+     * @param cols A vector of column names.
+     */
+    DataFrame select(const std::vector<std::string> &cols);
+
 private:
     std::shared_ptr<spark::connect::SparkConnectService::Stub> stub_;
     spark::connect::Plan plan_;
