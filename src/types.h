@@ -100,6 +100,7 @@ namespace spark::sql::types
     {
         std::vector<StructField> fields;
         std::string json() const;
+        void print_tree(std::ostream& os) const;
     };
 
     // --------------------------------
