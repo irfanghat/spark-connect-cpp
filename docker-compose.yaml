@@ -33,8 +33,10 @@ services:
           sleep 1
         done
         echo "Spark Connect Server is ready."
-        make all
-        make test
+        cd build
+        cmake ..
+        cmake --build .
+        ctest --output-on-failure
     networks:
       - default
 
@@ -42,4 +44,3 @@ networks:
   default:
     driver: bridge
     name: spark_connect_cpp
-    

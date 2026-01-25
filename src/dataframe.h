@@ -5,6 +5,8 @@
 #include <spark/connect/base.grpc.pb.h>
 #include <spark/connect/relations.pb.h>
 
+#include <types.h>
+
 /**
  * @class DataFrame
  * @brief Represents a distributed collection of data organized into named columns.
@@ -30,22 +32,42 @@ public:
               std::string user_id);
 
     /**
-     * @brief Displays the top rows of the DataFrame in a tabular format.
+     * @brief Displays the contents of the DataFrame in a tabular format.
      *
-     * This method triggers the execution of the DataFrame's logical plan and
-     * fetches the results from the Spark server.
+     * This method prints the data returned from a Spark SQL query or transformation.
+     * Internally, it deserializes the Arrow RecordBatch received from the Spark server
+     * and formats it for terminal output.
      *
-     * @param max_rows The maximum number of rows to display. Defaults to 10.
+     * @param limit The maximum number of rows to display. If not provided, all rows are shown.
+     *              Defaults to 10 if available.
+     *
+     * @note Supports pretty-printing of various data types including:
+     *       - Integers and floating-point values
+     *       - Strings
+     *       - Booleans
+     *       - Dates and timestamps (with formatting)
+     *       - Nulls (displayed as "null")
+     *
+     * @example
+     * SparkSession spark(...);
+     * auto df = spark.sql("SELECT * FROM range(10)");
+     * df.show(5);  // Display first 5 rows
      */
     void show(int max_rows = 10);
 
     /**
+     * @brief Returns the schema of this DataFrame as a StructType.
+     * @return A StructType object containing the full schema metadata.
+     */
+    spark::sql::types::StructType schema() const;
+
+    /**
      * @brief Return the column names of the DataFrame.
-     * 
+     *
      * This method retrieves the schema of the DataFrame from the Spark server
      * and extracts the names of all columns in their original order.
      * @return A vector of strings representing the column names.
-     *  
+     *
      * @throws std::runtime_error If the schema cannot be retrieved from the server.
      *
      * @note This operation requires a round-trip to the Spark server via AnalyzePlan RPC.

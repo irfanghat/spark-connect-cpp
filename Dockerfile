@@ -1,14 +1,19 @@
 FROM debian:12-slim
 
-WORKDIR /
+WORKDIR /workspace
 
 RUN apt-get update && apt-get install -y \
     build-essential \
+    cmake \
+    pkg-config \
+    libgtest-dev \
     protobuf-compiler \
     libprotobuf-dev \
     libgrpc-dev \
     libgrpc++-dev \
     protobuf-compiler-grpc \
+    uuid-dev \
+    libabsl-dev \
     ca-certificates \
     lsb-release \
     wget \
@@ -43,3 +48,5 @@ RUN DISTRO=$(lsb_release --id --short | tr 'A-Z' 'a-z') && \
     rm -rf /var/lib/apt/lists/*
 
 COPY . .
+
+RUN mkdir -p build

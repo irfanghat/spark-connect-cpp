@@ -1,11 +1,11 @@
 prefix=@CMAKE_INSTALL_PREFIX@
 exec_prefix=${prefix}
 libdir=${prefix}/@CMAKE_INSTALL_LIBDIR@
-includedir=${prefix}/@CMAKE_INSTALL_INCLUDEDIR@/spark_client
+includedir=${prefix}/@CMAKE_INSTALL_INCLUDEDIR@/spark_connect_cpp
 
-Name: spark_client
+Name: spark_connect_cpp
 Description: Spark Connect C++ Client Library
 Version: @PROJECT_VERSION@
 Requires: arrow parquet arrow-dataset arrow-flight arrow-flight-sql gandiva protobuf grpc++ uuid
-Libs: -L${libdir} -lspark_client -labsl_synchronization
+Libs: -L${libdir} -lspark_connect_cpp -labsl_synchronization
 Cflags: -I${includedir}
