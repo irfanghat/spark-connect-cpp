@@ -8,12 +8,17 @@ namespace spark::sql::types
     // Protobuf to C++ Conversion Logic (Internal)
     // ---------------------------------------------------------
 
-    // Static helper for recursive type resolution
+    /**
+     * @brief
+     * The following is a static helper for recursive type resolution
+     */
     static DataType from_proto_internal(const spark::connect::DataType &proto)
     {
         using namespace spark::connect;
 
+        // -------------------------
         // Check for Simple Types
+        // -------------------------
         if (proto.has_null())
             return DataType(NullType{});
         if (proto.has_boolean())
@@ -41,7 +46,9 @@ namespace spark::sql::types
         if (proto.has_timestamp_ntz())
             return DataType(TimestampNtzType{});
 
+        // ---------------------------------
         // Check for Parameterized Types
+        // ---------------------------------
         if (proto.has_decimal())
         {
             return DataType(DecimalType{proto.decimal().precision(), proto.decimal().scale()});
@@ -55,7 +62,9 @@ namespace spark::sql::types
             return DataType(VarCharType{proto.var_char().length()});
         }
 
+        // ---------------------------------
         // Check for Complex Types
+        // ---------------------------------
         if (proto.has_array())
         {
             ArrayType arr;
@@ -85,19 +94,23 @@ namespace spark::sql::types
             return DataType(st);
         }
 
-        return DataType(NullType{}); // Fallback
+        // Fall back to NullType
+        return DataType(NullType{});
     }
 
-    // Public factory method
+    /**
+     * @brief
+     * Public factory method
+     */
     DataType DataType::from_proto(const spark::connect::DataType &proto)
     {
         return from_proto_internal(proto);
     }
 
-    // ---------------------------------------------------------
-    // JSON Serialization Logic
-    // ---------------------------------------------------------
-
+    /**
+     * @brief
+     * JSON Serialization Logic
+     */
     struct JsonVisitor
     {
         std::string operator()(const NullType &) const { return "\"void\""; }
