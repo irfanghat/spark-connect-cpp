@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 #include <iostream>
+#include <sstream>
 #include "session.h"
 #include "config.h"
 #include "dataframe.h"
@@ -147,6 +148,8 @@ TEST_F(SparkIntegrationTest, AssertPrintSchema)
     df.schema().print_tree(oss);
     std::string actual_tree = oss.str();
 
+    df.printSchema();
+
     // --------------------------------------------------------------------
     // The expected output matches Spark's specific tree formatting
     // Array nullability is on the field line
@@ -179,4 +182,34 @@ TEST_F(SparkIntegrationTest, SelectSubset)
     // Verify show() still works on the new plan
     // ------------------------------------------------------------
     df_subset.show();
+}
+
+TEST_F(SparkIntegrationTest, Head)
+{
+    auto df = spark->sql("SELECT 1 AS a, 'Alice' AS b");
+
+    auto rows = df.head(1);
+    ASSERT_FALSE(rows.empty());
+    const auto &row = rows[0];
+    std::stringstream ss;
+    ss << row;
+
+    std::string expected = "Row(a=1, b='Alice')";
+    EXPECT_EQ(ss.str(), expected);
+
+    auto row_count = df.head().value().size();
+    EXPECT_EQ(row_count, 2);
+
+    // -----------------------------------------------------
+    // Spark literals 1, 2, 3 are usually INT32 (int32_t),
+    // therefore, 1L, would be INT64 (int64_t)
+    // -----------------------------------------------------
+    int32_t val_a = row.get<int32_t>("a");
+    EXPECT_EQ(val_a, 1);
+
+    // ----------------------------------------
+    // String access
+    // ----------------------------------------
+    std::string val_b = row.get<std::string>("b");
+    EXPECT_EQ(val_b, "Alice");
 }

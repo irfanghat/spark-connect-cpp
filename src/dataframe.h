@@ -86,6 +86,26 @@ public:
      */
     DataFrame select(const std::vector<std::string> &cols);
 
+    /**
+     * @brief Returns the first n rows.
+     */
+    std::vector<spark::sql::types::Row> take(int n);
+
+    /**
+     * @brief Returns the first row.
+     */
+    std::optional<spark::sql::types::Row> head();
+
+    /**
+     * @brief Returns the first n rows.
+     */
+    std::vector<spark::sql::types::Row> head(int n);
+
+    /**
+     * @brief Returns a new DataFrame by taking the first n rows.
+     */
+    DataFrame limit(int n);
+
 private:
     std::shared_ptr<spark::connect::SparkConnectService::Stub> stub_;
     spark::connect::Plan plan_;

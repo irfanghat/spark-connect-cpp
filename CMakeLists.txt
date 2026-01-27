@@ -104,7 +104,7 @@ set_target_properties(spark_connect_cpp PROPERTIES
 )
 
 #########################################################################
-# Tests
+# Testing Configuration
 #########################################################################
 enable_testing()
 
@@ -121,6 +121,10 @@ macro(add_spark_test TEST_NAME SOURCE_FILE)
     )
     add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})
 endmacro()
+
+######################################################
+# Test Suite Definitions
+######################################################
 
 # ---------------------------------
 # DataFrame Test

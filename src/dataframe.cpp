@@ -224,11 +224,15 @@ void DataFrame::show(int max_rows)
         }
     }
 
+    // -----------------------------------
     // Add padding (2 spaces)
+    // -----------------------------------
     for (auto &w : col_widths)
         w += 2;
 
+    // -----------------------------------
     // Separator line
+    // -----------------------------------
     auto print_separator = [&]()
     {
         std::cout << "+";
@@ -404,4 +408,86 @@ DataFrame DataFrame::select(const std::vector<std::string> &cols)
     // Return a new DataFrame with the same gRPC stub but the updated plan
     // -----------------------------------------------------------------------
     return DataFrame(stub_, new_plan, session_id_, user_id_);
+}
+
+DataFrame DataFrame::limit(int n)
+{
+    spark::connect::Plan new_plan;
+    auto *limit_rel = new_plan.mutable_root()->mutable_limit();
+    *limit_rel->mutable_input() = this->plan_.root();
+    limit_rel->set_limit(n);
+    return DataFrame(stub_, new_plan, session_id_, user_id_);
+}
+
+std::vector<spark::sql::types::Row> DataFrame::take(int n)
+{
+    ExecutePlanRequest request;
+    request.set_session_id(session_id_);
+
+    // ------------------------------------------------------------------
+    // We use limit(n) to ensure we only pull necessary data over the wire
+    // See note from PySpark API reference: https://spark.apache.org/docs/3.5.6/api/python/reference/pyspark.sql/api/pyspark.sql.DataFrame.head.html#pyspark.sql.DataFrame.head
+    // This method should only be used if the resulting array is expected
+    // to be small, as all the data is loaded into the driver’s memory.
+    // ------------------------------------------------------------------
+    *request.mutable_plan() = this->limit(n).plan_;
+    request.mutable_user_context()->set_user_id(user_id_);
+
+    grpc::ClientContext context;
+    auto reader = stub_->ExecutePlan(&context, request);
+    ExecutePlanResponse response;
+    std::vector<spark::sql::types::Row> result_rows;
+
+    while (reader->Read(&response))
+    {
+        if (!response.has_arrow_batch())
+            continue;
+
+        // ---------------------------------------
+        // Deserializing the Arrow Batch
+        // ---------------------------------------
+        auto buffer = std::make_shared<arrow::Buffer>(
+            reinterpret_cast<const uint8_t *>(response.arrow_batch().data().data()),
+            response.arrow_batch().data().size());
+        auto buffer_reader = std::make_shared<arrow::io::BufferReader>(buffer);
+        auto batch_reader = arrow::ipc::RecordBatchStreamReader::Open(buffer_reader).ValueOrDie();
+
+        std::shared_ptr<arrow::RecordBatch> batch;
+        while (batch_reader->ReadNext(&batch).ok() && batch)
+        {
+            // ---------------------------------------
+            // Extract column names once
+            // ---------------------------------------
+            std::vector<std::string> col_names;
+            for (int i = 0; i < batch->num_columns(); ++i)
+            {
+                col_names.push_back(batch->schema()->field(i)->name());
+            }
+
+            for (int64_t i = 0; i < batch->num_rows(); ++i)
+            {
+                spark::sql::types::Row row;
+                row.column_names = col_names;
+                for (int col = 0; col < batch->num_columns(); ++col)
+                {
+                    row.values.push_back(spark::sql::types::arrayValueToVariant(batch->column(col), i));
+                }
+                result_rows.push_back(std::move(row));
+                if (result_rows.size() >= static_cast<size_t>(n))
+                    break;
+            }
+        }
+    }
+    return result_rows;
+}
+
+std::optional<spark::sql::types::Row> DataFrame::head()
+{
+    auto rows = take(1);
+    return rows.empty() ? std::nullopt : std::make_optional(rows[0]);
+}
+
+std::vector<spark::sql::types::Row> DataFrame::head(int n)
+{
+    return take(n);
 }
