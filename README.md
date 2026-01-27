@@ -4,7 +4,7 @@
 
 This repository hosts a **native C++ spark** for **Apache Spark Connect**.
 
-Spark Connect introduces a **decoupled spark-server architecture** for Apache Spark, enabling remote execution of Spark operations. This spark offers a **high-performance, idiomatic C++ interface** to Spark SQL, with efficient **Apache Arrow-based columnar serialization**.
+Spark Connect introduces a **decoupled spark-server architecture** for Apache Spark, enabling remote execution of Spark operations. This offers a **high-performance, idiomatic C++ interface** to Spark SQL, with efficient **Apache Arrow-based columnar serialization**.
 
 * Status: _WIP_
 
