@@ -33,6 +33,8 @@ ctest --output-on-failure
 
 For more details on setting up the projects on Unix/Linux, and VsCode, see: [Setup Guide](https://github.com/spark-connect-cpp/docs/SETUP.md)
 
+Refer to the following document for API documentation: [API reference](https://github.com/spark-connect-cpp/docs/API_REFERENCE.md)
+
 ---
 
 ## License
