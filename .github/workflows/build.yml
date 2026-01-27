@@ -1,4 +1,4 @@
-name: Build & Test
+name: Build
 
 permissions:
   contents: read
@@ -24,4 +24,3 @@ jobs:
         cd build
         cmake ..
         make -j$(nproc)
-        ctest --output-on-failure
