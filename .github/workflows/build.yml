@@ -1,0 +1,26 @@
+name: Build
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install dependencies
+      run: chmod +x ./install_deps.sh && ./install_deps.sh
+    - name: Configure & Build
+      run: |
+        mkdir -p build
+        cd build
+        cmake ..
+        make -j$(nproc)
