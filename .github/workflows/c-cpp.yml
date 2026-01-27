@@ -1,0 +1,25 @@
+name: Build & Test
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install dependencies
+      run: chmod +x ./install_deps.sh && ./install_deps.sh
+    - name: Setup build directory
+      run: mkdir -p build && cd build
+    - name: Run cmake
+      run: cmake ..
+    - name: Build
+      run: make -j$(nproc)
+    - name: Run Tests
+      run: ctest --output-on-failure
