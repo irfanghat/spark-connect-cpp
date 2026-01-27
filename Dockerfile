@@ -7,6 +7,7 @@ RUN apt-get update && apt-get install -y \
     cmake \
     pkg-config \
     libgtest-dev \
+    libgmock-dev \
     protobuf-compiler \
     libprotobuf-dev \
     libgrpc-dev \
