@@ -1,11 +1,15 @@
-#include "types.h"
 #include <sstream>
+#include <iomanip>
+#include "types.h"
+
 #include <spark/connect/types.pb.h>
+
+#include <arrow/array.h>
 
 namespace spark::sql::types
 {
     // ---------------------------------------------------------
-    // Protobuf to C++ Conversion Logic (Internal)
+    // Protobuf to C++ Conversion Logic
     // ---------------------------------------------------------
 
     /**
@@ -94,7 +98,9 @@ namespace spark::sql::types
             return DataType(st);
         }
 
+        // -----------------------------
         // Fall back to NullType
+        // -----------------------------
         return DataType(NullType{});
     }
 
@@ -265,5 +271,164 @@ namespace spark::sql::types
             std::visit(TreeVisitor{os, 1}, f.data_type.kind);
             os << " (nullable = " << (f.nullable ? "true" : "false") << ")" << std::endl;
         }
+    }
+
+    ColumnValue arrayValueToVariant(const std::shared_ptr<arrow::Array> &array, int64_t row)
+    {
+        if (array->IsNull(row))
+            return std::monostate{};
+
+        switch (array->type_id())
+        {
+        case arrow::Type::BOOL:
+            return std::static_pointer_cast<arrow::BooleanArray>(array)->Value(row);
+        case arrow::Type::INT32:
+            return std::static_pointer_cast<arrow::Int32Array>(array)->Value(row);
+        case arrow::Type::INT64:
+            return std::static_pointer_cast<arrow::Int64Array>(array)->Value(row);
+        case arrow::Type::FLOAT:
+            return std::static_pointer_cast<arrow::FloatArray>(array)->Value(row);
+        case arrow::Type::DOUBLE:
+            return std::static_pointer_cast<arrow::DoubleArray>(array)->Value(row);
+        case arrow::Type::STRING:
+            return std::static_pointer_cast<arrow::StringArray>(array)->GetString(row);
+
+        case arrow::Type::LIST:
+        {
+            auto list_array = std::static_pointer_cast<arrow::ListArray>(array);
+            auto value_array = list_array->values();
+            auto out_array = std::make_shared<ArrayData>();
+            for (int64_t i = list_array->value_offset(row); i < list_array->value_offset(row + 1); ++i)
+            {
+                out_array->elements.push_back(arrayValueToVariant(value_array, i));
+            }
+            return out_array;
+        }
+
+        case arrow::Type::STRUCT:
+        {
+            auto struct_array = std::static_pointer_cast<arrow::StructArray>(array);
+            auto out_row = std::make_shared<Row>();
+            for (int i = 0; i < struct_array->num_fields(); ++i)
+            {
+                out_row->column_names.push_back(struct_array->struct_type()->field(i)->name());
+                out_row->values.push_back(arrayValueToVariant(struct_array->field(i), row));
+            }
+            return out_row;
+        }
+
+        case arrow::Type::MAP:
+        {
+            // ------------------------------------------------------
+            // Arrow Maps are structured as List<Struct<key, value>>
+            // ------------------------------------------------------
+            auto map_array = std::static_pointer_cast<arrow::MapArray>(array);
+            auto struct_array = std::static_pointer_cast<arrow::StructArray>(map_array->values());
+            auto keys = struct_array->field(0);
+            auto values = struct_array->field(1);
+
+            auto out_map = std::make_shared<MapData>();
+            for (int64_t i = map_array->value_offset(row); i < map_array->value_offset(row + 1); ++i)
+            {
+                out_map->keys.push_back(arrayValueToVariant(keys, i));
+                out_map->values.push_back(arrayValueToVariant(values, i));
+            }
+            return out_map;
+        }
+
+        default:
+            return std::monostate{};
+        }
+    }
+
+    struct RowStringVisitor
+    {
+        std::ostream &os;
+
+        void operator()(std::monostate) const { os << "null"; }
+        void operator()(const std::string &v) const { os << "'" << v << "'"; }
+        void operator()(bool v) const { os << (v ? "true" : "false"); }
+
+        // -----------------------------------------
+        // Binary Visualization (Hex Dump)
+        // -----------------------------------------
+        void operator()(const std::vector<uint8_t> &v) const
+        {
+            os << "0x";
+            for (auto b : v)
+            {
+                os << std::hex << std::setw(2) << std::setfill('0') << (int)b;
+            }
+
+            // ------------------------------------------
+            // Reset to decimal for subsequent prints
+            // ------------------------------------------
+            os << std::dec;
+        }
+
+        // ---------------------------------
+        // Map Support
+        // ---------------------------------
+        void operator()(const std::shared_ptr<MapData> &v) const
+        {
+            os << "{";
+            for (size_t i = 0; i < v->keys.size(); ++i)
+            {
+                std::visit(*this, v->keys[i]);
+                os << ": ";
+                std::visit(*this, v->values[i]);
+                if (i < v->keys.size() - 1)
+                    os << ", ";
+            }
+            os << "}";
+        }
+
+        // ----------------------------------------
+        // Handles Recursive Types (Row and Array)
+        // ----------------------------------------
+        void operator()(const std::shared_ptr<Row> &v) const
+        {
+            if (v)
+                os << *v;
+            else
+                os << "null";
+        }
+
+        void operator()(const std::shared_ptr<ArrayData> &v) const
+        {
+            if (!v)
+            {
+                os << "null";
+                return;
+            }
+            os << "[";
+            for (size_t i = 0; i < v->elements.size(); ++i)
+            {
+                std::visit(*this, v->elements[i]);
+                if (i < v->elements.size() - 1)
+                    os << ", ";
+            }
+            os << "]";
+        }
+
+        // -------------------------------------------------
+        // Fallback for Primitives (int, double, etc.)
+        // -------------------------------------------------
+        template <typename T>
+        void operator()(const T &v) const { os << v; }
+    };
+
+    std::ostream &operator<<(std::ostream &os, const Row &row)
+    {
+        os << "Row(";
+        for (size_t i = 0; i < row.values.size(); ++i)
+        {
+            os << row.column_names[i] << "=";
+            std::visit(RowStringVisitor{os}, row.values[i]);
+            if (i < row.values.size() - 1)
+                os << ", ";
+        }
+        os << ")";
+        return os;
     }
 }

@@ -40,7 +40,7 @@ spark-connect-cpp/
 ├── CMakeLists.txt
 ├── src/
 ├── tests/
-├── build/              # generated (not committed)
+├── build/              # Generated (Not committed)
 ├── docker-compose.yaml
 ├── install_deps.sh
 ├── hooks/
