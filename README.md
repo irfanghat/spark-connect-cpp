@@ -31,9 +31,9 @@ make -j$(nproc)
 ctest --output-on-failure
 ```
 
-For more details on setting up the projects on Unix/Linux, and VsCode, see: [Setup Guide](https://github.com/spark-connect-cpp/docs/SETUP.md)
+For more details on setting up the projects on Unix/Linux, and VsCode, see: [Setup Guide](https://github.com/irfanghat/spark-connect-cpp/blob/main/docs/SETUP.md)
 
-Refer to the following document for API documentation: [API reference](https://github.com/spark-connect-cpp/docs/API_REFERENCE.md)
+Refer to the following document for API documentation: [API reference](https://github.com/irfanghat/spark-connect-cpp/blob/main/docs/API_REFERENCE.md)
 
 ---
 
