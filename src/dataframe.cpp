@@ -148,128 +148,148 @@ static std::string arrayValueToString(std::shared_ptr<arrow::Array> array, int64
         return "(unsupported)";
     }
 }
-
 void DataFrame::show(int max_rows)
 {
     ExecutePlanRequest request;
     request.set_session_id(session_id_);
-    *request.mutable_plan() = plan_;
     request.mutable_user_context()->set_user_id(user_id_);
 
+    // -------------------------------------------------------------------
+    // Use the existing limit() logic to create the correct Plan
+    // This translate to something similar to the following behind the scenes:
+    //
+    // user_context {
+    // user_id: "SparkConnectCppGTest"
+    // }
+    // plan {
+    // root {
+    //  lim...) (first 15 tasks are for partitions Vector(0))
+    // -------------------------------------------------------------------
+    if (max_rows > 0)
+    {
+        *request.mutable_plan() = this->limit(max_rows).plan_;
+    }
+    else
+    {
+        *request.mutable_plan() = plan_;
+    }
+
     grpc::ClientContext context;
-    std::unique_ptr<grpc::ClientReader<ExecutePlanResponse>> reader(stub_->ExecutePlan(&context, request));
+    // We might need a timeout in the future?
+    // std::chrono::system_clock::time_point deadline = std::chrono::system_clock::now() + std::chrono::seconds(30);
+    // context.set_deadline(deadline);
+
+    auto reader = stub_->ExecutePlan(&context, request);
 
     ExecutePlanResponse response;
-    std::vector<std::shared_ptr<arrow::RecordBatch>> batches;
+    std::vector<std::vector<std::string>> string_data;
+    std::vector<std::string> headers;
+    std::vector<int> col_widths;
 
+    // ---------------------------------
+    // Read the stream
+    // ---------------------------------
     while (reader->Read(&response))
     {
-        if (response.has_arrow_batch())
+        if (!response.has_arrow_batch())
+            continue;
+
+        auto arrow_buffer = std::make_shared<arrow::Buffer>(
+            reinterpret_cast<const uint8_t *>(response.arrow_batch().data().data()),
+            response.arrow_batch().data().size());
+
+        auto buffer_reader = std::make_shared<arrow::io::BufferReader>(arrow_buffer);
+        auto maybe_batch_reader = arrow::ipc::RecordBatchStreamReader::Open(buffer_reader);
+
+        if (!maybe_batch_reader.ok())
+            continue;
+        auto batch_reader = maybe_batch_reader.ValueOrDie();
+
+        std::shared_ptr<arrow::RecordBatch> batch;
+        while (batch_reader->ReadNext(&batch).ok() && batch)
         {
-            auto arrow_buffer = std::make_shared<arrow::Buffer>(reinterpret_cast<const uint8_t *>(response.arrow_batch().data().data()), response.arrow_batch().data().size());
-            auto buffer_reader = std::make_shared<arrow::io::BufferReader>(arrow_buffer);
-            auto batch_reader = arrow::ipc::RecordBatchStreamReader::Open(buffer_reader).ValueOrDie();
+            int num_cols = batch->num_columns();
 
-            while (true)
+            if (headers.empty())
             {
-                auto maybe_batch = batch_reader->Next();
-                if (!maybe_batch.ok() || !maybe_batch.ValueOrDie())
-                    break;
+                for (int i = 0; i < num_cols; ++i)
+                {
+                    headers.push_back(batch->schema()->field(i)->name());
+                    col_widths.push_back(static_cast<int>(headers.back().length()));
+                }
+            }
 
-                batches.push_back(maybe_batch.ValueOrDie());
+            for (int64_t r = 0; r < batch->num_rows(); ++r)
+            {
+                std::vector<std::string> row_vec;
+                for (int c = 0; c < num_cols; ++c)
+                {
+                    std::string val = arrayValueToString(batch->column(c), r);
+                    row_vec.push_back(val);
+                    if (c < (int)col_widths.size())
+                    {
+                        col_widths[c] = std::max(col_widths[c], (int)val.length());
+                    }
+                }
+                string_data.push_back(std::move(row_vec));
             }
         }
+
+        // --------------------------------------------------------------------
+        // Since we already applied the Limit in the Plan, we should read
+        // the entire stream to let gRPC close naturally. Apache Spark's explain
+        // feature can be useful when it comes to debugging the generated plans.
+        //
+        // See: https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.DataFrame.explain.html
+        // --------------------------------------------------------------------
     }
 
     grpc::Status status = reader->Finish();
     if (!status.ok())
     {
-        std::cerr << "[ERROR] gRPC failed: " << status.error_message() << std::endl;
+        std::cerr << "gRPC Error: " << status.error_message() << std::endl;
         return;
     }
 
-    //-----------------------------------------------------------------------
-    // We only show the first batch for simplicity
-    //-----------------------------------------------------------------------
-    if (batches.empty())
+    if (string_data.empty())
     {
-        std::cout << "Empty result" << std::endl;
+        std::cout << "++\n|| (Empty DataFrame)\n++" << std::endl;
         return;
     }
 
-    auto batch = batches[0];
-    int num_columns = batch->num_columns();
-    int64_t num_rows = batch->num_rows();
-    if (max_rows > 0)
-    {
-        num_rows = std::min(num_rows, static_cast<int64_t>(max_rows));
-    }
-    std::vector<std::string> headers;
-    std::vector<int> col_widths(num_columns);
-    std::vector<std::vector<std::string>> string_data(num_rows, std::vector<std::string>(num_columns));
-
-    for (int i = 0; i < num_columns; ++i)
-    {
-        headers.push_back(batch->schema()->field(i)->name());
-        col_widths[i] = static_cast<int>(headers[i].length());
-    }
-
-    for (int64_t row = 0; row < num_rows; ++row)
-    {
-        for (int col = 0; col < num_columns; ++col)
-        {
-            std::string val = arrayValueToString(batch->column(col), row);
-            string_data[row][col] = val;
-            col_widths[col] = std::max(col_widths[col], static_cast<int>(val.length()));
-        }
-    }
-
-    // -----------------------------------
-    // Add padding (2 spaces)
-    // -----------------------------------
+    // ---------------------------------------
+    // Render the table
+    // ---------------------------------------
     for (auto &w : col_widths)
         w += 2;
 
-    // -----------------------------------
-    // Separator line
-    // -----------------------------------
-    auto print_separator = [&]()
+    auto print_sep = [&]()
     {
         std::cout << "+";
         for (int w : col_widths)
             std::cout << std::string(w, '-') << "+";
-        std::cout << std::endl;
+        std::cout << "\n";
     };
 
-    //-----------------------------------------------------------------------
-    // Header
-    //-----------------------------------------------------------------------
-    print_separator();
+    print_sep();
     std::cout << "|";
-    for (int i = 0; i < num_columns; ++i)
-        std::cout << " " << std::setfill(' ') << std::left << std::setw(col_widths[i] - 1) << headers[i] << "|";
-    std::cout << std::endl;
-    print_separator();
+    for (size_t i = 0; i < headers.size(); ++i)
+    {
+        std::cout << " " << std::left << std::setw(col_widths[i] - 1) << headers[i] << "|";
+    }
+    std::cout << "\n";
+    print_sep();
 
-    //-----------------------------------------------------------------------
-    // Rows
-    //-----------------------------------------------------------------------
-    for (int64_t row = 0; row < num_rows; ++row)
+    for (const auto &row : string_data)
     {
         std::cout << "|";
-        for (int col = 0; col < num_columns; ++col)
+        for (size_t c = 0; c < row.size(); ++c)
         {
-            std::cout << " " << std::setfill(' ') << std::left << std::setw(col_widths[col] - 1) << string_data[row][col] << "|";
+            std::cout << " " << std::left << std::setw(col_widths[c] - 1) << row[c] << "|";
         }
-        std::cout << std::endl;
-        if (row < num_rows - 1)
-            print_separator();
+        std::cout << "\n";
     }
-
-    //-----------------------------------------------------------------------
-    // Footer
-    //-----------------------------------------------------------------------
-    print_separator();
+    print_sep();
 }
 
 std::vector<std::string> DataFrame::columns() const
@@ -383,30 +403,21 @@ DataFrame DataFrame::select(const std::vector<std::string> &cols)
 {
     spark::connect::Plan new_plan;
 
-    // ---------------------------------
-    // Create the Project relation
-    // ---------------------------------
+    // Use the pointer to the root to ensure we are copying the content
     auto *project = new_plan.mutable_root()->mutable_project();
 
-    // ------------------------------------------------------------------
-    // Set the input of the Project to current plan's root relation
-    // We assume plan_.root() is always populated for a valid DataFrame
-    // ------------------------------------------------------------------
-    *project->mutable_input() = this->plan_.root();
+    // Copy the entire relation tree from the previous plan
+    if (this->plan_.has_root())
+    {
+        project->mutable_input()->CopyFrom(this->plan_.root());
+    }
 
-    // ---------------------------------------------------------------
-    // Add each column name as an UnresolvedAttribute expression
-    // ---------------------------------------------------------------
     for (const auto &col_name : cols)
     {
         auto *expr = project->add_expressions();
-        auto *unresolved = expr->mutable_unresolved_attribute();
-        unresolved->set_unparsed_identifier(col_name);
+        expr->mutable_unresolved_attribute()->set_unparsed_identifier(col_name);
     }
 
-    // -----------------------------------------------------------------------
-    // Return a new DataFrame with the same gRPC stub but the updated plan
-    // -----------------------------------------------------------------------
     return DataFrame(stub_, new_plan, session_id_, user_id_);
 }
 

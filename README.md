@@ -8,6 +8,8 @@ Spark Connect introduces a **decoupled spark-server architecture** for Apache Sp
 
 * Status: _WIP_
 
+![Architecture Diagram](https://github.com/irfanghat/spark-connect-cpp/blob/main/docs/ARICHITECTURE_DIAGRAM.png)
+
 ---
 
 ## Getting Started

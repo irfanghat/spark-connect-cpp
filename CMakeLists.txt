@@ -127,14 +127,19 @@ endmacro()
 ######################################################
 
 # ---------------------------------
-# DataFrame Test
+# DataFrame Tests
 # ---------------------------------
 add_spark_test(test_dataframe tests/dataframe.cpp)
 
 # ---------------------------------
-# Columns Test
+# Column Tests
 # ---------------------------------
 add_spark_test(test_dataframe_columns tests/dataframe_columns.cpp)
+
+# ---------------------------------
+# DataFrame Reader Tests
+# ---------------------------------
+add_spark_test(test_dataframe_reader tests/dataframe_reader.cpp)
 
 #########################################################################
 # Installation
