@@ -1,6 +1,6 @@
 #include "session.h"
 #include "dataframe.h"
-#include "dataframe_reader.h"
+#include "reader.h"
 #include <spark/connect/relations.pb.h>
 #include <spark/connect/commands.pb.h>
 #include <iostream>

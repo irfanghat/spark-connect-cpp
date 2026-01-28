@@ -1,4 +1,4 @@
-#include "dataframe_reader.h"
+#include "reader.h"
 #include "dataframe.h"
 #include <spark/connect/relations.pb.h>
 
@@ -55,20 +55,32 @@ DataFrameReader &DataFrameReader::options(const std::map<std::string, std::strin
 DataFrame DataFrameReader::load(const std::vector<std::string> &paths)
 {
     spark::connect::Plan plan;
-    spark::connect::Relation *relation = plan.mutable_root();
-    spark::connect::Read *read = relation->mutable_read();
-    spark::connect::Read_DataSource *dataSource = read->mutable_data_source();
+
+    auto *relation = plan.mutable_root();
+
+    // -----------------------------------
+    // Navigate the hierarchy
+    // -----------------------------------
+    auto *read = relation->mutable_read();
+    auto *dataSource = read->mutable_data_source();
 
     dataSource->set_format(format_);
+
     for (const auto &path : paths)
     {
         dataSource->add_paths(path);
     }
+
+    auto *options_map = dataSource->mutable_options();
     for (const auto &opt : options_)
     {
-        (*dataSource->mutable_options())[opt.first] = opt.second;
+        (*options_map)[opt.first] = opt.second;
     }
 
+    /**
+     * @note Since spark->read() was called, config_ should be a copy from the session
+     * Need a way to always ensure stub_ & config_ are valid
+     */
     return DataFrame(stub_, plan, config_.session_id, config_.user_id);
 }
 
