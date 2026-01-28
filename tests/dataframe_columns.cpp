@@ -42,6 +42,7 @@ SparkSession *ColumnTest::spark = nullptr;
 // Column validation after Transformation, Error Handling (Invalid Plans),
 // Column Data Type validation, as well as Complex Type detection.
 // ----------------------------------------------------------------
+
 TEST_F(ColumnTest, BasicColumnRetrieval)
 {
     auto df = spark->sql("SELECT 14 AS age, 'Tom' AS name, 'CA' AS state");

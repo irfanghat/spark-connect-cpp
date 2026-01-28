@@ -10,7 +10,7 @@
 #include <spark/connect/base.grpc.pb.h>
 #include "config.h"
 #include "dataframe.h"
-#include "dataframe_reader.h"
+#include "reader.h"
 
 class DataFrameReader;
 
