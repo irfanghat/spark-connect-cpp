@@ -4,9 +4,12 @@
 #include <vector>
 #include <memory>
 #include <map>
+
+#include "config.h"
+#include "types.h"
+
 #include <spark/connect/base.grpc.pb.h>
 #include <spark/connect/relations.pb.h>
-#include "config.h"
 
 class DataFrame;
 
@@ -71,9 +74,36 @@ public:
      */
     DataFrame json(const std::string &path);
 
+    /**
+     * @brief Loads text files and returns a DataFrame.
+     * @param path The path to the text file.
+     * @return A new DataFrame instance.
+     */
+    DataFrame text(const std::string &path);
+
+    /**
+     * @brief Loads text files from multiple paths.
+     * @param paths A vector of paths to the text files.
+     * @return A new DataFrame instance.
+     */
+    DataFrame text(const std::vector<std::string> &paths);
+
+    /**
+     * @brief Specifies the input schema using a DDL string.
+     * @example .schema("id INT, name STRING, active BOOLEAN")
+     */
+    DataFrameReader &schema(const std::string &schema_ddl);
+
+    /**
+     * @brief Specifies the input schema using a StructType object.
+     * This is useful when you want to pass a schema from another DataFrame.
+     */
+    DataFrameReader &schema(const spark::sql::types::StructType &schema_struct);
+
 private:
     std::shared_ptr<spark::connect::SparkConnectService::Stub> stub_;
     Config config_;
     std::string format_;
     std::map<std::string, std::string> options_;
+    std::string schema_ddl_;
 };

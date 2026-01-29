@@ -1,9 +1,12 @@
-#include "session.h"
+#include <iostream>
+
 #include "dataframe.h"
 #include "reader.h"
+#include "session.h"
+#include "logging.h"
+
 #include <spark/connect/relations.pb.h>
 #include <spark/connect/commands.pb.h>
-#include <iostream>
 
 SparkSession *SparkSession::instance_ = nullptr;
 std::once_flag SparkSession::once_flag_;
@@ -14,7 +17,7 @@ std::once_flag SparkSession::once_flag_;
  */
 SparkSession::SparkSession(const Config &config)
     : config_(config)
-{   
+{
     //--------------------------------------------------------
     // Build the gRPC channel and stub based on the config
     //--------------------------------------------------------
@@ -73,7 +76,7 @@ DataFrame SparkSession::range(int64_t end)
  */
 SparkSession SparkSession::newSession()
 {
-    std::cout << "[INFO] Creating a new isolated session..." << std::endl;
+    SPARK_LOG_INFO("SparkSession", "Creating a new isolated session...");
     Config newConfig = this->config_;
     newConfig.session_id = "new_session_" + std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(
                                                                std::chrono::system_clock::now().time_since_epoch())
@@ -91,18 +94,18 @@ void SparkSession::stop()
     //------------------------------------------------
     spark::connect::ReleaseExecuteRequest request;
     request.set_session_id(config_.session_id);
-    
+
     //------------------------------------------------------
     // Create a new UserContext and set it in the request.
     //------------------------------------------------------
     spark::connect::UserContext *user_context = request.mutable_user_context();
     user_context->set_user_id(config_.user_id);
-    
+
     //------------------------------------------------------
     // Set the release type to ReleaseAll.
     //------------------------------------------------------
     request.mutable_release_all();
-    
+
     //------------------------------------------------------
     // Call the gRPC method and check the status.
     //------------------------------------------------------
@@ -112,11 +115,11 @@ void SparkSession::stop()
 
     if (status.ok())
     {
-        std::cout << "[INFO] SparkSession stopped successfully." << std::endl;
+        SPARK_LOG_INFO("SparkSession", "SparkSession stopped successfully.");
     }
     else
     {
-        std::cout << "[ERROR] Failed to stop SparkSession: " << status.error_message() << std::endl;
+        SPARK_LOG_ERROR("SparkSession", "Failed to stop SparkSession: " + status.error_message());
     }
 }
 
