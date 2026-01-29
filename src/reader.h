@@ -89,7 +89,27 @@ public:
     DataFrame text(const std::vector<std::string> &paths);
 
     /**
-     * @brief Specifies the input schema using a DDL string.
+     * @brief Loads Parquet files, returning the result as a DataFrame.
+     * @param path The path to read the Parquet file from.
+     * @return A DataFrame containing the data from the Parquet files.
+     */
+    DataFrame parquet(const std::string &path);
+
+    /**
+     * @brief Loads Parquet files from multiple paths.
+     * @param paths One or more file paths to read the Parquet files from.
+     * @return A DataFrame containing the data from the Parquet files.
+     */
+    DataFrame parquet(const std::vector<std::string> &paths);
+
+    /**
+     * @brief Sets the schema using a DDL string.
+     * Some data sources (e.g. JSON) can infer the input schema automatically from data.
+     * By specifying the schema here, the underlying data source can skip the schema inference step,
+     * and thus speed up data loading.
+     * 
+     * It specifies the input schema using a DDL string.
+     * 
      * @example .schema("id INT, name STRING, active BOOLEAN")
      */
     DataFrameReader &schema(const std::string &schema_ddl);
