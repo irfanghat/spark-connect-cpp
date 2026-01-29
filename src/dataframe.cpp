@@ -148,6 +148,7 @@ static std::string arrayValueToString(std::shared_ptr<arrow::Array> array, int64
         return "(unsupported)";
     }
 }
+
 void DataFrame::show(int max_rows)
 {
     ExecutePlanRequest request;
@@ -186,9 +187,13 @@ void DataFrame::show(int max_rows)
     std::vector<std::string> headers;
     std::vector<int> col_widths;
 
-    // ---------------------------------
+    // ---------------------------------------------------------------
     // Read the stream
-    // ---------------------------------
+    //
+    // reader->Read() will return false if an error occurs
+    // immediately (e.g. PATH_NOT_FOUND)
+    // .. See: HandleMissingFile ..
+    // ---------------------------------------------------------------
     while (reader->Read(&response))
     {
         if (!response.has_arrow_batch())
@@ -203,6 +208,7 @@ void DataFrame::show(int max_rows)
 
         if (!maybe_batch_reader.ok())
             continue;
+
         auto batch_reader = maybe_batch_reader.ValueOrDie();
 
         std::shared_ptr<arrow::RecordBatch> batch;
@@ -234,21 +240,22 @@ void DataFrame::show(int max_rows)
                 string_data.push_back(std::move(row_vec));
             }
         }
-
-        // --------------------------------------------------------------------
-        // Since we already applied the Limit in the Plan, we should read
-        // the entire stream to let gRPC close naturally. Apache Spark's explain
-        // feature can be useful when it comes to debugging the generated plans.
-        //
-        // See: https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.DataFrame.explain.html
-        // --------------------------------------------------------------------
     }
 
+    // --------------------------------------------------------------------
+    // Since we already applied the Limit in the Plan, we should read
+    // the entire stream to let gRPC close naturally. Apache Spark's explain
+    // feature can be useful when it comes to debugging the generated plans.
+    //
+    // See: https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.DataFrame.explain.html
+    // --------------------------------------------------------------------
     grpc::Status status = reader->Finish();
     if (!status.ok())
     {
-        std::cerr << "gRPC Error: " << status.error_message() << std::endl;
-        return;
+        // ---------------------------------------------------------------
+        // Throwing here allows GTest's EXPECT_THROW to catch the error
+        // ---------------------------------------------------------------
+        throw std::runtime_error("gRPC Error: [" + std::to_string(status.error_code()) + "] " + status.error_message());
     }
 
     if (string_data.empty())
@@ -262,7 +269,6 @@ void DataFrame::show(int max_rows)
     // ---------------------------------------
     for (auto &w : col_widths)
         w += 2;
-
     auto print_sep = [&]()
     {
         std::cout << "+";
@@ -372,7 +378,7 @@ spark::sql::types::StructType DataFrame::schema() const
     if (response.has_schema())
     {
         // -------------------------------------
-        // Convert the proto to C++ DataType
+        // Convert proto to C++ DataType
         // -------------------------------------
         spark::sql::types::DataType dt = spark::sql::types::DataType::from_proto(response.schema().schema());
 
@@ -403,10 +409,14 @@ DataFrame DataFrame::select(const std::vector<std::string> &cols)
 {
     spark::connect::Plan new_plan;
 
+    // ---------------------------------------------------------------------
     // Use the pointer to the root to ensure we are copying the content
+    // ---------------------------------------------------------------------
     auto *project = new_plan.mutable_root()->mutable_project();
 
+    // ---------------------------------------------------------------------
     // Copy the entire relation tree from the previous plan
+    // ---------------------------------------------------------------------
     if (this->plan_.has_root())
     {
         project->mutable_input()->CopyFrom(this->plan_.root());

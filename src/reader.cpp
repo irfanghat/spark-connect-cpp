@@ -48,6 +48,25 @@ DataFrameReader &DataFrameReader::options(const std::map<std::string, std::strin
 }
 
 /**
+ * @brief Sets the schema using a DDL string.
+ */
+DataFrameReader &DataFrameReader::schema(const std::string &schema_ddl)
+{
+    schema_ddl_ = schema_ddl;
+    return *this;
+}
+
+/**
+ * @brief Sets the schema using your StructType object from types.h
+ */
+DataFrameReader &DataFrameReader::schema(const spark::sql::types::StructType &schema_struct)
+{
+    // Using the json() method defined in your StructType struct
+    schema_ddl_ = schema_struct.json();
+    return *this;
+}
+
+/**
  * @brief Loads a DataFrame from the specified file or directory path.
  * @param paths A list of paths to the data files.
  * @return A new DataFrame instance.
@@ -65,6 +84,11 @@ DataFrame DataFrameReader::load(const std::vector<std::string> &paths)
     auto *dataSource = read->mutable_data_source();
 
     dataSource->set_format(format_);
+
+    if (!schema_ddl_.empty())
+    {
+        dataSource->set_schema(schema_ddl_);
+    }
 
     for (const auto &path : paths)
     {
@@ -102,4 +126,20 @@ DataFrame DataFrameReader::csv(const std::string &path)
 DataFrame DataFrameReader::json(const std::string &path)
 {
     return this->format("json").load({path});
+}
+
+/**
+ * @brief Loads a single text file into a DataFrame.
+ */
+DataFrame DataFrameReader::text(const std::string &path)
+{
+    return this->format("text").load({path});
+}
+
+/**
+ * @brief Loads multiple text files into a DataFrame.
+ */
+DataFrame DataFrameReader::text(const std::vector<std::string> &paths)
+{
+    return this->format("text").load(paths);
 }
