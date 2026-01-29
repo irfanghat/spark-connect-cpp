@@ -88,6 +88,27 @@ TEST_F(SparkIntegrationTest, ReadTextFileWithOptions)
     EXPECT_NO_THROW(df.show());
 }
 
+TEST_F(SparkIntegrationTest, ReadParquet)
+{
+    auto df = spark->read().parquet("datasets/flights.parquet");
+    EXPECT_NO_THROW(df.show(10000));
+}
+
+TEST_F(SparkIntegrationTest, ReadParquetWithOptions)
+{
+    // ----------------------------------------------------------------------------
+    // Some Common Parquet options:
+    //
+    // "mergeSchema" - Merges schemas across all Parquet part-files which results in expensive operations
+    // "datetimeRebaseMode" - Handles legacy dates from older Spark versions
+    // ----------------------------------------------------------------------------
+    auto df = spark->read()
+                  .option("mergeSchema", "true")
+                  .parquet("datasets/flights.parquet");
+
+    EXPECT_NO_THROW(df.show(10));
+}
+
 TEST_F(SparkIntegrationTest, ReadWithDdlSchema)
 {
     auto df = spark->read()

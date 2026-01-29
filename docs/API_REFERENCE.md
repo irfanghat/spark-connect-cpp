@@ -326,6 +326,43 @@ bool same_schema = df1.columns() == df2.columns();
 
 ## DataFrame Reader
 
+### Read Parquet files
+
+```cpp
+auto df = spark->read().parquet("datasets/flights.parquet");
+df.show(10);
+
+// ----------------------------------------------------------------------------
+// Some Common Parquet options:
+//
+// "mergeSchema" - Merges schemas across all Parquet part-files which results in expensive operations
+// "datetimeRebaseMode" - Handles legacy dates from older Spark versions
+// ----------------------------------------------------------------------------
+
+// auto df = spark->read()
+//                 .option("mergeSchema", "true")
+//                 .parquet("datasets/flights.parquet");
+```
+
+**Output:**
+
+```
++------------+---------------+---------------+---------------+---------------+-----------+-----------+
+| FL_DATE    | DEP_DELAY     | ARR_DELAY     | AIR_TIME      | DISTANCE      | DEP_TIME  | ARR_TIME  |
++------------+---------------+---------------+---------------+---------------+-----------+-----------+
+| 2006-01-01 | (unsupported) | (unsupported) | (unsupported) | (unsupported) | 9.083333  | 12.483334 |
+| 2006-01-02 | (unsupported) | (unsupported) | (unsupported) | (unsupported) | 11.783334 | 15.766666 |
+| 2006-01-03 | (unsupported) | (unsupported) | (unsupported) | (unsupported) | 8.883333  | 12.133333 |
+| 2006-01-04 | (unsupported) | (unsupported) | (unsupported) | (unsupported) | 8.916667  | 11.950000 |
+| 2006-01-05 | (unsupported) | (unsupported) | (unsupported) | (unsupported) | 8.950000  | 11.883333 |
+| 2006-01-06 | (unsupported) | (unsupported) | (unsupported) | (unsupported) | 8.933333  | 11.633333 |
+| 2006-01-08 | (unsupported) | (unsupported) | (unsupported) | (unsupported) | 8.950000  | 12.133333 |
+| 2006-01-09 | (unsupported) | (unsupported) | (unsupported) | (unsupported) | 9.050000  | 12.166667 |
+| 2006-01-10 | (unsupported) | (unsupported) | (unsupported) | (unsupported) | 8.883333  | 11.816667 |
+| 2006-01-11 | (unsupported) | (unsupported) | (unsupported) | (unsupported) | 9.133333  | 12.000000 |
++------------+---------------+---------------+---------------+---------------+-----------+-----------+
+```
+
 ### Read JSON files
 
 ```cpp
