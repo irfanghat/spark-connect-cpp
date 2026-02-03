@@ -28,6 +28,7 @@ sudo apt update
 
 echo "[spark-connect-cpp]::[install_deps] ==> Installing Apache Arrow libraries..."
 sudo apt install -y -V \
+    cmake \
     libarrow-dev \
     libarrow-glib-dev \
     libarrow-dataset-dev \

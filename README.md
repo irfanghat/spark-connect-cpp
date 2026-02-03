@@ -53,10 +53,31 @@ The Spark Connect C++ client is designed for scenarios where performance, low la
 
 ### 2. Build & Run Tests
 
+#### Linux (Ubuntu/Debian)
+
 ```bash
+# --------------------------------
+# Install all required dependencies
+# --------------------------------
+chmod +x ./install_deps.sh
+./install_deps.sh
+
 mkdir build && cd build
+
+# ----------------------------------
+# Build the Spark Connect Client
+# ----------------------------------
 cmake ..
 make -j$(nproc)
+
+# --------------------------------
+# Make sure Spark is running...
+# --------------------------------
+docker compose up spark --build
+
+# ---------------------------
+# Run Test Suite
+# ---------------------------
 ctest --output-on-failure
 ````
 
