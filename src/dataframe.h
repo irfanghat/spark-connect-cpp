@@ -53,7 +53,7 @@ public:
      * auto df = spark.sql("SELECT * FROM range(10)");
      * df.show(5);  // Display first 5 rows
      */
-    void show(int max_rows = 10);
+    void show(int max_rows = 10, int runcate = 20);
 
     /**
      * @brief Returns the schema of this DataFrame as a StructType.
