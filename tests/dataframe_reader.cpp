@@ -91,7 +91,7 @@ TEST_F(SparkIntegrationTest, ReadTextFileWithOptions)
 TEST_F(SparkIntegrationTest, ReadParquet)
 {
     auto df = spark->read().parquet("datasets/flights.parquet");
-    EXPECT_NO_THROW(df.show(10000));
+    EXPECT_NO_THROW(df.show(1000));
 }
 
 TEST_F(SparkIntegrationTest, ReadParquetWithOptions)

@@ -149,51 +149,27 @@ static std::string arrayValueToString(std::shared_ptr<arrow::Array> array, int64
     }
 }
 
-void DataFrame::show(int max_rows)
+void DataFrame::show(int max_rows, int truncate)
 {
     ExecutePlanRequest request;
     request.set_session_id(session_id_);
     request.mutable_user_context()->set_user_id(user_id_);
 
-    // -------------------------------------------------------------------
-    // Use the existing limit() logic to create the correct Plan
-    // This translate to something similar to the following behind the scenes:
-    //
-    // user_context {
-    // user_id: "SparkConnectCppGTest"
-    // }
-    // plan {
-    // root {
-    //  lim...) (first 15 tasks are for partitions Vector(0))
-    // -------------------------------------------------------------------
     if (max_rows > 0)
-    {
         *request.mutable_plan() = this->limit(max_rows).plan_;
-    }
     else
-    {
         *request.mutable_plan() = plan_;
-    }
 
     grpc::ClientContext context;
-    // We might need a timeout in the future?
-    // std::chrono::system_clock::time_point deadline = std::chrono::system_clock::now() + std::chrono::seconds(30);
-    // context.set_deadline(deadline);
-
     auto reader = stub_->ExecutePlan(&context, request);
-
     ExecutePlanResponse response;
-    std::vector<std::vector<std::string>> string_data;
-    std::vector<std::string> headers;
-    std::vector<int> col_widths;
 
-    // ---------------------------------------------------------------
-    // Read the stream
-    //
-    // reader->Read() will return false if an error occurs
-    // immediately (e.g. PATH_NOT_FOUND)
-    // .. See: HandleMissingFile ..
-    // ---------------------------------------------------------------
+    bool headers_printed = false;
+    int total_rows_printed = 0;
+    std::vector<int> col_widths;
+    std::ostringstream buffer; // Buffer output
+    buffer << std::left;       // Set alignment once
+
     while (reader->Read(&response))
     {
         if (!response.has_arrow_batch())
@@ -205,97 +181,131 @@ void DataFrame::show(int max_rows)
 
         auto buffer_reader = std::make_shared<arrow::io::BufferReader>(arrow_buffer);
         auto maybe_batch_reader = arrow::ipc::RecordBatchStreamReader::Open(buffer_reader);
-
         if (!maybe_batch_reader.ok())
             continue;
 
         auto batch_reader = maybe_batch_reader.ValueOrDie();
-
         std::shared_ptr<arrow::RecordBatch> batch;
+
         while (batch_reader->ReadNext(&batch).ok() && batch)
         {
             int num_cols = batch->num_columns();
+            int64_t num_rows = batch->num_rows();
 
-            if (headers.empty())
+            // --- Step 1: Determine Column Widths (One-time or Dynamic) ---
+            if (col_widths.empty()) // First batch only
             {
-                for (int i = 0; i < num_cols; ++i)
+                if (truncate > 0)
                 {
-                    headers.push_back(batch->schema()->field(i)->name());
-                    col_widths.push_back(static_cast<int>(headers.back().length()));
+                    // Fixed width mode
+                    col_widths.assign(num_cols, truncate);
                 }
-            }
-
-            for (int64_t r = 0; r < batch->num_rows(); ++r)
-            {
-                std::vector<std::string> row_vec;
-                for (int c = 0; c < num_cols; ++c)
+                else
                 {
-                    std::string val = arrayValueToString(batch->column(c), r);
-                    row_vec.push_back(val);
-                    if (c < (int)col_widths.size())
+                    // Dynamic width mode: need to cache values for this batch
+                    col_widths.resize(num_cols, 0);
+
+                    // Calculate from headers
+                    for (int c = 0; c < num_cols; ++c)
                     {
-                        col_widths[c] = std::max(col_widths[c], (int)val.length());
+                        col_widths[c] = batch->schema()->field(c)->name().length();
                     }
                 }
-                string_data.push_back(std::move(row_vec));
+            }
+
+            // Cache string values to avoid double conversion
+            std::vector<std::vector<std::string>> cached_values;
+            if (truncate <= 0) // Only cache if we need dynamic widths
+            {
+                cached_values.resize(num_rows);
+                for (int64_t r = 0; r < num_rows; ++r)
+                {
+                    cached_values[r].resize(num_cols);
+                    for (int c = 0; c < num_cols; ++c)
+                    {
+                        cached_values[r][c] = arrayValueToString(batch->column(c), r);
+                        col_widths[c] = std::max(col_widths[c], (int)cached_values[r][c].length());
+                    }
+                }
+            }
+
+            // --- Step 2: Helper for Separator ---
+            auto print_sep = [&]()
+            {
+                buffer << "+";
+                for (int w : col_widths)
+                    buffer << std::string(w + 2, '-') << "+";
+                buffer << "\n";
+            };
+
+            // --- Step 3: Print Header (Once) ---
+            if (!headers_printed)
+            {
+                print_sep();
+                buffer << "|";
+                for (int i = 0; i < num_cols; ++i)
+                {
+                    buffer << " " << std::setw(col_widths[i])
+                           << batch->schema()->field(i)->name() << " |";
+                }
+                buffer << "\n";
+                print_sep();
+                headers_printed = true;
+            }
+
+            // --- Step 4: Print Batch Rows ---
+            for (int64_t r = 0; r < num_rows; ++r)
+            {
+                // Early termination if max_rows is set
+                if (max_rows > 0 && total_rows_printed >= max_rows)
+                    goto finish;
+
+                buffer << "|";
+                for (int c = 0; c < num_cols; ++c)
+                {
+                    std::string val;
+                    if (truncate <= 0 && !cached_values.empty())
+                    {
+                        // Use cached value
+                        val = cached_values[r][c];
+                    }
+                    else
+                    {
+                        // Convert on-demand for fixed width mode
+                        val = arrayValueToString(batch->column(c), r);
+                        if (truncate > 0 && val.length() > (size_t)truncate)
+                        {
+                            val = val.substr(0, truncate - 3) + "...";
+                        }
+                    }
+
+                    buffer << " " << std::setw(col_widths[c]) << val << " |";
+                }
+                buffer << "\n";
+                total_rows_printed++;
             }
         }
     }
 
-    // --------------------------------------------------------------------
-    // Since we already applied the Limit in the Plan, we should read
-    // the entire stream to let gRPC close naturally. Apache Spark's explain
-    // feature can be useful when it comes to debugging the generated plans.
-    //
-    // See: https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.DataFrame.explain.html
-    // --------------------------------------------------------------------
+finish:
+    if (total_rows_printed > 0)
+    {
+        buffer << "+";
+        for (int w : col_widths)
+            buffer << std::string(w + 2, '-') << "+";
+        buffer << "\n";
+    }
+    else
+    {
+        buffer << "++\n|| (Empty DataFrame)\n++\n";
+    }
+
+    // Single output operation
+    std::cout << buffer.str();
+
     grpc::Status status = reader->Finish();
     if (!status.ok())
-    {
-        // ---------------------------------------------------------------
-        // Throwing here allows GTest's EXPECT_THROW to catch the error
-        // ---------------------------------------------------------------
-        throw std::runtime_error("gRPC Error: [" + std::to_string(status.error_code()) + "] " + status.error_message());
-    }
-
-    if (string_data.empty())
-    {
-        std::cout << "++\n|| (Empty DataFrame)\n++" << std::endl;
-        return;
-    }
-
-    // ---------------------------------------
-    // Render the table
-    // ---------------------------------------
-    for (auto &w : col_widths)
-        w += 2;
-    auto print_sep = [&]()
-    {
-        std::cout << "+";
-        for (int w : col_widths)
-            std::cout << std::string(w, '-') << "+";
-        std::cout << "\n";
-    };
-
-    print_sep();
-    std::cout << "|";
-    for (size_t i = 0; i < headers.size(); ++i)
-    {
-        std::cout << " " << std::left << std::setw(col_widths[i] - 1) << headers[i] << "|";
-    }
-    std::cout << "\n";
-    print_sep();
-
-    for (const auto &row : string_data)
-    {
-        std::cout << "|";
-        for (size_t c = 0; c < row.size(); ++c)
-        {
-            std::cout << " " << std::left << std::setw(col_widths[c] - 1) << row[c] << "|";
-        }
-        std::cout << "\n";
-    }
-    print_sep();
+        throw std::runtime_error("gRPC Error: " + status.error_message());
 }
 
 std::vector<std::string> DataFrame::columns() const
