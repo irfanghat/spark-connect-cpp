@@ -192,20 +192,29 @@ void DataFrame::show(int max_rows, int truncate)
             int num_cols = batch->num_columns();
             int64_t num_rows = batch->num_rows();
 
-            // --- Step 1: Determine Column Widths (One-time or Dynamic) ---
+            // ------------------------------------------------------
+            // Determine Column Widths
+            // ------------------------------------------------------
             if (col_widths.empty()) // First batch only
             {
                 if (truncate > 0)
                 {
+                    // ----------------------------
                     // Fixed width mode
+                    // ----------------------------
                     col_widths.assign(num_cols, truncate);
                 }
                 else
                 {
-                    // Dynamic width mode: need to cache values for this batch
+                    // -------------------------------------------------------------
+                    // Dynamic width mode 
+                    // Need to cache values for this batch
+                    // -------------------------------------------------------------
                     col_widths.resize(num_cols, 0);
 
+                    // ----------------------------
                     // Calculate from headers
+                    // ----------------------------
                     for (int c = 0; c < num_cols; ++c)
                     {
                         col_widths[c] = batch->schema()->field(c)->name().length();
@@ -213,9 +222,12 @@ void DataFrame::show(int max_rows, int truncate)
                 }
             }
 
+            // --------------------------------------------------
             // Cache string values to avoid double conversion
+            // --------------------------------------------------
             std::vector<std::vector<std::string>> cached_values;
-            if (truncate <= 0) // Only cache if we need dynamic widths
+            // Only cache if we need dynamic widths
+            if (truncate <= 0)
             {
                 cached_values.resize(num_rows);
                 for (int64_t r = 0; r < num_rows; ++r)
@@ -229,7 +241,9 @@ void DataFrame::show(int max_rows, int truncate)
                 }
             }
 
-            // --- Step 2: Helper for Separator ---
+            // ---------------------------------
+            // Separator logic
+            // ---------------------------------
             auto print_sep = [&]()
             {
                 buffer << "+";
@@ -237,8 +251,10 @@ void DataFrame::show(int max_rows, int truncate)
                     buffer << std::string(w + 2, '-') << "+";
                 buffer << "\n";
             };
-
-            // --- Step 3: Print Header (Once) ---
+            
+            // ------------------------------
+            // Print Header
+            // ------------------------------
             if (!headers_printed)
             {
                 print_sep();
@@ -253,10 +269,14 @@ void DataFrame::show(int max_rows, int truncate)
                 headers_printed = true;
             }
 
-            // --- Step 4: Print Batch Rows ---
+            // --------------------------------
+            // Print Batch Rows
+            // --------------------------------
             for (int64_t r = 0; r < num_rows; ++r)
             {
+                // ----------------------------------------
                 // Early termination if max_rows is set
+                // ----------------------------------------
                 if (max_rows > 0 && total_rows_printed >= max_rows)
                     goto finish;
 
@@ -266,12 +286,16 @@ void DataFrame::show(int max_rows, int truncate)
                     std::string val;
                     if (truncate <= 0 && !cached_values.empty())
                     {
-                        // Use cached value
+                        // --------------------------------
+                        // Use generated cache values
+                        // --------------------------------
                         val = cached_values[r][c];
                     }
                     else
                     {
-                        // Convert on-demand for fixed width mode
+                        // ------------------------------------------------
+                        // Convert types on demand for fixed width mode
+                        // ------------------------------------------------
                         val = arrayValueToString(batch->column(c), r);
                         if (truncate > 0 && val.length() > (size_t)truncate)
                         {
@@ -300,7 +324,6 @@ finish:
         buffer << "++\n|| (Empty DataFrame)\n++\n";
     }
 
-    // Single output operation
     std::cout << buffer.str();
 
     grpc::Status status = reader->Finish();
