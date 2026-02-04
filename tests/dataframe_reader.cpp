@@ -2,6 +2,7 @@
 #include <gmock/gmock.h>
 
 #include <iostream>
+#include <map>
 
 #include "session.h"
 #include "config.h"
@@ -164,4 +165,17 @@ TEST_F(SparkIntegrationTest, OptionEvaluation)
     // The schemas should be different
     // --------------------------------------
     EXPECT_NE(df1.schema().fields[0].name, df2.schema().fields[0].name);
+}
+
+TEST_F(SparkIntegrationTest, ReaderOptions)
+{
+
+    std::map<std::string, std::string> config = {
+        {"header", "true"},
+        {"inferSchema", "true"},
+        {"delimiter", ","}};
+
+    auto df = spark->read().options(config).format("csv").load({"datasets/people.csv"});
+
+    EXPECT_NO_THROW(df.show());
 }
