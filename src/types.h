@@ -6,6 +6,9 @@
 #include <variant>
 #include <optional>
 #include <cstdint>
+#include <algorithm>
+#include <iostream>
+#include <stdexcept>
 
 #include <arrow/array.h>
 
@@ -106,7 +109,7 @@ namespace spark::sql::types
     };
 
     /**
-     * @brief Variant and Wrapper
+     * @brief Variant and Wrapper for Spark Schemas
      */
     using DataTypeVariant = std::variant<
         NullType, BooleanType, ByteType, ShortType, IntegerType, LongType,
@@ -118,7 +121,6 @@ namespace spark::sql::types
     {
     public:
         DataTypeVariant kind;
-
         DataType(DataTypeVariant k) : kind(std::move(k)) {}
 
         /**
@@ -158,8 +160,8 @@ namespace spark::sql::types
         bool,                       // Boolean
         int8_t,                     // Byte
         int16_t,                    // Short
-        int32_t,                    // Integer / Date (Days since epoch)
-        int64_t,                    // Long / Timestamp (Micros since epoch)
+        int32_t,                    // Integer / Date
+        int64_t,                    // Long / Timestamp
         float,                      // Float
         double,                     // Double
         std::string,                // String
@@ -173,7 +175,6 @@ namespace spark::sql::types
     {
         std::vector<ColumnValue> elements;
     };
-
     struct MapData
     {
         std::vector<ColumnValue> keys;
@@ -188,21 +189,15 @@ namespace spark::sql::types
         /**
          * @brief Access value by column index: row[0]
          */
-        const ColumnValue &operator[](size_t index) const
-        {
-            return values.at(index);
-        }
+        const ColumnValue &operator[](size_t index) const { return values.at(index); }
 
         /**
          * @brief Access value by column name: row["col_name"]
          */
-        const ColumnValue &operator[](const std::string &name) const
-        {
-            return values.at(col_index(name));
-        }
+        const ColumnValue &operator[](const std::string &name) const { return values.at(col_index(name)); }
 
         /**
-         * @brief Get value by name with explicit type: row.get<int32_t>("id")
+         * @brief Strict access. This fails if the type doesn't match exactly.
          */
         template <typename T>
         const T &get(const std::string &name) const
@@ -211,27 +206,39 @@ namespace spark::sql::types
         }
 
         /**
-         * @brief Get value by index with explicit type: row.get<int32_t>(0)
+         * @brief Widening Integer Access.
+         * This retrieves any integral type (int8..int64) as int64_t.
          */
-        template <typename T>
-        const T &get(size_t index) const
+        int64_t get_long(const std::string &name) const
         {
-            return std::get<T>(values.at(index));
+            return std::visit([](auto &&arg) -> int64_t
+                              {
+                using T = std::decay_t<decltype(arg)>;
+                if constexpr (std::is_integral_v<T> && !std::is_same_v<T, bool>) {
+                    return static_cast<int64_t>(arg);
+                }
+                throw std::runtime_error("Column is not a numeric integral type"); }, (*this)[name]);
         }
 
-        // ---------------------------------
-        // Iteration Support
-        //
-        // In oder to support iterating through the result,
-        // the following logic with
-        // ---------------------------------
+        /**
+         * @brief Widening Floating Point Access.
+         * This retrieves any numeric type as a double.
+         */
+        double get_double(const std::string &name) const
+        {
+            return std::visit([](auto &&arg) -> double
+                              {
+                using T = std::decay_t<decltype(arg)>;
+                if constexpr (std::is_arithmetic_v<T> && !std::is_same_v<T, bool>) {
+                    return static_cast<double>(arg);
+                }
+                throw std::runtime_error("Column is not a numeric type"); }, (*this)[name]);
+        }
 
         auto begin() const { return values.begin(); }
         auto end() const { return values.end(); }
-
         size_t size() const { return values.size(); }
 
-        // Helper to find index by name
         int col_index(const std::string &name) const
         {
             auto it = std::find(column_names.begin(), column_names.end(), name);
@@ -247,7 +254,7 @@ namespace spark::sql::types
 
     /**
      * @brief Converts an Arrow Array value at a specific row into a Spark ColumnValue.
-     * This is the bridge between the Arrow transport layer and our C++ Row model.
+     * This is the bridge between the Arrow transport layer and the respective C++ (custom) Row model.
      */
     ColumnValue arrayValueToVariant(const std::shared_ptr<arrow::Array> &array, int64_t row);
 }

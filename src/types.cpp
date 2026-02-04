@@ -1,9 +1,9 @@
 #include <sstream>
 #include <iomanip>
+#include <algorithm>
 #include "types.h"
 
 #include <spark/connect/types.pb.h>
-
 #include <arrow/array.h>
 
 namespace spark::sql::types
@@ -20,9 +20,6 @@ namespace spark::sql::types
     {
         using namespace spark::connect;
 
-        // -------------------------
-        // Check for Simple Types
-        // -------------------------
         if (proto.has_null())
             return DataType(NullType{});
         if (proto.has_boolean())
@@ -50,9 +47,6 @@ namespace spark::sql::types
         if (proto.has_timestamp_ntz())
             return DataType(TimestampNtzType{});
 
-        // ---------------------------------
-        // Check for Parameterized Types
-        // ---------------------------------
         if (proto.has_decimal())
         {
             return DataType(DecimalType{proto.decimal().precision(), proto.decimal().scale()});
@@ -66,9 +60,6 @@ namespace spark::sql::types
             return DataType(VarCharType{proto.var_char().length()});
         }
 
-        // ---------------------------------
-        // Check for Complex Types
-        // ---------------------------------
         if (proto.has_array())
         {
             ArrayType arr;
@@ -104,10 +95,6 @@ namespace spark::sql::types
         return DataType(NullType{});
     }
 
-    /**
-     * @brief
-     * Public factory method
-     */
     DataType DataType::from_proto(const spark::connect::DataType &proto)
     {
         return from_proto_internal(proto);
@@ -175,19 +162,12 @@ namespace spark::sql::types
         }
     };
 
-    std::string DataType::json() const
-    {
-        return std::visit(JsonVisitor{}, kind);
-    }
-
-    std::string StructType::json() const
-    {
-        return JsonVisitor{}(*this);
-    }
+    std::string DataType::json() const { return std::visit(JsonVisitor{}, kind); }
+    std::string StructType::json() const { return JsonVisitor{}(*this); }
 
     /**
      * @brief
-     * Internal visitor for tree printing
+     * This internal visitor adds support for tree printing
      */
     struct TreeVisitor
     {
@@ -208,18 +188,9 @@ namespace spark::sql::types
         void operator()(const TimestampType &) const { os << "timestamp"; }
         void operator()(const TimestampNtzType &) const { os << "timestamp_ntz"; }
 
-        void operator()(const DecimalType &t) const
-        {
-            os << "decimal(" << t.precision << "," << t.scale << ")";
-        }
-        void operator()(const CharType &t) const
-        {
-            os << "char(" << t.length << ")";
-        }
-        void operator()(const VarCharType &t) const
-        {
-            os << "varchar(" << t.length << ")";
-        }
+        void operator()(const DecimalType &t) const { os << "decimal(" << t.precision << "," << t.scale << ")"; }
+        void operator()(const CharType &t) const { os << "char(" << t.length << ")"; }
+        void operator()(const VarCharType &t) const { os << "varchar(" << t.length << ")"; }
 
         void operator()(const ArrayType &t) const
         {
@@ -273,6 +244,9 @@ namespace spark::sql::types
         }
     }
 
+    /**
+     * @brief A bridge for Arrow to C++ variant conversion
+     */
     ColumnValue arrayValueToVariant(const std::shared_ptr<arrow::Array> &array, int64_t row)
     {
         if (array->IsNull(row))
@@ -282,9 +256,16 @@ namespace spark::sql::types
         {
         case arrow::Type::BOOL:
             return std::static_pointer_cast<arrow::BooleanArray>(array)->Value(row);
+        case arrow::Type::INT8:
+            return static_cast<int8_t>(std::static_pointer_cast<arrow::Int8Array>(array)->Value(row));
+        case arrow::Type::INT16:
+            return static_cast<int16_t>(std::static_pointer_cast<arrow::Int16Array>(array)->Value(row));
         case arrow::Type::INT32:
+        case arrow::Type::DATE32:
             return std::static_pointer_cast<arrow::Int32Array>(array)->Value(row);
         case arrow::Type::INT64:
+        case arrow::Type::TIMESTAMP:
+        case arrow::Type::DATE64:
             return std::static_pointer_cast<arrow::Int64Array>(array)->Value(row);
         case arrow::Type::FLOAT:
             return std::static_pointer_cast<arrow::FloatArray>(array)->Value(row);
@@ -292,7 +273,12 @@ namespace spark::sql::types
             return std::static_pointer_cast<arrow::DoubleArray>(array)->Value(row);
         case arrow::Type::STRING:
             return std::static_pointer_cast<arrow::StringArray>(array)->GetString(row);
-
+        case arrow::Type::BINARY:
+        {
+            auto bin_arr = std::static_pointer_cast<arrow::BinaryArray>(array);
+            auto view = bin_arr->GetView(row);
+            return std::vector<uint8_t>(view.begin(), view.end());
+        }
         case arrow::Type::LIST:
         {
             auto list_array = std::static_pointer_cast<arrow::ListArray>(array);
@@ -304,7 +290,6 @@ namespace spark::sql::types
             }
             return out_array;
         }
-
         case arrow::Type::STRUCT:
         {
             auto struct_array = std::static_pointer_cast<arrow::StructArray>(array);
@@ -316,7 +301,6 @@ namespace spark::sql::types
             }
             return out_row;
         }
-
         case arrow::Type::MAP:
         {
             // ------------------------------------------------------
@@ -326,7 +310,6 @@ namespace spark::sql::types
             auto struct_array = std::static_pointer_cast<arrow::StructArray>(map_array->values());
             auto keys = struct_array->field(0);
             auto values = struct_array->field(1);
-
             auto out_map = std::make_shared<MapData>();
             for (int64_t i = map_array->value_offset(row); i < map_array->value_offset(row + 1); ++i)
             {
@@ -335,12 +318,14 @@ namespace spark::sql::types
             }
             return out_map;
         }
-
         default:
             return std::monostate{};
         }
     }
 
+    // ---------------------------------------------------------
+    // Row Visualization Logic
+    // ---------------------------------------------------------
     struct RowStringVisitor
     {
         std::ostream &os;
@@ -349,26 +334,20 @@ namespace spark::sql::types
         void operator()(const std::string &v) const { os << "'" << v << "'"; }
         void operator()(bool v) const { os << (v ? "true" : "false"); }
 
-        // -----------------------------------------
-        // Binary Visualization (Hex Dump)
-        // -----------------------------------------
+        /**
+         * @brief Binary Visualization (Hex Dump)
+         */
         void operator()(const std::vector<uint8_t> &v) const
         {
-            os << "0x";
+            os << "0x" << std::hex << std::setfill('0');
             for (auto b : v)
-            {
-                os << std::hex << std::setw(2) << std::setfill('0') << (int)b;
-            }
-
-            // ------------------------------------------
-            // Reset to decimal for subsequent prints
-            // ------------------------------------------
+                os << std::setw(2) << static_cast<int>(b);
             os << std::dec;
         }
 
-        // ---------------------------------
-        // Map Support
-        // ---------------------------------
+        /**
+         * @brief Reset to decimal for subsequent prints
+         */
         void operator()(const std::shared_ptr<MapData> &v) const
         {
             os << "{";
@@ -383,9 +362,9 @@ namespace spark::sql::types
             os << "}";
         }
 
-        // ----------------------------------------
-        // Handles Recursive Types (Row and Array)
-        // ----------------------------------------
+        /**
+         * @brief Map Support
+         */
         void operator()(const std::shared_ptr<Row> &v) const
         {
             if (v)
@@ -394,6 +373,9 @@ namespace spark::sql::types
                 os << "null";
         }
 
+        /**
+         *  @brief This handles Recursive Types such as Row and Array
+         */
         void operator()(const std::shared_ptr<ArrayData> &v) const
         {
             if (!v)
