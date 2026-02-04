@@ -167,9 +167,45 @@ TEST_F(SparkIntegrationTest, OptionEvaluation)
     EXPECT_NE(df1.schema().fields[0].name, df2.schema().fields[0].name);
 }
 
-TEST_F(SparkIntegrationTest, ReaderOptions)
-{
+/**
+ * @brief Configuration options for the Spark DataFrameReader.
+ * * These options control how the underlying Spark engine parses source files (CSV, JSON, etc.)
+ * into C++ Row objects. Use these keys within a std::map<std::string, std::string>
+ * passed to the .options() method.
+ *
+ * Schema Discovery & Integrity
+ * - @b "inferSchema": (Boolean) If "true", Spark performs a first pass over the data to
+ * automatically determine column types (e.g., Integer, Double). If "false" (default),
+ * all columns are treated as StringType.
+ * - @b "header": (Boolean) If "true", the first line of the file is used for column names.
+ * If "false", columns are named automatically (e.g., _c0, _c1).
+ * - @b "enforceSchema": (Boolean) If "true", forces the data to match a user-defined
+ * schema, returning null for non-compliant fields.
+ *
+ * CSV Parsing Configuration
+ * - @b "delimiter": (String) The character separating fields. Default is ','.
+ * - @b "quote": (String) The character used for escaping values containing the delimiter.
+ * Default is '"'.
+ * - @b "escape": (String) The character used for escaping quotes inside a value.
+ * Default is '\'.
+ * - @b "nullValue": (String) Defines which string represents a NULL in the dataset.
+ *
+ * Temporal (Date/Time) Formats
+ * - @b "dateFormat": (String) Pattern used to parse DateType columns (e.g., "yyyy-MM-dd").
+ * - @b "timestampFormat": (String) Pattern used for TimestampType columns.
+ *
+ * Corruption & Error Handling Modes
+ * - @b "mode": Determines behavior when a malformed row is encountered:
+ * - "PERMISSIVE": Sets corrupted fields to null (Default).
+ * - "DROPMALFORMED": Discards the entire row.
+ * - "FAILFAST": Throws an exception and terminates the job immediately.
+ * * @note When using CSVs without a manual schema, @ref inferSchema must be "true"
+ * for Row::get_long() or Row::get_double() to succeed, as it prevents numeric
+ * data from being stored as std::string in the internal variant.
+ */
 
+TEST_F(SparkIntegrationTest, ReaderOptions_VerifySchema)
+{
     std::map<std::string, std::string> config = {
         {"header", "true"},
         {"inferSchema", "true"},
@@ -177,5 +213,51 @@ TEST_F(SparkIntegrationTest, ReaderOptions)
 
     auto df = spark->read().options(config).format("csv").load({"datasets/people.csv"});
 
-    EXPECT_NO_THROW(df.show());
+    auto cols = df.columns();
+
+    // ----------------------------------------------------------------
+    // Check if column names were read from the header correctly
+    // ----------------------------------------------------------------
+    ASSERT_EQ(cols.size(), 3);
+    EXPECT_EQ(cols[0], "name");
+    EXPECT_EQ(cols[1], "age");
+}
+
+TEST_F(SparkIntegrationTest, ReaderOptions_InferredTypes)
+{
+    std::map<std::string, std::string> config = {
+        {"header", "true"},
+        {"inferSchema", "true"}};
+
+    auto df = spark->read().options(config).format("csv").load({"datasets/people.csv"});
+    auto schema = df.schema();
+
+    // ----------------------------------------------------
+    // Find the 'age' field and verify it's an Integer
+    // ----------------------------------------------------
+    auto it = std::find_if(schema.fields.begin(), schema.fields.end(),
+                           [](const auto &f)
+                           { return f.name == "age"; });
+
+    ASSERT_NE(it, schema.fields.end()) << "Column 'age' not found";
+
+    // -------------------------------------------------
+    // Check if the variant holds IntegerType
+    // -------------------------------------------------
+    EXPECT_TRUE(std::holds_alternative<spark::sql::types::IntegerType>(it->data_type.kind));
+}
+
+TEST_F(SparkIntegrationTest, ReaderOptions_CorrectValueParsing)
+{
+    std::map<std::string, std::string> config = {{"header", "true"}, {"delimiter", ","}, {"inferSchema", "true"}};
+    auto df = spark->read().options(config).format("csv").load({"datasets/people.csv"});
+
+    auto first_row = df.head();
+    ASSERT_TRUE(first_row.has_value());
+
+    // --------------------------------------------------
+    // Verify values via the templated get<T>
+    // --------------------------------------------------
+    EXPECT_EQ(first_row->get<std::string>("name"), "John");
+    EXPECT_EQ(first_row->get_long("age"), 25);
 }
