@@ -59,15 +59,40 @@ DataFrame SparkSession::sql(const std::string &query)
 }
 
 /**
- * @brief Creates a DataFrame with a single column containing elements in a range.
- * @param end The end value of the range (exclusive).
- * @return A new DataFrame instance.
+ * @brief Generates a DataFrame containing a sequence of numbers.
+ * * This is a leaf relation, meaning it generates data rather than
+ * transforming existing data.
+ *
+ * @param start The first value in the sequence (inclusive).
+ * @param end The boundary value (exclusive).
+ * @param step The difference between consecutive numbers in the sequence.
+ * @throw std::runtime_error If step is set to 0.
+ * @return DataFrame containing a single column "id" of type Long.
+ */
+DataFrame SparkSession::range(int64_t start, int64_t end, int64_t step)
+{
+    spark::connect::Plan plan;
+    auto *range_rel = plan.mutable_root()->mutable_range();
+
+    range_rel->set_start(start);
+    range_rel->set_end(end);
+    range_rel->set_step(step);
+
+    // --------------------------------------------------------------
+    // Spark Connect default column name is usually "id"
+    // We should support set partitions here in the future:
+    // range_rel->set_num_partitions(2);
+    // --------------------------------------------------------------
+
+    return DataFrame(stub_, plan, config_.session_id, config_.user_id);
+}
+
+/**
+ * @brief Overload for range starting at 0 with a step of 1.
  */
 DataFrame SparkSession::range(int64_t end)
 {
-    spark::connect::Plan plan;
-    plan.mutable_root()->mutable_range()->set_end(end);
-    return DataFrame(stub_, plan, config_.session_id, config_.user_id);
+    return range(0, end, 1);
 }
 
 /**

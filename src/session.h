@@ -86,6 +86,7 @@ public:
     }
 
     DataFrame sql(const std::string &query);
+    DataFrame range(int64_t start, int64_t end, int64_t step = 1);
     DataFrame range(int64_t end);
     DataFrameReader read();
     // Placeholder for a more complex method (Review PySpark implementation)
