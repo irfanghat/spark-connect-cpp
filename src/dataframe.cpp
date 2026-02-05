@@ -207,7 +207,7 @@ void DataFrame::show(int max_rows, int truncate)
                 else
                 {
                     // -------------------------------------------------------------
-                    // Dynamic width mode 
+                    // Dynamic width mode
                     // Need to cache values for this batch
                     // -------------------------------------------------------------
                     col_widths.resize(num_cols, 0);
@@ -251,7 +251,7 @@ void DataFrame::show(int max_rows, int truncate)
                     buffer << std::string(w + 2, '-') << "+";
                 buffer << "\n";
             };
-            
+
             // ------------------------------
             // Print Header
             // ------------------------------
@@ -544,4 +544,99 @@ std::optional<spark::sql::types::Row> DataFrame::head()
 std::vector<spark::sql::types::Row> DataFrame::head(int n)
 {
     return take(n);
+}
+
+int64_t DataFrame::count()
+{
+    // -----------------------------------------------------
+    // Initialize the Plan and the Aggregate Relation
+    // -----------------------------------------------------
+    spark::connect::Plan count_plan;
+    auto *aggregate = count_plan.mutable_root()->mutable_aggregate();
+
+    // -------------------------------------------------------------------------------
+    // We explicitly set the Group Type to GROUP_TYPE_GROUPBY.
+    // If left as default (0), it is UNSPECIFIED and Spark will complain & reject the plan:
+    // org.apache.spark.sql.connect.common.InvalidPlanInput: Unknown Group Type GROUP_TYPE_UNSPECIFIED
+    // -------------------------------------------------------------------------------
+    aggregate->set_group_type(spark::connect::Aggregate_GroupType_GROUP_TYPE_GROUPBY);
+
+    // -----------------------------------------------------
+    // Set the input to the current DataFrame's plan
+    // -----------------------------------------------------
+    *aggregate->mutable_input() = this->plan_.root();
+
+    // ------------------------------------------------------------------------
+    // Construct the "count(*)" aggregate expression
+    // Path: Aggregate -> AggregateExpression -> Alias -> UnresolvedFunction
+    // ------------------------------------------------------------------------
+    auto *agg_expr = aggregate->add_aggregate_expressions();
+    auto *alias = agg_expr->mutable_alias();
+
+    // ----------------------------------------------------------------
+    // Set Alias Name.
+    // This is useful for identifying the column in the result batch
+    // ----------------------------------------------------------------
+    alias->add_name("count");
+
+    // -------------------------------------------------------
+    // Set function logic inside the alias expression
+    // -------------------------------------------------------
+    auto *func = alias->mutable_expr()->mutable_unresolved_function();
+    func->set_function_name("count");
+
+    // --------------------------------------------------
+    // Add the "*" (star) argument to the function
+    // --------------------------------------------------
+    func->add_arguments()->mutable_unresolved_star();
+
+    ExecutePlanRequest request;
+    request.set_session_id(session_id_);
+    request.mutable_user_context()->set_user_id(user_id_);
+    *request.mutable_plan() = count_plan;
+
+    grpc::ClientContext context;
+    auto reader = stub_->ExecutePlan(&context, request);
+    ExecutePlanResponse response;
+    int64_t row_count = 0;
+
+    while (reader->Read(&response))
+    {
+        if (!response.has_arrow_batch())
+            continue;
+
+        // -------------------------------------
+        // Deserialize Arrow Batch
+        // -------------------------------------
+        auto buffer = std::make_shared<arrow::Buffer>(
+            reinterpret_cast<const uint8_t *>(response.arrow_batch().data().data()),
+            response.arrow_batch().data().size());
+
+        auto buffer_reader = std::make_shared<arrow::io::BufferReader>(buffer);
+        auto batch_reader = arrow::ipc::RecordBatchStreamReader::Open(buffer_reader).ValueOrDie();
+
+        std::shared_ptr<arrow::RecordBatch> batch;
+        if (batch_reader->ReadNext(&batch).ok() && batch && batch->num_rows() > 0)
+        {
+            // -----------------------------------------------------------
+            // Spark's count() result is in the first column (index 0)
+            // -----------------------------------------------------------
+            auto column = batch->column(0);
+
+            // ------------------------------------------------------------
+            // In Spark SQL, the result of a COUNT() aggregation is always
+            // returned as a LongType (64‑bit integer), regardless of the size of the dataset.
+            // ------------------------------------------------------------
+            auto int_array = std::static_pointer_cast<arrow::Int64Array>(column);
+            row_count = int_array->Value(0);
+        }
+    }
+
+    grpc::Status status = reader->Finish();
+    if (!status.ok())
+    {
+        throw std::runtime_error("gRPC Error: " + status.error_message());
+    }
+
+    return row_count;
 }

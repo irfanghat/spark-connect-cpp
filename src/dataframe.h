@@ -106,6 +106,12 @@ public:
      */
     DataFrame limit(int n);
 
+    /**
+     * @brief Returns the number of rows in this DataFrame.
+     * @return The row count.
+     */
+    int64_t count();
+
 private:
     std::shared_ptr<spark::connect::SparkConnectService::Stub> stub_;
     spark::connect::Plan plan_;
