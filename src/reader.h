@@ -122,7 +122,7 @@ public:
     /**
      * @brief Loads ORC files, returning the result as a DataFrame.
      * @param path The path to read the ORC file from(str).
-     * @return A DataFrame containing the data from the ORC files.
+     * @return A DataFrame containing the data from the ORC file.
      */
     DataFrame orc(const std::string &path);
     /**
