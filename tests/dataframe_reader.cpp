@@ -82,9 +82,21 @@ TEST_F(SparkIntegrationTest, ReadTextFile)
 TEST_F(SparkIntegrationTest, ReadTextFileWithOptions)
 {
     auto df = spark->read()
-                  .option("wholetext", "true")
+                  .option("wholetext", "false")
                   .option("lineSep", "\n")
-                  .text("datasets/people.txt");
+                  .format("text")
+                  .load({"datasets/people.txt"});
+
+    // -------------------------------------------------------------------------------------------
+    // Reading text files is a straightforward way to ingest unstructured or semi-structured data, 
+    // transforming plain text into DataFrames with the flexibility of Spark’s distributed engine.
+    //
+    // auto df = spark->read()
+    //               .option("wholetext", "true")
+    //               .option("lineSep", "\n")
+    //               .format("text")
+    //               .load({"datasets/people.txt"});
+    // -------------------------------------------------------------------------------------------
 
     EXPECT_NO_THROW(df.show());
 }
@@ -129,12 +141,14 @@ TEST_F(SparkIntegrationTest, SchemaEvaluation)
     ASSERT_EQ(schema.fields.size(), 3);
     EXPECT_EQ(schema.fields[0].name, "name");
     EXPECT_EQ(schema.fields[1].name, "age");
+    EXPECT_EQ(schema.fields[2].name, "salary");
 
     // -------------------------------------------------------
     // Check if the variant holds the correct type
     // -------------------------------------------------------
     EXPECT_TRUE(std::holds_alternative<spark::sql::types::StringType>(schema.fields[0].data_type.kind));
     EXPECT_TRUE(std::holds_alternative<spark::sql::types::IntegerType>(schema.fields[1].data_type.kind));
+    EXPECT_TRUE(std::holds_alternative<spark::sql::types::IntegerType>(schema.fields[2].data_type.kind));
 }
 
 TEST_F(SparkIntegrationTest, HandleMissingFile)
