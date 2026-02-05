@@ -213,3 +213,10 @@ TEST_F(SparkIntegrationTest, Head)
     std::string val_b = row.get<std::string>("b");
     EXPECT_EQ(val_b, "Alice");
 }
+
+TEST_F(SparkIntegrationTest, DataFrameCount)
+{
+    auto df = spark->range(1000);
+    df.show(1000);
+    EXPECT_EQ(df.count(), 1000);
+}
