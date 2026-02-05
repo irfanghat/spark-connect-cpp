@@ -109,3 +109,13 @@ DataFrame DataFrameReader::parquet(const std::vector<std::string> &paths)
 {
     return this->format("parquet").load({paths});
 }
+
+DataFrame DataFrameReader::orc(const std::string &path)
+{
+    return this->format("orc").load({path});
+}
+
+DataFrame DataFrameReader::orc(const std::vector<std::string> &paths)
+{
+    return this->format("orc").load({paths});
+}

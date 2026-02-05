@@ -275,3 +275,9 @@ TEST_F(SparkIntegrationTest, ReaderOptions_CorrectValueParsing)
     EXPECT_EQ(first_row->get<std::string>("name"), "John");
     EXPECT_EQ(first_row->get_long("age"), 25);
 }
+
+TEST_F(SparkIntegrationTest, ReadOrc)
+{
+    auto df = spark->read().orc("datasets/types.orc");
+    EXPECT_NO_THROW(df.show(10));
+}

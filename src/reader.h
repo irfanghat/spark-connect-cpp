@@ -119,6 +119,18 @@ public:
      * This is useful when you want to pass a schema from another DataFrame.
      */
     DataFrameReader &schema(const spark::sql::types::StructType &schema_struct);
+    /**
+     * @brief Loads ORC files, returning the result as a DataFrame.
+     * @param path The path to read the ORC file from(str).
+     * @return A DataFrame containing the data from the ORC file.
+     */
+    DataFrame orc(const std::string &path);
+    /**
+     * @brief Loads ORC files from multiple paths.
+     * @param paths One or more file paths to read the ORC files from.
+     * @return A DataFrame containing the data from the ORC files.
+     */
+    DataFrame orc(const std::vector<std::string> &paths);
 
 private:
     std::shared_ptr<spark::connect::SparkConnectService::Stub> stub_;
