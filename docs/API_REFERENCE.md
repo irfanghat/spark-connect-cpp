@@ -468,6 +468,8 @@ filtered_df.show();
 +----------------------+----------------------+----------------------+
 ```
 
+#### Complex Filtering
+
 ```cpp
 auto df = spark->read().csv("datasets/people.csv");
 auto complex_logic = df.filter("age > 20 AND name LIKE 'J%' OR salary = 130000");
@@ -493,7 +495,7 @@ complex_logic.show();
 +----------------------+----------------------+----------------------+
 ```
 
-### Where
+### Where (Filter Alias)
 
 ```cpp
 auto df = spark->read().csv("datasets/people.csv");
