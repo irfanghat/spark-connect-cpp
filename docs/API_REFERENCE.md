@@ -406,6 +406,50 @@ df.show(163);
 +-------------+-----+--------+
 ```
 
+## DataFrame Writer
+
+### Write Parquet files
+
+```cpp
+auto write_data = spark->range(100);
+
+write_data.filter("id > 50")
+    .write()
+    .mode("overwrite")
+    .option("compression", "gzip")
+    .parquet("output/range_data.parquet");
+
+auto read_data = spark->read().parquet("output/range_data.parquet");
+read_data.show(100);
+```
+
+**Output:**
+
+```
++----------------------+
+| id                   |
++----------------------+
+| 75                   |
+| 76                   |
+| 77                   |
+| 78                   |
+| 79                   |
+| 80                   |
+
+--- Truncated for brevity ---
+
+| 67                   |
+| 68                   |
+| 69                   |
+| 70                   |
+| 71                   |
+| 72                   |
+| 73                   |
+| 74                   |
++----------------------+
+```
+
+
 ## Aggregate Functions
 
 ### Row Count

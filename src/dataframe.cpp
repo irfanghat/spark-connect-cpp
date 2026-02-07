@@ -15,6 +15,7 @@
 
 #include "dataframe.h"
 #include "types.h"
+#include "writer.h"
 
 using namespace spark::connect;
 
@@ -679,4 +680,13 @@ DataFrame DataFrame::filter(const std::string &condition)
 DataFrame DataFrame::where(const std::string &condition)
 {
     return filter(condition);
+}
+
+DataFrameWriter DataFrame::write()
+{
+    Config config;
+    config.session_id = session_id_;
+    config.user_id = user_id_;
+
+    return DataFrameWriter(stub_, plan_.root(), config);
 }
