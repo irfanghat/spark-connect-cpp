@@ -141,6 +141,12 @@ add_spark_test(test_dataframe_columns tests/dataframe_columns.cpp)
 # ---------------------------------
 add_spark_test(test_dataframe_reader tests/dataframe_reader.cpp)
 
+# ---------------------------------
+# DataFrame Writer Tests
+# ---------------------------------
+add_spark_test(test_dataframe_writer tests/dataframe_writer.cpp
+)
+
 #########################################################################
 # Installation
 #########################################################################

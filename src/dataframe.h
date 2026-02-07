@@ -7,6 +7,8 @@
 
 #include <types.h>
 
+class DataFrameWriter;
+
 /**
  * @class DataFrame
  * @brief Represents a distributed collection of data organized into named columns.
@@ -122,6 +124,12 @@ public:
      * @return The row count.
      */
     int64_t count();
+
+    /**
+     * @brief Interface to save the content of the non-streaming DataFrame out into external storage.
+     * @return A DataFrameWriter instance.
+     */
+    DataFrameWriter write();
 
 private:
     std::shared_ptr<spark::connect::SparkConnectService::Stub> stub_;
