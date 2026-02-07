@@ -14,7 +14,7 @@ The library is intended for environments where:
 * Tight control over memory and system resources is important
 * Existing performance-critical C++ systems need to integrate with Spark
 
-**Status:** *WIP*
+**Status:** *Work in Progress*
 
 ![Architecture Diagram](https://github.com/irfanghat/spark-connect-cpp/blob/main/docs/ARICHITECTURE_DIAGRAM.png)
 
