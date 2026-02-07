@@ -87,6 +87,17 @@ public:
     DataFrame select(const std::vector<std::string> &cols);
 
     /**
+     * @brief Filters rows using the given SQL condition string.
+     * @param condition SQL expression (e.g., "age > 3")
+     */
+    DataFrame filter(const std::string &condition);
+
+    /**
+     * @brief Alias for filter().
+     */
+    DataFrame where(const std::string &condition);
+
+    /**
      * @brief Returns the first n rows.
      */
     std::vector<spark::sql::types::Row> take(int n);
