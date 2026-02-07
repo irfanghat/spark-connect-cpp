@@ -236,30 +236,6 @@ df.printSchema();
 
 ```
 
-### Select Subset
-
-```cpp
-auto df = spark->sql(R"(SELECT 1 AS a, 2 AS b, 3 AS c)");
-
-// ------------------------------------------------------------
-// Select only 'b' and 'a' (Reordering them)
-// ------------------------------------------------------------
-auto df_subset = df.select({"b", "a"});
-
-df_subset.show();
-
-```
-
-**Output:**
-
-```
-+---+---+
-| b | a |
-+---+---+
-| 2 | 1 |
-+---+---+
-```
-
 ### Head
 
 ```cpp
@@ -413,23 +389,6 @@ df.show(163);
 | Emily       | 27  | 89000  |
 | Michael     | 31  | 99000  |
 | Olivia      | 29  | 97000  |
-| Daniel      | 36  | 115000 |
-| Isabella    | 26  | 88000  |
-| William     | 38  | 124000 |
-| Mia         | 24  | 76000  |
-| Benjamin    | 33  | 108000 |
-| Charlotte   | 32  | 94000  |
-| Lucas       | 41  | 130000 |
-| Amelia      | 23  | 75000  |
-| Henry       | 39  | 125000 |
-| Harper      | 35  | 102000 |
-| Elijah      | 42  | 135000 |
-| Evelyn      | 28  | 87000  |
-| Alexander   | 37  | 118000 |
-| Abigail     | 30  | 92000  |
-| Mason       | 43  | 138000 |
-| Ella        | 25  | 83000  |
-| Logan       | 27  | 96000  
 
 --- Truncated for brevity ---
 
@@ -454,4 +413,109 @@ df.show(163);
 ```cpp
 auto df = spark->range(1000);
 auto row_count = df.count();
+```
+
+## Filtering
+
+### Select Subset
+
+```cpp
+auto df = spark->sql(R"(SELECT 1 AS a, 2 AS b, 3 AS c)");
+
+// ------------------------------------------------------------
+// Select only 'b' and 'a' (Reordering them)
+// ------------------------------------------------------------
+auto df_subset = df.select({"b", "a"});
+
+df_subset.show();
+
+```
+
+**Output:**
+
+```
++---+---+
+| b | a |
++---+---+
+| 2 | 1 |
++---+---+
+```
+
+### Filter
+
+```cpp
+auto df = spark->read().csv("datasets/peaople.csv");
+auto filtered_df = df.filter("age > 30");
+filtered_df.show();
+```
+
+**Output:**
+
+```
++----------------------+----------------------+----------------------+
+| name                 | age                  | salary               |
++----------------------+----------------------+----------------------+
+| Robert               | 45                   | 120000               |
+| David                | 34                   | 110000               |
+| James                | 40                   | 132000               |
+| Michael              | 31                   | 99000                |
+| Daniel               | 36                   | 115000               |
+| William              | 38                   | 124000               |
+| Benjamin             | 33                   | 108000               |
+| Charlotte            | 32                   | 94000                |
+| Lucas                | 41                   | 130000               |
+| Henry                | 39                   | 125000               |
++----------------------+----------------------+----------------------+
+```
+
+```cpp
+auto df = spark->read().csv("datasets/people.csv");
+auto complex_logic = df.filter("age > 20 AND name LIKE 'J%' OR salary = 130000");
+complex_logic.show();
+```
+
+**Output:**
+
+```
++----------------------+----------------------+----------------------+
+| name                 | age                  | salary               |
++----------------------+----------------------+----------------------+
+| John                 | 25                   | 100000               |
+| James                | 40                   | 132000               |
+| Lucas                | 41                   | 130000               |
+| Jackson              | 29                   | 101000               |
+| Jack                 | 38                   | 123000               |
+| Joseph               | 45                   | 136000               |
+| Jayden               | 31                   | 108000               |
+| Julian               | 34                   | 114000               |
+| Isaiah               | 41                   | 130000               |
+| Josiah               | 40                   | 128000               |
++----------------------+----------------------+----------------------+
+```
+
+### Where
+
+```cpp
+auto df = spark->read().csv("datasets/people.csv");
+auto filtered_df = df.where("age < 25");
+filtered_df.show();
+```
+
+**Output:**
+
+```
++----------------------+----------------------+----------------------+
+| name                 | age                  | salary               |
++----------------------+----------------------+----------------------+
+| Sophia               | 22                   | 72000                |
+| Mia                  | 24                   | 76000                |
+| Amelia               | 23                   | 75000                |
+| Aria                 | 22                   | 71000                |
+| Zoe                  | 24                   | 78000                |
+| Luna                 | 23                   | 77000                |
+| Mila                 | 24                   | 76000                |
+| Lillian              | 23                   | 74000                |
+| Stella               | 24                   | 79000                |
+| Brooklyn             | 23                   | 75000                |
++----------------------+----------------------+----------------------+
 ```

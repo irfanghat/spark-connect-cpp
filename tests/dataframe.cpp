@@ -39,6 +39,7 @@ SparkSession *SparkIntegrationTest::spark = nullptr;
 // Null & Boolean logic, Numeric Types &
 // Binary formats, as well as Schema inspection.
 // ----------------------------------------------------------------
+
 TEST_F(SparkIntegrationTest, SessionIsActive)
 {
     ASSERT_NE(spark, nullptr);
@@ -61,7 +62,7 @@ TEST_F(SparkIntegrationTest, SimpleStringSelection)
 TEST_F(SparkIntegrationTest, MixedTypesAndCaseLogic)
 {
     auto df = spark->sql(R"(
-        SELECT id, 
+        SELECT id,
                CASE WHEN id % 2 = 0 THEN 'Alice' ELSE 'Bob' END AS name,
                id * 1.5 AS score,
                id % 3 = 0 AS is_active
@@ -73,7 +74,7 @@ TEST_F(SparkIntegrationTest, MixedTypesAndCaseLogic)
 TEST_F(SparkIntegrationTest, DateTimeAndDecimal)
 {
     auto df = spark->sql(R"(
-        SELECT 
+        SELECT
             CAST('2024-01-01' AS DATE) AS date_col,
             CAST('2024-01-01 12:34:56' AS TIMESTAMP) AS ts_col,
             CAST(12345.6789 AS DECIMAL(20, 4)) AS decimal_col
@@ -84,7 +85,7 @@ TEST_F(SparkIntegrationTest, DateTimeAndDecimal)
 TEST_F(SparkIntegrationTest, DateRanges)
 {
     auto df = spark->sql(R"(
-        SELECT 
+        SELECT
             CAST(date_sub(current_date(), CAST(id AS INT)) AS DATE) AS date32_col,
             CAST(date_add(current_timestamp(), CAST(id AS INT)) AS TIMESTAMP) AS ts_col
         FROM range(5)
@@ -95,7 +96,7 @@ TEST_F(SparkIntegrationTest, DateRanges)
 TEST_F(SparkIntegrationTest, NullAndBooleanLogic)
 {
     auto df = spark->sql(R"(
-        SELECT 
+        SELECT
             IF(id % 2 = 0, null, id) AS maybe_null,
             id % 2 = 0 AS is_even
         FROM range(6)
@@ -106,7 +107,7 @@ TEST_F(SparkIntegrationTest, NullAndBooleanLogic)
 TEST_F(SparkIntegrationTest, NumericTypesAndBinary)
 {
     auto df = spark->sql(R"(
-        SELECT 
+        SELECT
             CAST(id AS FLOAT) / 3.0 AS float_val,
             CAST(id AS DOUBLE) * 2.5 AS double_val,
             encode(CAST(id AS STRING), 'utf-8') AS bin_val
@@ -219,4 +220,58 @@ TEST_F(SparkIntegrationTest, DataFrameCount)
     auto df = spark->range(1000);
     df.show(1000);
     EXPECT_EQ(df.count(), 1000);
+}
+
+TEST_F(SparkIntegrationTest, Filter)
+{
+    auto df = spark->read()
+                  .option("header", "true")
+                  .option("inferSchema", "true")
+                  .csv("datasets/people.csv");
+
+    auto equal_to = df.filter("name = 'Josephine'");
+    equal_to.show();
+
+    // --------------------------------------------------------------
+    // Numeric Comparison requires inferSchema to be set to "true",
+    // otherwise, everything gets treated as a string
+    // --------------------------------------------------------------
+    auto greater_than = df.filter("age > 30");
+    greater_than.show();
+
+    // --------------------------------------------
+    // Complex Logical Operators (AND, OR, NOT)
+    // --------------------------------------------
+    auto complex_logic = df.filter("age > 20 AND name LIKE 'J%' OR salary = 130000");
+    complex_logic.show();
+
+    // ----------------------------------------
+    // Using SQL Functions inside Filter
+    // ----------------------------------------
+    auto sql_func_filter = df.filter("length(name) > 6");
+    sql_func_filter.show();
+
+    // ---------------------------
+    // Filtering for NULLs
+    // ---------------------------
+    auto null_filter = df.filter("name IS NOT NULL");
+    EXPECT_NO_THROW(null_filter.count());
+    EXPECT_NE(null_filter.count(), 0);
+
+    // ----------------------------------------------
+    // Chained Filters via Nesting Doll pattern
+    // ----------------------------------------------
+    auto chained = df.filter("age > 18").filter("name != 'Unknown'");
+    chained.show();
+}
+
+TEST_F(SparkIntegrationTest, WhereFilter)
+{
+    auto df = spark->read()
+                  .option("header", "true")
+                  .option("inferSchema", "true")
+                  .csv("datasets/people.csv");
+
+    auto filtered_df = df.where("age < 25");
+    filtered_df.show();
 }

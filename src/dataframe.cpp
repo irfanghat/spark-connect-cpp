@@ -640,3 +640,43 @@ int64_t DataFrame::count()
 
     return row_count;
 }
+
+DataFrame DataFrame::filter(const std::string &condition)
+{
+    spark::connect::Plan plan;
+
+    // ------------------------------------------------------
+    // Access the Filter relation in the new plan root
+    // See: spark/connect/relations.proto (v3.5.x)
+    // ------------------------------------------------------
+    auto *filter_rel = plan.mutable_root()->mutable_filter();
+
+    // ----------------------------------------------------------------------
+    // Set input to the current relation (i.e. the parent of this filter)
+    // ----------------------------------------------------------------------
+    if (this->plan_.has_root())
+    {
+        filter_rel->mutable_input()->CopyFrom(this->plan_.root());
+    }
+
+    // ------------------------------------------------------------------
+    // Set the condition using the ExpressionString message type
+    //
+    // In Spark 3.5, the plan is laid out as follows:
+    // Filter -> Expression (condition) -> ExpressionString -> string (expression)
+    // ------------------------------------------------------------------
+    auto *condition_expr = filter_rel->mutable_condition();
+    auto *expr_string_msg = condition_expr->mutable_expression_string();
+
+    // -----------------------------------------------------------------
+    // Set the actual SQL string inside the ExpressionString message
+    // -----------------------------------------------------------------
+    expr_string_msg->set_expression(condition);
+
+    return DataFrame(stub_, plan, session_id_, user_id_);
+}
+
+DataFrame DataFrame::where(const std::string &condition)
+{
+    return filter(condition);
+}
