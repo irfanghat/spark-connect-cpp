@@ -1,41 +1,136 @@
-# Spark Connect C++ 
+# Spark Connect C++
 
 ## Overview
 
-This repository hosts a **native C++ client** for **Apache Spark Connect**.
+This repository provides a **native C++ client for Apache Spark Connect**, enabling C++ applications to execute Spark SQL workloads against remote Spark clusters without requiring JVM dependencies.
 
-Spark Connect introduces a **decoupled spark-server architecture** for Apache Spark, enabling remote execution of Spark operations. This offers a **high-performance, idiomatic C++ interface** to Spark SQL, with efficient **Apache Arrow-based columnar serialization**.
+Spark Connect introduces a **decoupled client–server architecture** for Apache Spark, where client applications construct logical query plans that are executed remotely by a Spark server. This project delivers an **idiomatic, high-performance C++ interface** for building and submitting Spark queries, with efficient **Apache Arrow–based columnar data exchange** over gRPC.
 
-* Status: _WIP_
+The library is intended for environments where:
+
+* Native C++ integration is required
+* JVM runtimes are impractical or undesirable
+* High-throughput data movement is necessary
+* Tight control over memory and system resources is important
+* Existing performance-critical C++ systems need to integrate with Spark
+
+**Status:** *WIP*
 
 ![Architecture Diagram](https://github.com/irfanghat/spark-connect-cpp/blob/main/docs/ARICHITECTURE_DIAGRAM.png)
 
 ---
 
+## Design Goals
+
+* Native-first Spark integration for C++ ecosystems
+* Efficient Arrow-based columnar data transfer
+* Clear separation between client logic and remote Spark execution
+* Compatibility with evolving Spark Connect protocols
+* Predictable performance characteristics suitable for production systems
+* Minimal runtime dependencies outside standard native infrastructure
+
+---
+
 ## Use Cases
 
-The Spark Connect C++ client is designed for scenarios where performance, low latency, and native integration are critical. Common use cases include:
+The Spark Connect C++ client is designed for environments that require **native system integration**, **efficient columnar data transfer**, and **low-overhead communication** with remote Spark clusters.
 
-1. **High-Performance Data Ingestion & Streaming**  
-   Ideal for ingesting high-throughput event streams or telemetry data where low-latency processing is required.
+### Native Data Producers and High-Throughput Pipelines
 
-2. **Edge and Embedded Analytics**  
-   Suitable for analytics on resource-constrained devices or edge gateways, enabling local processing and aggregation before pushing data to Spark.
+Enable high-performance C++ services to submit ingestion workloads and push structured datasets to Spark using Apache Arrow serialization without JVM dependencies.
 
-3. **AI/ML Integration**  
-   Can be used to run high-speed inference with native C++ ML libraries (e.g., TensorRT, ONNX Runtime) and stream features or results to Spark for large-scale training or aggregation.
+### Integration with Legacy, Industrial, and Scientific Systems
 
-4. **Integration with Legacy or Critical Systems**  
-   Bridges enterprise systems, industrial controllers, or scientific instrumentation directly into Spark without requiring JVM dependencies.
+Connect existing C++ infrastructure such as industrial control systems, financial engines, robotics platforms, HPC pipelines, or scientific instrumentation directly to Spark for large-scale analytics.
 
-5. **Custom High-Performance Connectors**  
-   Facilitates the development of specialized connectors for proprietary data stores, in-memory engines, or high-throughput queues.
+### AI/ML and Inference Pipelines
 
-6. **Low-Latency Interactive Queries**  
-   Supports interactive Spark SQL queries in latency-sensitive applications such as dashboards, monitoring tools, and real-time analytics.
+Run high-speed inference using native libraries (e.g., TensorRT, ONNX Runtime, CUDA pipelines) and stream features, embeddings, or predictions into Spark for downstream analytics and training workflows.
 
-7. **Benchmarking and Performance Tooling**  
-   Useful for testing Spark Connect performance, measuring end-to-end latency, and evaluating serialization and network overhead.
+### Custom High-Performance Data Connectors
+
+Build specialized connectors for proprietary data stores, binary protocols, in-memory engines, or high-throughput messaging systems that benefit from native execution and fine-grained memory control.
+
+### Interactive Analytics Clients
+
+Develop native dashboards, monitoring tools, and backend services that execute Spark SQL queries through Spark Connect with minimal client-side overhead.
+
+### Edge Gateways and Data Aggregation Services
+
+Use C++ aggregation services or gateway nodes to collect telemetry from distributed environments and forward structured datasets to centralized Spark clusters for processing.
+
+### Performance Testing and Systems Benchmarking
+
+Evaluate Spark Connect performance characteristics such as serialization overhead, network latency, query planning costs, and concurrent client behavior using native workloads.
+
+---
+
+## When Should You Use the C++ Client?
+
+The Spark Connect C++ client is **not a replacement** for Python or Scala Spark APIs. Instead, it enables Spark integration in environments where native execution, performance constraints, or system-level integration are required.
+
+### Use the C++ Client When
+
+* You are integrating Spark into an existing **C++ application or platform**
+* Your environment cannot depend on a **JVM runtime**
+* You are building **high-performance ingestion or producer services**
+* You require integration with:
+
+  * HPC systems
+  * scientific computing pipelines
+  * robotics or industrial platforms
+  * embedded gateways or native backend services
+* You run **AI/ML inference pipelines** in C++ and need to forward structured outputs into Spark
+* You are implementing proprietary data connectors or binary protocols
+* You require precise control over memory layout and data transfer efficiency
+
+### Prefer Python or Scala Spark APIs When
+
+* You are building notebooks or data science workflows
+* Your team primarily consists of data engineers or analysts
+* You require the full Spark API surface immediately
+* Rapid prototyping is more important than native performance
+* Your applications already run comfortably in JVM or Python environments
+
+---
+
+## Architecture Deep Dive
+
+The Spark Connect C++ client follows the Spark Connect execution model:
+
+### Client API Layer
+
+Applications use a native C++ API to construct DataFrame operations and Spark SQL queries. These operations are translated into logical execution plans rather than executed locally.
+
+### Logical Plan Construction
+
+The client builds Spark logical plans representing transformations, queries, and actions. No distributed computation occurs inside the client process.
+
+### Serialization Layer
+
+Logical plans and data batches are serialized using:
+
+* Protobuf for query plans and RPC communication
+* Apache Arrow for efficient columnar data transfer
+
+### Transport Layer
+
+Communication with the Spark Connect server occurs via:
+
+* gRPC streaming RPCs
+* bidirectional execution channels
+* Arrow batch streaming
+
+### Spark Server Execution
+
+The Spark Connect server:
+
+* receives logical plans
+* executes distributed workloads
+* performs query planning and optimization
+* returns Arrow-encoded results to the client
+
+This separation enables native applications to leverage Spark’s distributed engine without embedding Spark or JVM runtimes locally.
 
 ---
 
@@ -43,13 +138,16 @@ The Spark Connect C++ client is designed for scenarios where performance, low la
 
 ### 1. Prerequisites
 
-- **Apache Spark 3.5+** with Spark Connect enabled  
-- **C++17 or later**  
-- Libraries:
-  - `gRPC`
-  - `Protobuf`
-  - `Apache Arrow`
-  - `uuid`
+* **Apache Spark 3.5+** with Spark Connect enabled
+* **C++17 or later**
+* Required libraries:
+
+  * `gRPC`
+  * `Protobuf`
+  * `Apache Arrow`
+  * `uuid`
+
+---
 
 ### 2. Build & Run Tests
 
@@ -79,11 +177,12 @@ docker compose up spark --build
 # Run Test Suite
 # ---------------------------
 ctest --output-on-failure
-````
+```
 
-For more details on setting up the project on Unix/Linux, and VSCode, see: [Setup Guide](https://github.com/irfanghat/spark-connect-cpp/blob/main/docs/SETUP.md)
+For detailed development setup instructions, see:
 
-Refer to the following document for API documentation: [API Reference](https://github.com/irfanghat/spark-connect-cpp/blob/main/docs/API_REFERENCE.md)
+* [Setup Guide](https://github.com/irfanghat/spark-connect-cpp/blob/main/docs/SETUP.md)
+* [API Reference](https://github.com/irfanghat/spark-connect-cpp/blob/main/docs/API_REFERENCE.md)
 
 ---
 
