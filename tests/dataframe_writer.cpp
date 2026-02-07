@@ -57,7 +57,7 @@ TEST_F(SparkIntegrationTest, ParquetReadAndWrite)
     auto df = spark->read()
                   .option("header", "true")
                   .option("inferSchema", "true")
-                  .csv("datasets/iot_intrusion.csv");
+                  .csv("datasets/iot_intrusion_data.csv");
 
     df.printSchema();
 
@@ -78,7 +78,7 @@ TEST_F(SparkIntegrationTest, IOTSecurityAnalysisScenario)
     auto df = spark->read()
                   .option("header", "true")
                   .option("inferSchema", "true")
-                  .csv("datasets/iot_intrusion.csv");
+                  .csv("datasets/iot_intrusion_data.csv");
 
     // -----------------------------------------------------------------------------------
     // Filter for specific DDoS indicators (e.g., Rate > 0.5 and specific Protocol Type)
