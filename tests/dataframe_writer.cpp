@@ -43,7 +43,7 @@ TEST_F(SparkIntegrationTest, ParquetWrite)
     write_data.filter("id > 50")
         .write()
         .mode("overwrite")
-        .option("compression", "gzip")
+        .option("compression", "snappy")
         .parquet("output/range_data.parquet");
 
     auto read_data = spark->read().parquet("output/range_data.parquet");
