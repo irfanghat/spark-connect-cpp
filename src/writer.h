@@ -73,6 +73,12 @@ public:
     void csv(const std::string &path);
 
     /**
+     * @brief Saves the content of the DataFrame in a text file at the specified path.
+     * The text files will be encoded as UTF-8.
+     */
+    void text(const std::string &path);
+
+    /**
      * @brief Saves the contents of the `DataFrame` to a data source.
      */
     void save(const std::string &path = "");

@@ -42,6 +42,11 @@ void DataFrameWriter::csv(const std::string &path)
     this->format("csv").save(path);
 }
 
+void DataFrameWriter::text(const std::string &path)
+{
+    this->format("text").save(path);
+}
+
 void DataFrameWriter::save(const std::string &path)
 {
     spark::connect::Plan plan;
