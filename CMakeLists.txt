@@ -120,6 +120,9 @@ macro(add_spark_test TEST_NAME SOURCE_FILE)
         GTest::gtest_main
     )
     add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})
+    set_tests_properties(${TEST_NAME}
+    PROPERTIES
+    ENVIRONMENT "GTEST_COLOR=1")
 endmacro()
 
 ######################################################

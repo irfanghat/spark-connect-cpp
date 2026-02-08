@@ -44,9 +44,9 @@ TEST_F(SparkIntegrationTest, ParquetWrite)
         .write()
         .mode("overwrite")
         .option("compression", "snappy")
-        .parquet("output/range_data.parquet");
+        .parquet("output/parquet_range_data");
 
-    auto read_data = spark->read().parquet("output/range_data.parquet");
+    auto read_data = spark->read().parquet("output/parquet_range_data");
     read_data.show(100);
 
     EXPECT_EQ(read_data.count(), 49);
@@ -64,10 +64,10 @@ TEST_F(SparkIntegrationTest, ParquetReadAndWrite)
     df.write()
         .mode("overwrite")
         .option("compression", "snappy") // snappy is faster when compared to gzip. See: https://parquet.apache.org/docs/file-format/data-pages/compression/
-        .parquet("output/iot_intrusion.parquet");
+        .parquet("output/iot_intrusion_data");
 
     auto iot_data_columns = spark->read()
-                                .parquet("output/iot_intrusion.parquet")
+                                .parquet("output/iot_intrusion_data")
                                 .columns();
 
     EXPECT_THAT(iot_data_columns, ElementsAre("flow_duration", "Header_Length", "Protocol Type", "Duration", "Rate", "Srate", "Drate", "fin_flag_number", "syn_flag_number", "rst_flag_number", "psh_flag_number", "ack_flag_number", "ece_flag_number", "cwr_flag_number", "ack_count", "syn_count", "fin_count", "urg_count", "rst_count", "HTTP", "HTTPS", "DNS", "Telnet", "SMTP", "SSH", "IRC", "TCP", "UDP", "DHCP", "ARP", "ICMP", "IPv", "LLC", "Tot sum", "Min", "Max", "AVG", "Std", "Tot size", "IAT", "Number", "Magnitue", "Radius", "Covariance", "Variance", "Weight", "label"));
@@ -90,9 +90,9 @@ TEST_F(SparkIntegrationTest, IOTSecurityAnalysisScenario)
     analysis_df.write()
         .mode("overwrite")
         .option("compression", "snappy")
-        .parquet("output/iot_analysis_results.parquet");
+        .parquet("output/iot_analysis_results");
 
-    auto result_df = spark->read().parquet("output/iot_analysis_results.parquet");
+    auto result_df = spark->read().parquet("output/iot_analysis_results");
 
     // --------------------------------------------------------
     // Validate that filter and projection were preserved
@@ -109,4 +109,47 @@ TEST_F(SparkIntegrationTest, IOTSecurityAnalysisScenario)
     result_df.show(5);
 
     EXPECT_GT(incident_count, 0);
+}
+
+TEST_F(SparkIntegrationTest, CsvWriteWithOptions)
+{
+    auto write_df = spark->range(50);
+    std::string csv_path = "output/csv_write_with_options";
+
+    write_df.write()
+        .mode("overwrite")
+        .option("header", "true")
+        .option("delimiter", ";")
+        .csv(csv_path);
+
+    auto read_df = spark->read()
+                       .option("header", "true")
+                       .option("delimiter", ";")
+                       .csv(csv_path);
+
+    EXPECT_EQ(read_df.count(), 50);
+    EXPECT_THAT(read_df.columns(), ElementsAre("id"));
+}
+
+TEST_F(SparkIntegrationTest, PartitionedWriteToParquet)
+{
+    auto df = spark->read()
+                  .option("header", "true")
+                  .option("inferSchema", "true")
+                  .csv("datasets/iot_intrusion_data.csv");
+
+    // ---------------------------------------- 
+    // Partition by the 'label' column
+    // ---------------------------------------- 
+    df.limit(100).write().mode("overwrite").partitionBy({"label"}).parquet("output/partitioned_iot");
+
+    // ------------------------------------------------------------------------------------------
+    // Spark creates directory structures such as:
+    //
+    // output/partitioned_iot/label=DDoS-RSTFINFlood/
+    // output/partitioned_iot/label=DDoS-SynonymousIP_Flood
+    // etc...
+    // ------------------------------------------------------------------------------------------
+    auto read_partitioned = spark->read().parquet("output/partitioned_iot");
+    EXPECT_GT(read_partitioned.count(), 0);
 }

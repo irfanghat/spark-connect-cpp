@@ -88,7 +88,7 @@ TEST_F(SparkIntegrationTest, ReadTextFileWithOptions)
                   .load({"datasets/people.txt"});
 
     // -------------------------------------------------------------------------------------------
-    // Reading text files is a straightforward way to ingest unstructured or semi-structured data, 
+    // Reading text files is a straightforward way to ingest unstructured or semi-structured data,
     // transforming plain text into DataFrames with the flexibility of Spark’s distributed engine.
     //
     // auto df = spark->read()
@@ -280,4 +280,19 @@ TEST_F(SparkIntegrationTest, ReadOrc)
 {
     auto df = spark->read().orc("datasets/types.orc");
     EXPECT_NO_THROW(df.show(10));
+}
+
+TEST_F(SparkIntegrationTest, ErrorHandlingInvalidPath)
+{
+    auto parquet_reader = spark->read().parquet("non_existent_path");
+    EXPECT_THROW({ parquet_reader.count(); }, std::runtime_error);
+
+    auto csv_reader = spark->read().csv("non_existent_path");
+    EXPECT_THROW({ csv_reader.count(); }, std::runtime_error);
+
+    auto json_reader = spark->read().json("non_existent_path");
+    EXPECT_THROW({ json_reader.count(); }, std::runtime_error);
+
+    auto text_reader = spark->read().text("non_existent_path");
+    EXPECT_THROW({ text_reader.count(); }, std::runtime_error);
 }

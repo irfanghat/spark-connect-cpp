@@ -174,9 +174,20 @@ make -j$(nproc)
 docker compose up spark --build
 
 # ---------------------------
-# Run Test Suite
+# Run Full Test Suite
 # ---------------------------
-ctest --output-on-failure
+ctest --output-on-failure --verbose
+# ctest --verbose --test-arguments=--gtest_color=yes
+
+# -----------------------------
+# Run Single Test Suite
+# -----------------------------
+ctest -R test_dataframe_reader --verbose
+
+# --------------------------------
+# Run Test Suite directly
+# --------------------------------
+./test_<suite_name>
 ```
 
 For detailed development setup instructions, see:
