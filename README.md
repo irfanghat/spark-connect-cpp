@@ -184,6 +184,11 @@ ctest --output-on-failure --verbose
 # -----------------------------
 ctest -R test_dataframe_reader --verbose
 
+# ------------------------------
+# Run Single Test Case
+# ------------------------------
+ctest -R test_dataframe_writer --test-args --gtest_filter=SparkIntegrationTest.ParquetWrite
+
 # --------------------------------
 # Run Test Suite directly
 # --------------------------------
