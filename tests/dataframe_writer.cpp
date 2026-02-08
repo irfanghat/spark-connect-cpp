@@ -131,6 +131,98 @@ TEST_F(SparkIntegrationTest, CsvWriteWithOptions)
     EXPECT_THAT(read_df.columns(), ElementsAre("id"));
 }
 
+TEST_F(SparkIntegrationTest, WriteToText)
+{
+    auto write_df = spark->sql("SELECT 'a' AS alphabets UNION ALL SELECT 'b' AS alphabets");
+
+    write_df.write()
+        .mode("overwrite")
+        .text("output/text_write");
+
+    auto read_df = spark->read().text("output/text_write");
+
+    EXPECT_THAT(read_df.columns(), ElementsAre("value"));
+    EXPECT_EQ(read_df.count(), 2);
+}
+
+TEST_F(SparkIntegrationTest, EmptyDataFrameWrite)
+{
+    auto empty_df = spark->range(0);
+
+    empty_df.write()
+        .mode("overwrite")
+        .parquet("output/empty_data_parquet");
+
+    auto read_back = spark->read().parquet("output/empty_data_parquet");
+
+    EXPECT_EQ(read_back.count(), 0);
+    EXPECT_THAT(read_back.columns(), ElementsAre("id"));
+}
+
+TEST_F(SparkIntegrationTest, MultiColumnPartitioning)
+{
+    // -----------------------------------------------------------
+    // Partitioning by multiple columns
+    // This mostly focuses on the WriteOperation proto mapping
+    // -----------------------------------------------------------
+    auto df = spark->read()
+                  .option("header", "true")
+                  .option("inferSchema", "true")
+                  .csv("datasets/iot_intrusion_data.csv");
+
+    // ------------------------------------------------------
+    // Take a subset and partition by Protocol and Label
+    // ------------------------------------------------------
+    df.limit(100).write().mode("overwrite").partitionBy({"Protocol Type", "label"}).parquet("output/multi_partitioned_iot");
+
+    auto read_df = spark->read().parquet("output/multi_partitioned_iot");
+
+    // ----------------------------------------------------------------------
+    // Verify columns exist (Partition columns move to the end in Spark)
+    // ----------------------------------------------------------------------
+    auto cols = read_df.columns();
+    bool has_protocol = std::find(cols.begin(), cols.end(), "Protocol Type") != cols.end();
+    bool has_label = std::find(cols.begin(), cols.end(), "label") != cols.end();
+
+    EXPECT_TRUE(has_protocol);
+    EXPECT_TRUE(has_label);
+}
+
+TEST_F(SparkIntegrationTest, SaveModeIgnoreBehavior)
+{
+    // ---------------------------------
+    // Evaluate "ignore" save mode
+    // ---------------------------------
+    auto path = "output/ignore_test_parquet";
+    auto df1 = spark->range(10);
+    auto df2 = spark->range(100);
+
+    df1.write().mode("overwrite").parquet(path);
+
+    // -----------------------------------------------------------
+    // Second write with 'ignore' should not change the data
+    // -----------------------------------------------------------
+    df2.write().mode("ignore").parquet(path);
+
+    auto result = spark->read().parquet(path);
+    EXPECT_EQ(result.count(), 10); // Row count should still be 10, not 100
+}
+
+TEST_F(SparkIntegrationTest, JsonReadWrite)
+{
+    auto df = spark->sql("SELECT 1 as id, 'test' as name, NAMED_STRUCT('a', 1, 'b', 2) as nested");
+
+    df.write()
+        .mode("overwrite")
+        .format("json")
+        .save("output/test_json");
+
+    auto read_df = spark->read().format("json").load({"output/test_json"});
+
+    EXPECT_EQ(read_df.count(), 1);
+    EXPECT_THAT(read_df.columns(), ::testing::UnorderedElementsAre("id", "name", "nested"));
+}
+
 TEST_F(SparkIntegrationTest, PartitionedWriteToParquet)
 {
     auto df = spark->read()
@@ -138,9 +230,9 @@ TEST_F(SparkIntegrationTest, PartitionedWriteToParquet)
                   .option("inferSchema", "true")
                   .csv("datasets/iot_intrusion_data.csv");
 
-    // ---------------------------------------- 
+    // ----------------------------------------
     // Partition by the 'label' column
-    // ---------------------------------------- 
+    // ----------------------------------------
     df.limit(100).write().mode("overwrite").partitionBy({"label"}).parquet("output/partitioned_iot");
 
     // ------------------------------------------------------------------------------------------
