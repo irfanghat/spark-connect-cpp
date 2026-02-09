@@ -29,13 +29,8 @@ jobs:
           https://dlcdn.apache.org/spark/spark-3.5.8/spark-3.5.8-bin-hadoop3.tgz \
           -o spark.tgz
 
-        echo "Validating archive..."
-        file spark.tgz
-        ls -lh spark.tgz
-
         tar -xzf spark.tgz
         mv spark-3.5.8-bin-hadoop3 $HOME/spark
-
 
     - name: Start Spark Connect Server
       run: |
@@ -43,18 +38,33 @@ jobs:
           --packages org.apache.spark:spark-connect_2.12:3.5.1
         sleep 10
 
-    - name: Install dependencies
-      run: chmod +x ./install_deps.sh && ./install_deps.sh
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y valgrind
+
+    - name: Install project dependencies
+      run: |
+        chmod +x ./install_deps.sh
+        ./install_deps.sh
 
     - name: Configure & Build
       run: |
         mkdir -p build
         cd build
-        cmake ..
+        cmake .. -DCMAKE_BUILD_TYPE=Debug
         make -j$(nproc)
 
     - name: Run Tests
       run: |
         export SPARK_REMOTE=sc://localhost
         cd build
-        ctest --output-on-failure
+        ctest --output-on-failure --verbose
+
+    - name: Run Valgrind Memcheck
+      run: |
+        export SPARK_REMOTE=sc://localhost
+        cd build
+        ctest --memcheck \
+              --output-on-failure \
+              --verbose
