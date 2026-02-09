@@ -195,6 +195,19 @@ ctest -R test_dataframe_writer --test-args --gtest_filter=SparkIntegrationTest.P
 ./test_<suite_name>
 ```
 
+### Mem Checks (Valgrind)
+
+```sh
+mkdir -p build && cd build
+
+cmake .. \
+  -DCMAKE_BUILD_TYPE=Debug \
+  -DCTEST_MEMORYCHECK_COMMAND=/usr/bin/valgrind \
+  -DCTEST_MEMORYCHECK_TYPE=Valgrind
+
+valgrind --leak-check=full ./test_dataframe
+```
+
 For detailed development setup instructions, see:
 
 * [Setup Guide](https://github.com/irfanghat/spark-connect-cpp/blob/main/docs/SETUP.md)
