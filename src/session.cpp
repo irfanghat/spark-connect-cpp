@@ -1,4 +1,5 @@
 #include <iostream>
+#include <grpcpp/grpcpp.h>
 
 #include "dataframe.h"
 #include "reader.h"
@@ -7,6 +8,33 @@
 
 #include <spark/connect/relations.pb.h>
 #include <spark/connect/commands.pb.h>
+
+/**
+ * @brief gRPC Metadata plugin to inject custom headers from the Spark Config
+ * into every request sent by the stub. This is essential for Databricks
+ * Authentication and cluster routing.
+ */
+class HeaderMetadataPlugin : public grpc::MetadataCredentialsPlugin
+{
+public:
+    explicit HeaderMetadataPlugin(const std::map<std::string, std::string> &headers)
+        : headers_(headers) {}
+
+    grpc::Status GetMetadata(grpc::string_ref service_url,
+                             grpc::string_ref method_name,
+                             const grpc::AuthContext &auth_context,
+                             std::multimap<grpc::string, grpc::string> *metadata) override
+    {
+        for (const auto &[key, value] : headers_)
+        {
+            metadata->insert(std::make_pair(key, value));
+        }
+        return grpc::Status::OK;
+    }
+
+private:
+    std::map<std::string, std::string> headers_;
+};
 
 SparkSession *SparkSession::instance_ = nullptr;
 std::once_flag SparkSession::once_flag_;
@@ -18,21 +46,46 @@ std::once_flag SparkSession::once_flag_;
 SparkSession::SparkSession(const Config &config)
     : config_(config)
 {
-    //--------------------------------------------------------
+    // --------------------------------------------------------
     // Build the gRPC channel and stub based on the config
-    //--------------------------------------------------------
+    // --------------------------------------------------------
     std::string target = config_.host + ":" + std::to_string(config_.port);
+    std::shared_ptr<grpc::ChannelCredentials> creds;
+
     if (config_.use_ssl)
     {
-        grpc::SslCredentialsOptions ssl_opts;
-        stub_ = spark::connect::SparkConnectService::NewStub(
-            grpc::CreateChannel(target, grpc::SslCredentials(ssl_opts)));
+        // ---------------------------------------
+        // For Databricks/Cloud, we enable SSL
+        // ---------------------------------------
+        auto ssl_creds = grpc::SslCredentials(grpc::SslCredentialsOptions());
+
+        if (!config_.headers.empty())
+        {
+            // ----------------------------------------------------------------------------
+            // If headers, such as Auth tokens exist, we create Composite Credentials
+            // ----------------------------------------------------------------------------
+            auto plugin = std::make_unique<HeaderMetadataPlugin>(config_.headers);
+            auto call_creds = grpc::MetadataCredentialsFromPlugin(std::move(plugin));
+            creds = grpc::CompositeChannelCredentials(ssl_creds, call_creds);
+        }
+        else
+        {
+            creds = ssl_creds;
+        }
     }
     else
     {
-        stub_ = spark::connect::SparkConnectService::NewStub(
-            grpc::CreateChannel(target, grpc::InsecureChannelCredentials()));
+        creds = grpc::InsecureChannelCredentials();
     }
+
+    // --------------------------------------------------------
+    // Apply Channel Arguments e.g. User Agent
+    // --------------------------------------------------------
+    grpc::ChannelArguments args;
+    args.SetString(GRPC_ARG_PRIMARY_USER_AGENT_STRING, config_.user_agent);
+
+    auto channel = grpc::CreateCustomChannel(target, creds, args);
+    stub_ = spark::connect::SparkConnectService::NewStub(channel);
 }
 
 /**
@@ -114,26 +167,26 @@ SparkSession SparkSession::newSession()
  */
 void SparkSession::stop()
 {
-    //------------------------------------------------
+    // ------------------------------------------------
     // Build the request to release the session.
-    //------------------------------------------------
+    // ------------------------------------------------
     spark::connect::ReleaseExecuteRequest request;
     request.set_session_id(config_.session_id);
 
-    //------------------------------------------------------
+    // ------------------------------------------------------
     // Create a new UserContext and set it in the request.
-    //------------------------------------------------------
+    // ------------------------------------------------------
     spark::connect::UserContext *user_context = request.mutable_user_context();
     user_context->set_user_id(config_.user_id);
 
-    //------------------------------------------------------
+    // ------------------------------------------------------
     // Set the release type to ReleaseAll.
-    //------------------------------------------------------
+    // ------------------------------------------------------
     request.mutable_release_all();
 
-    //------------------------------------------------------
+    // ------------------------------------------------------
     // Call the gRPC method and check the status.
-    //------------------------------------------------------
+    // ------------------------------------------------------
     grpc::ClientContext context;
     spark::connect::ReleaseExecuteResponse response;
     grpc::Status status = stub_->ReleaseExecute(&context, request, &response);

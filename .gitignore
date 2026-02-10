@@ -48,3 +48,6 @@
 /build/
 /*.pb.*
 Testing
+
+# Environment
+.env
