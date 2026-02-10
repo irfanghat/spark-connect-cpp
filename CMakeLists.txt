@@ -120,6 +120,14 @@ macro(add_spark_test TEST_NAME SOURCE_FILE)
         GTest::gtest_main
     )
     add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})
+    
+    # -------------------------------------------------------
+    # Automatically tag databricks tests as "integration"
+    # -------------------------------------------------------
+    if(${TEST_NAME} MATCHES "databricks")
+        set_tests_properties(${TEST_NAME} PROPERTIES LABELS "integration")
+    endif()
+
     set_tests_properties(${TEST_NAME}
     PROPERTIES
     ENVIRONMENT "GTEST_COLOR=1")
@@ -129,26 +137,18 @@ endmacro()
 # Test Suite Definitions
 ######################################################
 
-# ---------------------------------
-# DataFrame Tests
-# ---------------------------------
 add_spark_test(test_dataframe tests/dataframe.cpp)
-
-# ---------------------------------
-# Column Tests
-# ---------------------------------
 add_spark_test(test_dataframe_columns tests/dataframe_columns.cpp)
-
-# ---------------------------------
-# DataFrame Reader Tests
-# ---------------------------------
 add_spark_test(test_dataframe_reader tests/dataframe_reader.cpp)
+add_spark_test(test_dataframe_writer tests/dataframe_writer.cpp)
 
-# ---------------------------------
-# DataFrame Writer Tests
-# ---------------------------------
-add_spark_test(test_dataframe_writer tests/dataframe_writer.cpp
-)
+# -----------------------------------------------------------------------
+# The following tests will be labeled "integration" automatically
+# Since these specifically require an active Databricks connection,
+# we can conditionally exclude them.
+# -----------------------------------------------------------------------
+add_spark_test(test_traditional_databricks_cluster tests/traditional_databricks_cluster.cpp)
+add_spark_test(test_serverless_databricks_cluster tests/serverless_databricks_cluster.cpp)
 
 #########################################################################
 # Installation

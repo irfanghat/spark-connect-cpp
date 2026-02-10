@@ -2,7 +2,7 @@
 
 #include <string>
 #include <map>
-#include <uuid/uuid.h>
+#include <vector>
 
 class Config
 {
@@ -22,6 +22,20 @@ public:
     Config &setUserId(const std::string &u);
     Config &setUseSSL(bool ssl);
     Config &setHeader(const std::string &key, const std::string &value);
+
+    /**
+     * @brief This sets Databricks specific headers
+     * @param token Personal Access Token (PAT)
+     * @param cluster_id The cluster ID (e.g., 1234-567890-abc123)
+     */
+    Config &setDatabricksAuth(const std::string &token, const std::string &cluster_id);
+
+    /**
+     * @brief Sets Databricks Serverless specific headers
+     * @param token Personal Access Token (PAT)
+     * @param warehouse_id The SQL Warehouse ID (e.g., 12341a102456ee789)
+     */
+    Config &setServerlessAuth(const std::string &token, const std::string &warehouse_id);
 
 private:
     static std::string generate_uuid();
