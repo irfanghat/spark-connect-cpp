@@ -193,6 +193,11 @@ ctest -R test_dataframe_writer --test-args --gtest_filter=SparkIntegrationTest.P
 # Run Test Suite directly
 # --------------------------------
 ./test_<suite_name>
+
+# --------------------------------
+# Run Single Test Case directly - show output
+# --------------------------------
+./test_dataframe --gtest_filter=SparkIntegrationTest.DropDuplicates
 ```
 
 ### Mem Checks (Valgrind)

@@ -690,3 +690,40 @@ DataFrameWriter DataFrame::write()
 
     return DataFrameWriter(stub_, plan_.root(), config);
 }
+
+DataFrame DataFrame::dropDuplicates()
+{
+    return dropDuplicates({});
+}
+
+DataFrame DataFrame::dropDuplicates(const std::vector<std::string> &subset)
+{
+    spark::connect::Plan new_plan;
+
+    auto *relation = new_plan.mutable_root()->mutable_deduplicate();
+
+    if (this->plan_.has_root())
+    {
+        relation->mutable_input()->CopyFrom(this->plan_.root());
+    }
+
+    if (subset.empty()) {
+        relation->set_all_columns_as_keys(true); 
+    } else {
+        for (const auto &col_name : subset) {
+            relation->add_column_names(col_name);
+        }
+    }
+
+    return DataFrame(stub_, new_plan, session_id_, user_id_);
+}
+
+DataFrame DataFrame::drop_duplicates()
+{
+    return dropDuplicates();
+}
+
+DataFrame DataFrame::drop_duplicates(const std::vector<std::string> &subset)
+{
+    return dropDuplicates(subset);
+}

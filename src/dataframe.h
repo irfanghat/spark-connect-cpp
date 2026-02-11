@@ -131,6 +131,27 @@ public:
      */
     DataFrameWriter write();
 
+    /**
+     * @brief Returns a new DataFrame with duplicate rows removed - equivalent to distinct() function
+     */
+
+    DataFrame dropDuplicates();
+    /**
+     * @brief Returns a new DataFrame with duplicate rows removed,
+     *          considering only the given subset of columns - equivalent to distinct() function
+     */
+    DataFrame dropDuplicates(const std::vector<std::string>& subset);
+    
+    /**
+     * @brief Alias for dropDuplicates().
+     */
+    DataFrame drop_duplicates();
+
+    /**
+     * @brief Alias for dropDuplicates(subset).
+     */
+    DataFrame drop_duplicates(const std::vector<std::string>& subset);
+
 private:
     std::shared_ptr<spark::connect::SparkConnectService::Stub> stub_;
     spark::connect::Plan plan_;
