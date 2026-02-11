@@ -275,3 +275,27 @@ TEST_F(SparkIntegrationTest, WhereFilter)
     auto filtered_df = df.where("age < 25");
     filtered_df.show();
 }
+
+TEST_F(SparkIntegrationTest, DropDuplicates)
+{
+    // R - raw string literal.
+    auto df = spark->sql(R"(
+        SELECT *
+                FROM VALUES
+                    (14, 'Tom'),
+                    (14, 'Tom'),
+                    (14, 'Alice'),
+                    (14, 'Alice'),
+                    (14, 'Bob'),
+                    (14, 'Bob'),
+                    (15, 'Tom'),
+                    (15, 'John')
+                AS people(age, name)
+    )");
+
+    auto deduped = df.dropDuplicates();
+    deduped.show();
+
+    auto subset_deduped = df.dropDuplicates({"age"});
+    subset_deduped.show();
+}
