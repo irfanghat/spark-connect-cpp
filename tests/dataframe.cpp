@@ -288,7 +288,8 @@ TEST_F(SparkIntegrationTest, DropDuplicates)
                     (14, 'Alice'),
                     (14, 'Bob'),
                     (14, 'Bob'),
-                    (15, 'Tom')
+                    (15, 'Tom'),
+                    (15, 'John')
                 AS people(age, name)
     )");
 
