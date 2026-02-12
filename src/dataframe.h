@@ -156,6 +156,26 @@ public:
 
     /**
      * @brief Returns all the records as a list of `Row`
+     * @example
+     * SparkSession spark(...);
+     * auto df = spark.read()
+     *                  .option("header", "true");
+     *                  .option("inferSchema", "true");
+     *                  .csv("datasets/people.csv");
+     * 
+     * auto rows = df.collect();
+     * 
+     * for (auto &row : rows) {
+     *  std::cout << row << std::endl;
+     * }
+     * 
+     * // ------------------------------------------
+     * // Output:
+     * // Row(name='John', age=25, salary=100000)
+     * // Row(name='Alice', age=30, salary=85000)
+     * // ...
+     * // ------------------------------------------
+     * @returns A list of rows.
      */
     std::vector<spark::sql::types::Row> collect();
 
