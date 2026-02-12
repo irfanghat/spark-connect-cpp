@@ -549,6 +549,12 @@ std::vector<spark::sql::types::Row> DataFrame::head(int n)
     return take(n);
 }
 
+std::optional<spark::sql::types::Row> DataFrame::first()
+{
+    auto rows = take(1);
+    return rows.empty() ? std::nullopt : std::make_optional(rows[0]);
+}
+
 int64_t DataFrame::count()
 {
     // -----------------------------------------------------

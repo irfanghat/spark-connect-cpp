@@ -117,6 +117,11 @@ public:
     std::vector<spark::sql::types::Row> head(int n);
 
     /**
+     * @brief Returns the first row.
+     */
+    std::optional<spark::sql::types::Row> first();
+
+    /**
      * @brief Returns a new DataFrame by taking the first n rows.
      */
     DataFrame limit(int n);
@@ -162,13 +167,13 @@ public:
      *                  .option("header", "true");
      *                  .option("inferSchema", "true");
      *                  .csv("datasets/people.csv");
-     * 
+     *
      * auto rows = df.collect();
-     * 
+     *
      * for (auto &row : rows) {
      *  std::cout << row << std::endl;
      * }
-     * 
+     *
      * // ------------------------------------------
      * // Output:
      * // Row(name='John', age=25, salary=100000)
