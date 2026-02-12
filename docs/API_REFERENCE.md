@@ -250,6 +250,20 @@ auto rows = df.head(1);
 Row(a=1, b='Alice')
 ```
 
+### First
+
+```cpp
+auto df = spark->sql("SELECT 1 AS a, 'Alice' AS b");
+
+auto rows = df.head(1);
+```
+
+**Output:**
+
+```
+Row(a=1, b='Alice')
+```
+
 ### Executing SQL
 
 ```cpp
