@@ -8,6 +8,8 @@
 #include <arrow/api.h>
 #include <arrow/ipc/api.h>
 #include <arrow/io/memory.h>
+#include <arrow/ipc/reader.h>
+#include <arrow/table.h>
 
 #include <grpcpp/grpcpp.h>
 #include <spark/connect/base.grpc.pb.h>
@@ -441,12 +443,12 @@ void DataFrame::printSchema() const
 
 DataFrame DataFrame::select(const std::vector<std::string> &cols)
 {
-    spark::connect::Plan new_plan;
+    spark::connect::Plan plan;
 
     // ---------------------------------------------------------------------
     // Use the pointer to the root to ensure we are copying the content
     // ---------------------------------------------------------------------
-    auto *project = new_plan.mutable_root()->mutable_project();
+    auto *project = plan.mutable_root()->mutable_project();
 
     // ---------------------------------------------------------------------
     // Copy the entire relation tree from the previous plan
@@ -462,16 +464,16 @@ DataFrame DataFrame::select(const std::vector<std::string> &cols)
         expr->mutable_unresolved_attribute()->set_unparsed_identifier(col_name);
     }
 
-    return DataFrame(stub_, new_plan, session_id_, user_id_);
+    return DataFrame(stub_, plan, session_id_, user_id_);
 }
 
 DataFrame DataFrame::limit(int n)
 {
-    spark::connect::Plan new_plan;
-    auto *limit_rel = new_plan.mutable_root()->mutable_limit();
+    spark::connect::Plan plan;
+    auto *limit_rel = plan.mutable_root()->mutable_limit();
     *limit_rel->mutable_input() = this->plan_.root();
     limit_rel->set_limit(n);
-    return DataFrame(stub_, new_plan, session_id_, user_id_);
+    return DataFrame(stub_, plan, session_id_, user_id_);
 }
 
 std::vector<spark::sql::types::Row> DataFrame::take(int n)
@@ -698,24 +700,28 @@ DataFrame DataFrame::dropDuplicates()
 
 DataFrame DataFrame::dropDuplicates(const std::vector<std::string> &subset)
 {
-    spark::connect::Plan new_plan;
+    spark::connect::Plan plan;
 
-    auto *relation = new_plan.mutable_root()->mutable_deduplicate();
+    auto *relation = plan.mutable_root()->mutable_deduplicate();
 
     if (this->plan_.has_root())
     {
         relation->mutable_input()->CopyFrom(this->plan_.root());
     }
 
-    if (subset.empty()) {
-        relation->set_all_columns_as_keys(true); 
-    } else {
-        for (const auto &col_name : subset) {
+    if (subset.empty())
+    {
+        relation->set_all_columns_as_keys(true);
+    }
+    else
+    {
+        for (const auto &col_name : subset)
+        {
             relation->add_column_names(col_name);
         }
     }
 
-    return DataFrame(stub_, new_plan, session_id_, user_id_);
+    return DataFrame(stub_, plan, session_id_, user_id_);
 }
 
 DataFrame DataFrame::drop_duplicates()
@@ -726,4 +732,73 @@ DataFrame DataFrame::drop_duplicates()
 DataFrame DataFrame::drop_duplicates(const std::vector<std::string> &subset)
 {
     return dropDuplicates(subset);
+}
+
+std::vector<spark::sql::types::Row> DataFrame::collect()
+{
+    std::vector<spark::sql::types::Row> results;
+
+    spark::connect::ExecutePlanRequest request;
+    request.set_session_id(session_id_);
+    request.mutable_user_context()->set_user_id(user_id_);
+    *request.mutable_plan() = plan_;
+
+    grpc::ClientContext context;
+    auto stream = stub_->ExecutePlan(&context, request);
+
+    spark::connect::ExecutePlanResponse response;
+    std::vector<std::string> col_names;
+    bool schema_initialized = false;
+
+    while (stream->Read(&response))
+    {
+        if (response.has_arrow_batch())
+        {
+            const auto &batch_proto = response.arrow_batch();
+
+            auto buffer = std::make_shared<arrow::Buffer>(
+                reinterpret_cast<const uint8_t *>(batch_proto.data().data()),
+                batch_proto.data().size());
+            arrow::io::BufferReader buffer_reader(buffer);
+
+            auto reader_result = arrow::ipc::RecordBatchStreamReader::Open(&buffer_reader);
+            if (!reader_result.ok())
+                continue;
+            auto reader = reader_result.ValueOrDie();
+
+            std::shared_ptr<arrow::RecordBatch> batch;
+            while (reader->ReadNext(&batch).ok() && batch)
+            {
+                if (!schema_initialized)
+                {
+                    for (int i = 0; i < batch->num_columns(); ++i)
+                    {
+                        col_names.push_back(batch->column_name(i));
+                    }
+                    schema_initialized = true;
+                }
+
+                for (int64_t i = 0; i < batch->num_rows(); ++i)
+                {
+                    spark::sql::types::Row row;
+                    row.column_names = col_names;
+
+                    for (int j = 0; j < batch->num_columns(); ++j)
+                    {
+                        row.values.push_back(
+                            spark::sql::types::arrayValueToVariant(batch->column(j), i));
+                    }
+                    results.push_back(std::move(row));
+                }
+            }
+        }
+    }
+
+    auto status = stream->Finish();
+    if (!status.ok())
+    {
+        throw std::runtime_error("gRPC Error during collect: " + status.error_message());
+    }
+
+    return results;
 }

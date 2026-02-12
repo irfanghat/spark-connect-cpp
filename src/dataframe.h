@@ -1,7 +1,9 @@
 #pragma once
 
-#include <string>
 #include <memory>
+#include <string>
+#include <vector>
+
 #include <spark/connect/base.grpc.pb.h>
 #include <spark/connect/relations.pb.h>
 
@@ -132,25 +134,50 @@ public:
     DataFrameWriter write();
 
     /**
-     * @brief Returns a new DataFrame with duplicate rows removed - equivalent to distinct() function
+     * @brief Returns a new DataFrame with duplicate rows removed - equivalent to `distinct()` function
      */
 
     DataFrame dropDuplicates();
     /**
      * @brief Returns a new DataFrame with duplicate rows removed,
-     *          considering only the given subset of columns - equivalent to distinct() function
+     *          considering only the given subset of columns - equivalent to `distinct()` function
      */
-    DataFrame dropDuplicates(const std::vector<std::string>& subset);
-    
+    DataFrame dropDuplicates(const std::vector<std::string> &subset);
+
     /**
-     * @brief Alias for dropDuplicates().
+     * @brief Alias for `dropDuplicates()`.
      */
     DataFrame drop_duplicates();
 
     /**
-     * @brief Alias for dropDuplicates(subset).
+     * @brief Alias for `dropDuplicates(subset)`.
      */
-    DataFrame drop_duplicates(const std::vector<std::string>& subset);
+    DataFrame drop_duplicates(const std::vector<std::string> &subset);
+
+    /**
+     * @brief Returns all the records as a list of `Row`
+     * @example
+     * SparkSession spark(...);
+     * auto df = spark.read()
+     *                  .option("header", "true");
+     *                  .option("inferSchema", "true");
+     *                  .csv("datasets/people.csv");
+     * 
+     * auto rows = df.collect();
+     * 
+     * for (auto &row : rows) {
+     *  std::cout << row << std::endl;
+     * }
+     * 
+     * // ------------------------------------------
+     * // Output:
+     * // Row(name='John', age=25, salary=100000)
+     * // Row(name='Alice', age=30, salary=85000)
+     * // ...
+     * // ------------------------------------------
+     * @returns A list of rows.
+     */
+    std::vector<spark::sql::types::Row> collect();
 
 private:
     std::shared_ptr<spark::connect::SparkConnectService::Stub> stub_;

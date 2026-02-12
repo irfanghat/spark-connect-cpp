@@ -69,7 +69,7 @@ TEST_F(SparkIntegrationTest, DatabricksNycTaxiAnalysis)
         "GROUP BY pickup_zip "
         "ORDER BY total_trips DESC");
 
-    df.show(10);
+    df.show(20);
 
     ASSERT_GT(df.count(), 0) << "The taxi dataset should not be empty.";
 }

@@ -122,10 +122,10 @@ macro(add_spark_test TEST_NAME SOURCE_FILE)
     add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})
     
     # -------------------------------------------------------
-    # Automatically tag databricks tests as "integration"
+    # Automatically tag databricks tests as "dbrx"
     # -------------------------------------------------------
     if(${TEST_NAME} MATCHES "databricks")
-        set_tests_properties(${TEST_NAME} PROPERTIES LABELS "integration")
+        set_tests_properties(${TEST_NAME} PROPERTIES LABELS "dbrx")
     endif()
 
     set_tests_properties(${TEST_NAME}
@@ -143,7 +143,7 @@ add_spark_test(test_dataframe_reader tests/dataframe_reader.cpp)
 add_spark_test(test_dataframe_writer tests/dataframe_writer.cpp)
 
 # -----------------------------------------------------------------------
-# The following tests will be labeled "integration" automatically
+# The following tests will be labeled "dbrx" automatically
 # Since these specifically require an active Databricks connection,
 # we can conditionally exclude them.
 # -----------------------------------------------------------------------
