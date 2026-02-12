@@ -273,12 +273,12 @@ TEST_F(SparkIntegrationTest, WhereFilter)
                   .csv("datasets/people.csv");
 
     auto filtered_df = df.where("age < 25");
-    filtered_df.show();
+    EXPECT_NO_THROW(filtered_df.show());
+    EXPECT_LT(filtered_df.count(), df.count());
 }
 
 TEST_F(SparkIntegrationTest, DropDuplicates)
 {
-    // R - raw string literal.
     auto df = spark->sql(R"(
         SELECT *
                 FROM VALUES
@@ -296,6 +296,48 @@ TEST_F(SparkIntegrationTest, DropDuplicates)
     auto deduped = df.dropDuplicates();
     deduped.show();
 
+    EXPECT_EQ(deduped.count(), 5);
+
     auto subset_deduped = df.dropDuplicates({"age"});
     subset_deduped.show();
+
+    EXPECT_EQ(subset_deduped.count(), 2);
+}
+
+TEST_F(SparkIntegrationTest, DataFrameCollect)
+{
+    auto df = spark->read()
+                  .option("header", "true")
+                  .option("inferSchema", "true")
+                  .csv("datasets/people.csv");
+
+    auto rows = df.collect();
+
+    EXPECT_EQ(df.count(), rows.size());
+
+    // --------------------------------------------
+    // Check the first row: e.g., "John", 25
+    // Refer to: /datasets/people.csv
+    //
+    // Sample: Row(name='John', age=25, salary=100000)
+    // --------------------------------------------
+    EXPECT_EQ(std::get<std::string>(rows[0]["name"]), "John");
+    EXPECT_EQ(rows[0].get_long("age"), 25);
+
+    // --------------------------------------------
+    // Check the second row: e.g., "Andy", 30
+    // Refer to: /datasets/people.csv
+    //
+    // Sample: Row(name='Alice', age=30, salary=85000)
+    // --------------------------------------------
+    EXPECT_EQ(std::get<std::string>(rows[1]["name"]), "Alice");
+    EXPECT_EQ(rows[1].get_long("age"), 30);
+
+    EXPECT_EQ(rows[0].column_names[0], "name");
+    EXPECT_EQ(rows[0].column_names[1], "age");
+    EXPECT_EQ(rows[0].column_names[2], "salary");
+
+    auto cols = df.columns();
+    EXPECT_EQ(cols.size(), 3);
+    EXPECT_STREQ(cols[0].c_str(), "name");
 }
