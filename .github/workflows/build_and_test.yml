@@ -57,4 +57,4 @@ jobs:
       run: |
         export SPARK_REMOTE=sc://localhost
         cd build
-        ctest -LE integration --output-on-failure
+        ctest -LE dbrx --output-on-failure
