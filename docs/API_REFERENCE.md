@@ -603,3 +603,35 @@ Row(name='Alice', age=30, salary=85000)
 ...
 
 ```
+
+### Distinct
+
+```cpp
+auto df = spark->sql(
+    R"(
+    SELECT * FROM
+    VALUES 
+        (1, "John"),
+        (1, "John"),
+        (2, "Sam"),
+        (2, "Bob"),
+        (3, "Anne")
+    AS people(id, name)
+)");
+
+auto distinct_df = df.distinct();
+distinct_df.show();
+```
+
+**Output:**
+
+```
++----------------------+----------------------+
+| id                   | name                 |
++----------------------+----------------------+
+| 1                    | John                 |
+| 2                    | Sam                  |
+| 2                    | Bob                  |
+| 3                    | Anne                 |
++----------------------+----------------------+
+```

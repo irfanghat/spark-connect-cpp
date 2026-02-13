@@ -184,6 +184,11 @@ public:
      */
     std::vector<spark::sql::types::Row> collect();
 
+    /**
+     * @brief Returns a new `DataFrame` containing the distinct rows.
+     */
+    DataFrame distinct();
+
 private:
     std::shared_ptr<spark::connect::SparkConnectService::Stub> stub_;
     spark::connect::Plan plan_;

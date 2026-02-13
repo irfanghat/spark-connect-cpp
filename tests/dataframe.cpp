@@ -354,3 +354,36 @@ TEST_F(SparkIntegrationTest, DataFrameCollect)
     EXPECT_EQ(cols.size(), 3);
     EXPECT_STREQ(cols[0].c_str(), "name");
 }
+
+TEST_F(SparkIntegrationTest, DataFrameDistinct)
+{
+    auto df = spark->sql(
+        R"(
+        SELECT * FROM
+        VALUES 
+            (1, "John"),
+            (1, "John"),
+            (2, "Sam"),
+            (2, "Bob"),
+            (3, "Anne")
+        AS people(id, name)
+    )");
+
+    auto distinct_df = df.distinct();
+
+    EXPECT_NO_THROW(distinct_df.show());
+    EXPECT_GT(df.count(), distinct_df.count());
+    EXPECT_EQ(distinct_df.count(), 4);
+
+    auto rows = distinct_df.collect();
+    std::set<std::string> unique_rows;
+
+    for (const auto &row : rows)
+    {
+        std::string row_str = std::get<std::string>(row["name"]) + std::to_string(row.get_long("id"));
+        unique_rows.insert(row_str);
+    }
+
+    EXPECT_EQ(unique_rows.size(), rows.size());
+    EXPECT_EQ(rows.size(), 4);
+}
