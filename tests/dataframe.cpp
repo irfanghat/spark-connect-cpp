@@ -215,6 +215,19 @@ TEST_F(SparkIntegrationTest, Head)
     EXPECT_EQ(val_b, "Alice");
 }
 
+TEST_F(SparkIntegrationTest, First)
+{
+    auto df = spark->read()
+                  .option("header", "true")
+                  .option("inferSchema", "true")
+                  .csv("datasets/people.csv");
+
+    auto row = df.first();
+
+    ASSERT_TRUE(row.has_value());
+    EXPECT_EQ(row->get<std::string>("name"), "John");
+}
+
 TEST_F(SparkIntegrationTest, DataFrameCount)
 {
     auto df = spark->range(1000);
