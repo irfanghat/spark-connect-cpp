@@ -371,6 +371,7 @@ TEST_F(SparkIntegrationTest, DataFrameDistinct)
 
     auto distinct_df = df.distinct();
 
+    EXPECT_NO_THROW(distinct_df.show());
     EXPECT_GT(df.count(), distinct_df.count());
     EXPECT_EQ(distinct_df.count(), 4);
 
