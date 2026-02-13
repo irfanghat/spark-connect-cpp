@@ -560,8 +560,8 @@ int64_t DataFrame::count()
     // -----------------------------------------------------
     // Initialize the Plan and the Aggregate Relation
     // -----------------------------------------------------
-    spark::connect::Plan count_plan;
-    auto *aggregate = count_plan.mutable_root()->mutable_aggregate();
+    spark::connect::Plan plan;
+    auto *aggregate = plan.mutable_root()->mutable_aggregate();
 
     // -------------------------------------------------------------------------------
     // We explicitly set the Group Type to GROUP_TYPE_GROUPBY.
@@ -602,7 +602,7 @@ int64_t DataFrame::count()
     ExecutePlanRequest request;
     request.set_session_id(session_id_);
     request.mutable_user_context()->set_user_id(user_id_);
-    *request.mutable_plan() = count_plan;
+    *request.mutable_plan() = plan;
 
     grpc::ClientContext context;
     auto reader = stub_->ExecutePlan(&context, request);
@@ -807,4 +807,17 @@ std::vector<spark::sql::types::Row> DataFrame::collect()
     }
 
     return results;
+}
+
+DataFrame DataFrame::distinct()
+{
+    spark::connect::Plan plan;
+
+    auto *deduplicate = plan.mutable_root()->mutable_deduplicate();
+
+    deduplicate->mutable_input()->CopyFrom(this->plan_.root());
+
+    deduplicate->set_all_columns_as_keys(true);
+
+    return DataFrame(stub_, plan, session_id_, user_id_);
 }
