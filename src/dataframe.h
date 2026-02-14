@@ -189,6 +189,28 @@ public:
      */
     DataFrame distinct();
 
+    /**
+     * @brief Computes basic statistics for numeric and string columns.
+     * @note This function is meant for exploratory data analysis, as we make no
+     * guarantee about the backward compatibility of the schema of the resulting `DataFrame`.
+     * Use `summary` for expanded statistics and control over which statistics to compute.
+     * @param cols Column name or list of column names to describe by (default All columns).
+     * @example
+     * df.describe({"age"}).show();
+     *
+     *  +-------+----+
+     *  |summary| age|
+     *  +-------+----+
+     *  |  count|   3|
+     *  |   mean|12.0|
+     *  | stddev| 1.0|
+     *  |    min|  11|
+     *  |    max|  13|
+     *  +-------+----+
+     * @returns A new DataFrame that describes (provides statistics) given DataFrame.
+     */
+    DataFrame describe(const std::vector<std::string> &cols);
+
 private:
     std::shared_ptr<spark::connect::SparkConnectService::Stub> stub_;
     spark::connect::Plan plan_;

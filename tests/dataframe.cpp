@@ -387,3 +387,24 @@ TEST_F(SparkIntegrationTest, DataFrameDistinct)
     EXPECT_EQ(unique_rows.size(), rows.size());
     EXPECT_EQ(rows.size(), 4);
 }
+
+TEST_F(SparkIntegrationTest, DataFrameDescribe)
+{
+    auto df = spark->sql(
+        R"(
+            SELECT * 
+            FROM
+            VALUES
+                ("Bob", 13, 40.3, 150.5), 
+                ("Alice", 12, 37.8, 142.3), 
+                ("Tom", 11, 44.1, 142.2)
+            AS people(name, age, weight, height)
+        )");
+
+    auto df_stats = df.describe({"age", "weight", "height"}).collect();
+
+    EXPECT_EQ(std::get<std::string>(df_stats[0]["summary"]), "count");
+    EXPECT_EQ(std::get<std::string>(df_stats[1]["summary"]), "mean");
+
+    EXPECT_EQ(std::get<std::string>(df_stats[1]["age"]), "12.0");
+}
