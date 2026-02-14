@@ -821,3 +821,18 @@ DataFrame DataFrame::distinct()
 
     return DataFrame(stub_, plan, session_id_, user_id_);
 }
+
+DataFrame DataFrame::describe(const std::vector<std::string> &cols)
+{
+    spark::connect::Plan plan;
+
+    auto *relation = plan.mutable_root()->mutable_describe();
+    relation->mutable_input()->CopyFrom(this->plan_.root());
+
+    for (const auto &col : cols)
+    {
+        relation->add_cols(col);
+    }
+
+    return DataFrame(stub_, plan, session_id_, user_id_);
+}
