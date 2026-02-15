@@ -200,9 +200,43 @@ namespace spark::sql::types
          * @brief Strict access. This fails if the type doesn't match exactly.
          */
         template <typename T>
-        const T &get(const std::string &name) const
+        T get(const std::string &name) const
         {
-            return std::get<T>(values.at(col_index(name)));
+            const auto &val = values.at(col_index(name));
+
+            return std::visit([](auto &&arg) -> T
+                              {
+        using ArgType = std::decay_t<decltype(arg)>;
+        
+        // ---------------------------------
+        // Handle exact Type Match
+        // ---------------------------------
+        if constexpr (std::is_same_v<T, ArgType>) {
+            return arg;
+        } 
+
+        // -------------------------------------------------
+        // Null Handling 
+        // std::monostate to "null"
+        // -------------------------------------------------
+        else if constexpr (std::is_same_v<T, std::string> && std::is_same_v<ArgType, std::monostate>) {
+            return "null";
+        }
+
+        // --------------------------------------------------------------------
+        // Widening / Numeric Conversion
+        // This supports get<double> on int32_t columns
+        // --------------------------------------------------------------------
+        else if constexpr (std::is_arithmetic_v<T> && std::is_arithmetic_v<ArgType>) {
+            return static_cast<T>(arg);
+        }
+
+        // -----------------------------------------------
+        // Failure State
+        // -----------------------------------------------
+        else {
+            throw std::runtime_error("Row::get Type Mismatch: requested type does not match variant state.");
+        } }, val);
         }
 
         /**
@@ -211,13 +245,18 @@ namespace spark::sql::types
          */
         int64_t get_long(const std::string &name) const
         {
+            const auto &val = (*this)[name];
+            if (std::holds_alternative<std::monostate>(val))
+            {
+                throw std::runtime_error("Column " + name + " is null");
+            }
             return std::visit([](auto &&arg) -> int64_t
                               {
-                using T = std::decay_t<decltype(arg)>;
-                if constexpr (std::is_integral_v<T> && !std::is_same_v<T, bool>) {
-                    return static_cast<int64_t>(arg);
-                }
-                throw std::runtime_error("Column is not a numeric integral type"); }, (*this)[name]);
+        using T = std::decay_t<decltype(arg)>;
+        if constexpr (std::is_integral_v<T> && !std::is_same_v<T, bool>) {
+            return static_cast<int64_t>(arg);
+        }
+        throw std::runtime_error("Column is not a numeric integral type"); }, val);
         }
 
         /**

@@ -405,6 +405,72 @@ TEST_F(SparkIntegrationTest, DataFrameDescribe)
 
     EXPECT_EQ(std::get<std::string>(df_stats[0]["summary"]), "count");
     EXPECT_EQ(std::get<std::string>(df_stats[1]["summary"]), "mean");
+    EXPECT_EQ(std::get<std::string>(df_stats[2]["summary"]), "stddev");
+    EXPECT_EQ(std::get<std::string>(df_stats[3]["summary"]), "min");
+    EXPECT_EQ(std::get<std::string>(df_stats[4]["summary"]), "max");
 
+    EXPECT_EQ(std::get<std::string>(df_stats[0]["age"]), "3");
     EXPECT_EQ(std::get<std::string>(df_stats[1]["age"]), "12.0");
+    EXPECT_EQ(std::get<std::string>(df_stats[2]["age"]), "1.0");
+    EXPECT_EQ(std::get<std::string>(df_stats[3]["age"]), "11");
+    EXPECT_EQ(std::get<std::string>(df_stats[4]["age"]), "13");
+
+    EXPECT_EQ(std::get<std::string>(df_stats[0]["weight"]), "3");
+    EXPECT_EQ(std::get<std::string>(df_stats[1]["weight"]), "40.73333");
+    EXPECT_EQ(std::get<std::string>(df_stats[2]["weight"]), "3.1722757341273704");
+    EXPECT_EQ(std::get<std::string>(df_stats[3]["weight"]), "37.8");
+    EXPECT_EQ(std::get<std::string>(df_stats[4]["weight"]), "44.1");
+
+    EXPECT_EQ(std::get<std::string>(df_stats[0]["height"]), "3");
+    EXPECT_EQ(std::get<std::string>(df_stats[1]["height"]), "145.00000");
+    EXPECT_EQ(std::get<std::string>(df_stats[2]["height"]), "4.763402145525822");
+    EXPECT_EQ(std::get<std::string>(df_stats[3]["height"]), "142.2");
+    EXPECT_EQ(std::get<std::string>(df_stats[4]["height"]), "150.5");
+}
+
+TEST_F(SparkIntegrationTest, DataFrameSummary)
+{
+    auto df = spark->sql(
+        R"(
+            SELECT * 
+            FROM
+            VALUES
+                ("Bob", 13, 40.3, 150.5), 
+                ("Alice", 12, 37.8, 142.3), 
+                ("Tom", 11, 44.1, 142.2)
+            AS people(name, age, weight, height)
+        )");
+
+    auto df_stats = df.summary().collect();
+
+    // ----------------------------------------------------------------------
+    // ROWS returned:
+    //
+    // Row(summary='count', name='3', age='3', weight='3', height='3')
+    // Row(summary='mean', name=null, age='12.0', weight='40.73333', height='145.00000')
+    // Row(summary='stddev', name=null, age='1.0', weight='3.1722757341273704', height='4.763402145525822')
+    // Row(summary='min', name='Alice', age='11', weight='37.8', height='142.2')
+    // Row(summary='25%', name=null, age='11', weight='37.8', height='142.2')
+    // Row(summary='50%', name=null, age='12', weight='40.3', height='142.3')
+    // Row(summary='75%', name=null, age='13', weight='44.1', height='150.5')
+    // Row(summary='max', name='Tom', age='13', weight='44.1', height='150.5')
+    // ----------------------------------------------------------------------
+
+    EXPECT_EQ(df_stats[0].get<std::string>("summary"), "count");
+    EXPECT_EQ(df_stats[1].get<std::string>("summary"), "mean");
+    EXPECT_EQ(df_stats[2].get<std::string>("summary"), "stddev");
+    EXPECT_EQ(df_stats[3].get<std::string>("summary"), "min");
+    EXPECT_EQ(df_stats[4].get<std::string>("summary"), "25%");
+    EXPECT_EQ(df_stats[5].get<std::string>("summary"), "50%");
+    EXPECT_EQ(df_stats[6].get<std::string>("summary"), "75%");
+    EXPECT_EQ(df_stats[7].get<std::string>("summary"), "max");
+
+    EXPECT_EQ(df_stats[0].get<std::string>("name"), "3");
+    EXPECT_EQ(df_stats[1].get<std::string>("name"), "null");
+    EXPECT_EQ(df_stats[2].get<std::string>("name"), "null");
+    EXPECT_EQ(df_stats[3].get<std::string>("name"), "Alice");
+    EXPECT_EQ(df_stats[4].get<std::string>("name"), "null");
+    EXPECT_EQ(df_stats[5].get<std::string>("name"), "null");
+    EXPECT_EQ(df_stats[6].get<std::string>("name"), "null");
+    EXPECT_EQ(df_stats[7].get<std::string>("name"), "Tom");
 }
