@@ -211,6 +211,39 @@ public:
      */
     DataFrame describe(const std::vector<std::string> &cols);
 
+    /**
+     * @brief Computes specified statistics for numeric and string columns.
+     * Available statistics are:
+     * - count
+     *
+     * - mean
+     *
+     * - stddev
+     *
+     * - min
+     *
+     * - max
+     *
+     * - arbitrary approximate percentiles specified as a percentage (e.g., 75%)
+     *
+     * If no statistics are given, this function computes count, mean, stddev, min,
+     * approximate quartiles (percentiles at 25%, 50%, and 75%), and max.
+     *
+     * @note This function is meant for exploratory data analysis, as we make no
+     * guarantee about the backward compatibility of the schema of
+     * the resulting `DataFrame`.
+     *
+     * @param statistics Column names to calculate statistics by (default All columns).
+     * @returns A new `DataFrame` that provides statistics for the given `DataFrame`.
+     */
+    DataFrame summary(const std::vector<std::string> &statistics);
+
+    /**
+     * @brief Overload for empty summary() which computes the default
+     * set of statistics (count, mean, stddev, min, 25%, 50%, 75%, max).
+     */
+    DataFrame summary();
+
 private:
     std::shared_ptr<spark::connect::SparkConnectService::Stub> stub_;
     spark::connect::Plan plan_;

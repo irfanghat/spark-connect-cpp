@@ -836,3 +836,24 @@ DataFrame DataFrame::describe(const std::vector<std::string> &cols)
 
     return DataFrame(stub_, plan, session_id_, user_id_);
 }
+
+DataFrame DataFrame::summary(const std::vector<std::string> &statistics)
+{
+    spark::connect::Plan plan;
+
+    auto *summary_rel = plan.mutable_root()->mutable_summary();
+
+    summary_rel->mutable_input()->CopyFrom(this->plan_.root());
+
+    for (const auto &stat : statistics)
+    {
+        summary_rel->add_statistics(stat);
+    }
+
+    return DataFrame(stub_, plan, session_id_, user_id_);
+}
+
+DataFrame DataFrame::summary()
+{
+    return summary({});
+}
