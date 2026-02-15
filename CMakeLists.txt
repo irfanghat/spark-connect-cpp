@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
-project(spark_connect_cpp VERSION 1.0.0 LANGUAGES CXX)
+project(spark_connect_cpp VERSION 0.0.1 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -165,3 +165,23 @@ install(DIRECTORY ${GEN_DIR}/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/spark_conn
 
 configure_file(spark_connect_cpp.pc.in spark_connect_cpp.pc @ONLY)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/spark_connect_cpp.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
+
+#########################################################################
+# CPack (Debian Packaging)
+#########################################################################
+set(CPACK_GENERATOR "DEB")
+set(CPACK_PACKAGE_NAME "spark-connect-cpp")
+set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Spark Connect C++ Client Library")
+set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
+set(CPACK_PACKAGE_CONTACT "Irfan M. Ghat <irfanghat@gmail.com>")
+set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Irfan M. Ghat")
+set(CPACK_DEBIAN_PACKAGE_SECTION "libs")
+set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
+
+set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "libarrow-dev, libgrpc++-dev, libprotobuf-dev, libgoogle-glog-dev")
+#########################################################################
+
+include(CPack)
