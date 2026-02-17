@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
-project(spark_connect_cpp VERSION 1.0.0 LANGUAGES CXX)
+project(spark_connect_cpp VERSION 0.0.1 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -81,7 +81,8 @@ add_custom_target(proto DEPENDS ${PROTO_GENERATED_FILES})
 file(GLOB_RECURSE LIB_SOURCES "src/*.cpp")
 list(FILTER LIB_SOURCES EXCLUDE REGEX "src/main.cpp")
 
-add_library(spark_connect_cpp SHARED ${LIB_SOURCES} ${PROTO_GENERATED_FILES})
+add_library(spark_connect_cpp STATIC ${LIB_SOURCES} ${PROTO_GENERATED_FILES})
+# add_library(spark_connect_cpp SHARED ${LIB_SOURCES} ${PROTO_GENERATED_FILES})
 
 target_include_directories(spark_connect_cpp PUBLIC 
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
@@ -128,9 +129,7 @@ macro(add_spark_test TEST_NAME SOURCE_FILE)
         set_tests_properties(${TEST_NAME} PROPERTIES LABELS "dbrx")
     endif()
 
-    set_tests_properties(${TEST_NAME}
-    PROPERTIES
-    ENVIRONMENT "GTEST_COLOR=1")
+    set_tests_properties(${TEST_NAME} PROPERTIES ENVIRONMENT "GTEST_COLOR=1")
 endmacro()
 
 ######################################################
@@ -165,3 +164,15 @@ install(DIRECTORY ${GEN_DIR}/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/spark_conn
 
 configure_file(spark_connect_cpp.pc.in spark_connect_cpp.pc @ONLY)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/spark_connect_cpp.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
+
+#########################################################################
+# CPack
+#########################################################################
+set(CPACK_GENERATOR "TGZ")
+set(CPACK_PACKAGE_NAME "spark-connect-cpp")
+set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Spark Connect C++ Static Library")
+set(CPACK_PACKAGE_VENDOR "Irfan M. Ghat")
+set(CPACK_PACKAGE_FILE_NAME "spark-connect-cpp-${PROJECT_VERSION}-linux-amd64")
+
+include(CPack)
