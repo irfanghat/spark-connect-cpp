@@ -81,7 +81,8 @@ add_custom_target(proto DEPENDS ${PROTO_GENERATED_FILES})
 file(GLOB_RECURSE LIB_SOURCES "src/*.cpp")
 list(FILTER LIB_SOURCES EXCLUDE REGEX "src/main.cpp")
 
-add_library(spark_connect_cpp SHARED ${LIB_SOURCES} ${PROTO_GENERATED_FILES})
+add_library(spark_connect_cpp STATIC ${LIB_SOURCES} ${PROTO_GENERATED_FILES})
+# add_library(spark_connect_cpp SHARED ${LIB_SOURCES} ${PROTO_GENERATED_FILES})
 
 target_include_directories(spark_connect_cpp PUBLIC 
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
@@ -128,9 +129,7 @@ macro(add_spark_test TEST_NAME SOURCE_FILE)
         set_tests_properties(${TEST_NAME} PROPERTIES LABELS "dbrx")
     endif()
 
-    set_tests_properties(${TEST_NAME}
-    PROPERTIES
-    ENVIRONMENT "GTEST_COLOR=1")
+    set_tests_properties(${TEST_NAME} PROPERTIES ENVIRONMENT "GTEST_COLOR=1")
 endmacro()
 
 ######################################################
@@ -167,21 +166,13 @@ configure_file(spark_connect_cpp.pc.in spark_connect_cpp.pc @ONLY)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/spark_connect_cpp.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
 
 #########################################################################
-# CPack (Debian Packaging)
+# CPack
 #########################################################################
-set(CPACK_GENERATOR "DEB")
+set(CPACK_GENERATOR "TGZ")
 set(CPACK_PACKAGE_NAME "spark-connect-cpp")
 set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Spark Connect C++ Client Library")
-set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
-set(CPACK_PACKAGE_CONTACT "Irfan M. Ghat <irfanghat@gmail.com>")
-set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Irfan M. Ghat")
-set(CPACK_DEBIAN_PACKAGE_SECTION "libs")
-set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
-
-set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
-
-set(CPACK_DEBIAN_PACKAGE_DEPENDS "libarrow-dev, libgrpc++-dev, libprotobuf-dev, libgoogle-glog-dev")
-#########################################################################
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Spark Connect C++ Static Library")
+set(CPACK_PACKAGE_VENDOR "Irfan M. Ghat")
+set(CPACK_PACKAGE_FILE_NAME "spark-connect-cpp-${PROJECT_VERSION}-linux-amd64")
 
 include(CPack)
