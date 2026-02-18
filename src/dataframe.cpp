@@ -744,7 +744,7 @@ std::vector<spark::sql::types::Row> DataFrame::collect()
 {
     std::vector<spark::sql::types::Row> results;
 
-    spark::connect::ExecutePlanRequest request;
+    ExecutePlanRequest request;
     request.set_session_id(session_id_);
     request.mutable_user_context()->set_user_id(user_id_);
     *request.mutable_plan() = plan_;
@@ -752,7 +752,7 @@ std::vector<spark::sql::types::Row> DataFrame::collect()
     grpc::ClientContext context;
     auto stream = stub_->ExecutePlan(&context, request);
 
-    spark::connect::ExecutePlanResponse response;
+    ExecutePlanResponse response;
     std::vector<std::string> col_names;
     bool schema_initialized = false;
 
