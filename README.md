@@ -200,7 +200,7 @@ ctest -R test_dataframe_writer --test-args --gtest_filter=SparkIntegrationTest.P
 ./test_dataframe --gtest_filter=SparkIntegrationTest.DropDuplicates
 ```
 
-### Mem Checks (Valgrind)
+### 3. Mem Checks (Valgrind)
 
 ```sh
 mkdir -p build && cd build
@@ -211,6 +211,112 @@ cmake .. \
   -DCTEST_MEMORYCHECK_TYPE=Valgrind
 
 valgrind --leak-check=full ./test_dataframe
+```
+
+### 4. Installation & Usage
+
+```sh
+mkdir -p build && cd build
+cmake ..
+make -j$(nproc)
+cpack
+```
+
+This generates a **compressed archive** under the **build** directory. 
+
+```
+CPack: Create package using TGZ
+CPack: Install projects
+CPack: - Run preinstall target for: spark_connect_cpp
+CPack: - Install project: spark_connect_cpp []
+CPack: Create package
+CPack: - package: /home/user/spark-connect-cpp/build/spark-connect-cpp-0.0.1-linux-amd64.tar.gz generated.
+```
+
+Extract the contents of the archive:
+
+```sh
+tar -xzf spark-connect-cpp-0.0.1-linux-amd64.tar.gz
+```
+
+You can verify the contents by running:
+
+```sh
+ls -F spark-connect-cpp-0.0.1-linux-amd64
+```
+
+Copy contents to global path:
+
+```sh
+sudo cp -r ~/spark-connect-cpp/build/spark-connect-cpp-0.0.1-linux-amd64/include/spark_connect_cpp /usr/local/include/
+sudo cp ~/spark-connect-cpp/build/spark-connect-cpp-0.0.1-linux-amd64/lib/libspark_connect_cpp.a /usr/local/lib/
+sudo cp ~/spark-connect-cpp/build/spark-connect-cpp-0.0.1-linux-amd64/lib/pkgconfig/spark_connect_cpp.pc /usr/local/lib/pkgconfig
+```
+
+Verify that the contents were copied successfully:
+
+```sh
+ls /usr/local/lib/pkgconfig
+```
+
+Update the Shared Library Cache:
+
+```sh
+sudo ldconfig
+```
+
+Verify Spark Connect C++ is accessible globally:
+
+```sh
+pkg-config --exists spark_connect_cpp && echo "Library is global" || echo "Library not found"
+```
+
+Running a sample application:
+
+```cpp
+#include <spark_connect_cpp/session.h>
+
+int main()
+{
+    auto spark = &SparkSession::builder()
+                     .master("localhost")
+                     .appName("demo")
+                     .getOrCreate();
+
+    auto df = spark->sql(
+        R"(
+            SELECT *
+            FROM VALUES
+                ('Tom', 21),
+                ('Alice', NULL),
+                ('Sharon', 32)
+            AS people(name, age)
+        )"
+    );
+    df.show();
+}
+```
+
+Compile the sample application:
+
+```sh
+g++ src/main.cpp $(pkg-config --cflags --libs spark_connect_cpp) -o spark_app
+```
+
+Run the sample application:
+
+```sh
+./spark_app
+```
+
+**Output:**
+
+```
++----------------------+
+| id                   |
++----------------------+
+| 1                    |
++----------------------+
 ```
 
 For detailed development setup instructions, see:
