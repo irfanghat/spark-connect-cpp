@@ -244,6 +244,73 @@ public:
      */
     DataFrame summary();
 
+    /**
+     * @brief Performs an inner join with another DataFrame on all columns with matching names.
+     * 
+     * This function automatically finds all columns that exist in both DataFrames
+     * and performs an inner join on them. If there are no common columns,
+     * an exception is thrown.
+     * 
+     * @param other The right side of the join.
+     * @return A new DataFrame representing the inner join on common columns.
+     * @throws std::invalid_argument if there are no common columns to join on.
+     */
+    DataFrame join(const DataFrame &other) const;
+
+    /**
+     * @brief Joins this DataFrame with another DataFrame using a join column name.
+     *
+     * Performs an equi-join using the specified column. The column must exist
+     * in both DataFrames.
+     *
+     * @param other The right side of the join.
+     * @param on Column name to join on.
+     * @param how Type of join. Default is "inner".
+     *
+     * Must be one of:
+     * "inner", "cross",
+     * "outer", "full", "fullouter", "full_outer",
+     * "left", "leftouter", "left_outer",
+     * "right", "rightouter", "right_outer",
+     * "semi", "leftsemi", "left_semi",
+     * "anti", "leftanti", "left_anti".
+     *
+     * @return A new DataFrame representing the joined result.
+     */
+    DataFrame join(const DataFrame& other,
+                   const std::string& on,
+                   const std::string& how = "inner");
+
+    /**
+     * @brief Joins this DataFrame with another DataFrame using multiple column names.
+     * 
+     * Performs an equi-join using the specified list of columns.
+     * All columns must exist in bboth DataFrames.
+     * 
+     * @param other The right side of the join.
+     * @param on List of colum names to join on.
+     * @param how Type of join. Default is "inner".
+     * 
+     * @return A new DataFrame representing the joined result.
+     */
+
+     DataFrame join(const DataFrame& other,
+                    const std::vector<std::string>& on,
+                    const std::string& how = "inner");
+    
+    /**
+     * @brief Joins this DataFrame with another DataFrame using a SQL expression.
+     *
+     * @param other The right side of the join.
+     * @param condition SQL join expression (e.g., "df1.id = df2.id").
+     * @param how Type of join. Default is "inner".
+     *
+     * @return A new DataFrame representing the joined result.
+     */
+    DataFrame join_on_expression(const DataFrame& other,
+                   const std::string& condition,
+                   const std::string& how);
+
 private:
     std::shared_ptr<spark::connect::SparkConnectService::Stub> stub_;
     spark::connect::Plan plan_;
