@@ -474,3 +474,198 @@ TEST_F(SparkIntegrationTest, DataFrameSummary)
     EXPECT_EQ(df_stats[6].get<std::string>("name"), "null");
     EXPECT_EQ(df_stats[7].get<std::string>("name"), "Tom");
 }
+TEST_F(SparkIntegrationTest, DefaultInnerJoinOnCommonColumns)
+{
+    // Create first DataFrame
+    auto df1 = spark->sql(R"(
+        SELECT * FROM VALUES
+            ('Alice', 2),
+            ('Bob', 5),
+            ('Charlie', 7)
+        AS people(name, age)
+    )");
+
+    // Create second DataFrame
+    auto df2 = spark->sql(R"(
+        SELECT * FROM VALUES
+            ('Tom', 80),
+            ('Bob', 85),
+            ('Alice', 78)
+        AS people(name, height)
+    )");
+
+    auto joined = df1.join(df2);
+
+    joined.show();
+
+    auto rows = joined.head(100);
+
+    EXPECT_EQ(rows.size(), 2);
+
+    std::set<std::string> names;
+    for (const auto &row : rows)
+        names.insert(row.get<std::string>("name"));
+
+    EXPECT_TRUE(names.count("Alice") == 1);
+    EXPECT_TRUE(names.count("Bob") == 1);
+}
+
+TEST_F(SparkIntegrationTest, InnerJoinSingleColumn)
+{
+    auto df1 = spark->sql(R"(
+        SELECT * FROM VALUES
+            ('Alice', 2),
+            ('Bob', 5),
+            ('Charlie', 7)
+        AS people(name, age)
+    )");
+
+    auto df2 = spark->sql(R"(
+        SELECT * FROM VALUES
+            ('Tom', 80),
+            ('Bob', 85),
+            ('Alice', 78)
+        AS people(name, height)
+    )");
+
+    auto joined = df1.join(df2, "name", "inner");
+    joined.show();
+
+    auto rows = joined.collect();
+    EXPECT_EQ(rows.size(), 2);
+}
+
+TEST_F(SparkIntegrationTest, LeftOuterJoinSingleColumn)
+{
+    auto df1 = spark->sql(R"(
+        SELECT * FROM VALUES
+            ('Alice', 2),
+            ('Bob', 5),
+            ('Charlie', 7)
+        AS people(name, age)
+    )");
+
+    auto df2 = spark->sql(R"(
+        SELECT * FROM VALUES
+            ('Tom', 80),
+            ('Bob', 85),
+            ('Alice', 78)
+        AS people(name, height)
+    )");
+
+    auto joined = df1.join(df2, "name", "left_outer");
+    joined.show();
+
+    auto rows = joined.collect();
+    EXPECT_EQ(rows.size(), 3);
+}
+
+TEST_F(SparkIntegrationTest, MultiColumnInnerJoin)
+{
+    auto df1 = spark->sql(R"(
+        SELECT * FROM VALUES
+            ('Alice', 2),
+            ('Bob', 5),
+            ('Charlie', 7)
+        AS people(name, age)
+    )");
+
+    auto df3 = spark->sql(R"(
+        SELECT * FROM VALUES
+            ('Alice', 10, 80),
+            ('Bob', 5, NULL),
+            ('Tom', NULL, 80),
+            (NULL, NULL, NULL)
+        AS people(name, age, height)
+    )");
+
+    auto joined = df1.join(df3, std::vector<std::string>{"name", "age"}, "inner");
+    joined.show();
+
+    auto rows = joined.collect();
+    EXPECT_EQ(rows.size(), 1);
+    EXPECT_EQ(rows[0].get<std::string>("name"), "Bob");
+    EXPECT_EQ(rows[0].get<int>("age"), 5);
+}
+
+TEST_F(SparkIntegrationTest, MultiColumnOuterJoin)
+{
+    auto df1 = spark->sql(R"(
+        SELECT * FROM VALUES
+            ('Alice', 2),
+            ('Bob', 5),
+            ('Charlie', 7)
+        AS people(name, age)
+    )");
+
+    auto df3 = spark->sql(R"(
+        SELECT * FROM VALUES
+            ('Alice', 10, 80),
+            ('Bob', 5, NULL),
+            ('Tom', NULL, 80),
+            (NULL, NULL, NULL)
+        AS people(name, age, height)
+    )");
+
+    auto joined = df1.join(df3, std::vector<std::string>{"name","age"}, "outer");
+    joined.show();
+
+    auto rows = joined.collect();
+    EXPECT_EQ(rows.size(), 6);
+}
+
+TEST_F(SparkIntegrationTest, JoinOnExpressionInner)
+{
+    auto df1 = spark->sql(R"(
+        SELECT * FROM VALUES
+            (1, 'Alice'),
+            (2, 'Bob')
+        AS people(id, name)
+    )");
+
+    auto df2 = spark->sql(R"(
+        SELECT * FROM VALUES
+            (1, 100),
+            (2, 200),
+            (3, 300)
+        AS orders(custid, amount)
+    )");
+
+    auto joined = df1.join_on_expression(
+        df2,
+        "id = custid",
+        "inner"
+    );
+
+    joined.show();
+
+    auto rows = joined.collect();
+    EXPECT_EQ(rows.size(), 2);
+}
+TEST_F(SparkIntegrationTest, JoinOnExpressionOuter)
+{
+    auto df1 = spark->sql(R"(
+        SELECT * FROM VALUES
+            (1, 'Alice'),
+            (2, 'Bob')
+        AS people(id, name)
+    )");
+
+    auto df2 = spark->sql(R"(
+        SELECT * FROM VALUES
+            (1, 100),
+            (2, 200),
+            (3, 300)
+        AS orders(custid, amount)
+    )");
+    auto joined = df1.join_on_expression(
+        df2,
+        "id = custid",
+        "outer"
+    );
+
+    joined.show();
+
+    auto rows = joined.collect();
+    EXPECT_EQ(rows.size(), 3);
+}
