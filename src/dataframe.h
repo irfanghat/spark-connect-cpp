@@ -274,12 +274,12 @@ public:
      * @param how Type of join. Default is "inner".
      *
      * Must be one of:
-     * "inner", "cross",
-     * "outer", "full", "fullouter", "full_outer",
-     * "left", "leftouter", "left_outer",
-     * "right", "rightouter", "right_outer",
-     * "semi", "leftsemi", "left_semi",
-     * "anti", "leftanti", "left_anti".
+     * `"inner"`, `"cross"`,
+     * `"outer"`, `"full"`, `"fullouter"`, `"full_outer"`,
+     * `"left"`, `"leftouter"`, `"left_outer"`,
+     * `"right"`, `"rightouter"`, `"right_outer"`,
+     * `"semi"`, `"leftsemi"`, `"left_semi"`,
+     * `"anti"`, `"leftanti"`, `"left_anti"`.
      *
      * @return A new DataFrame representing the joined result.
      */
