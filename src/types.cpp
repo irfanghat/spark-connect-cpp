@@ -3,6 +3,7 @@
 #include <algorithm>
 #include "types.h"
 
+#include <spark/connect/expressions.pb.h>
 #include <spark/connect/types.pb.h>
 #include <arrow/array.h>
 
@@ -412,5 +413,54 @@ namespace spark::sql::types
         }
         os << ")";
         return os;
+    }
+
+    Column::Column(std::string name) : expr(std::make_shared<spark::connect::Expression>())
+    {
+        expr->mutable_unresolved_attribute()->set_unparsed_identifier(name);
+    }
+
+    Column::Column(spark::connect::Expression e) : expr(std::make_shared<spark::connect::Expression>(std::move(e))) {}
+
+    /**
+     * @brief Helper to build Spark's UnresolvedFunction calls
+     */
+    static Column build_binary_op(const std::string &op, const Column &l, const Column &r)
+    {
+        spark::connect::Expression e;
+        auto *func = e.mutable_unresolved_function();
+        func->set_function_name(op);
+        *func->add_arguments() = *l.expr;
+        *func->add_arguments() = *r.expr;
+        return Column(std::move(e));
+    }
+
+    Column Column::operator+(const Column &other) const { return build_binary_op("+", *this, other); }
+    Column Column::operator==(const Column &other) const { return build_binary_op("==", *this, other); }
+    Column Column::operator>(const Column &other) const { return build_binary_op(">", *this, other); }
+
+    Column Column::alias(const std::string &name) const
+    {
+        spark::connect::Expression e;
+        auto *a = e.mutable_alias();
+        *a->mutable_expr() = *this->expr;
+        a->add_name(name);
+        return Column(std::move(e));
+    }
+
+    Column col(const std::string &name) { return Column(name); }
+
+    Column lit(int32_t value)
+    {
+        spark::connect::Expression e;
+        e.mutable_literal()->set_integer(value);
+        return Column(std::move(e));
+    }
+
+    Column lit(const std::string &value)
+    {
+        spark::connect::Expression e;
+        e.mutable_literal()->set_string(value);
+        return Column(std::move(e));
     }
 }

@@ -97,6 +97,12 @@ public:
     DataFrame filter(const std::string &condition);
 
     /**
+     * @brief Filters rows using a Column expression.
+     * @param condition Column expression (e.g., col("age") > lit(21))
+     */
+    DataFrame filter(const spark::sql::types::Column &condition);
+
+    /**
      * @brief Alias for filter().
      */
     DataFrame where(const std::string &condition);
@@ -246,11 +252,11 @@ public:
 
     /**
      * @brief Performs an inner join with another DataFrame on all columns with matching names.
-     * 
+     *
      * This function automatically finds all columns that exist in both DataFrames
      * and performs an inner join on them. If there are no common columns,
      * an exception is thrown.
-     * 
+     *
      * @param other The right side of the join.
      * @return A new DataFrame representing the inner join on common columns.
      * @throws std::invalid_argument if there are no common columns to join on.
@@ -277,27 +283,27 @@ public:
      *
      * @return A new DataFrame representing the joined result.
      */
-    DataFrame join(const DataFrame& other,
-                   const std::string& on,
-                   const std::string& how = "inner");
+    DataFrame join(const DataFrame &other,
+                   const std::string &on,
+                   const std::string &how = "inner");
 
     /**
      * @brief Joins this DataFrame with another DataFrame using multiple column names.
-     * 
+     *
      * Performs an equi-join using the specified list of columns.
      * All columns must exist in bboth DataFrames.
-     * 
+     *
      * @param other The right side of the join.
      * @param on List of colum names to join on.
      * @param how Type of join. Default is "inner".
-     * 
+     *
      * @return A new DataFrame representing the joined result.
      */
 
-     DataFrame join(const DataFrame& other,
-                    const std::vector<std::string>& on,
-                    const std::string& how = "inner");
-    
+    DataFrame join(const DataFrame &other,
+                   const std::vector<std::string> &on,
+                   const std::string &how = "inner");
+
     /**
      * @brief Joins this DataFrame with another DataFrame using a SQL expression.
      *
@@ -307,9 +313,9 @@ public:
      *
      * @return A new DataFrame representing the joined result.
      */
-    DataFrame join_on_expression(const DataFrame& other,
-                   const std::string& condition,
-                   const std::string& how);
+    DataFrame join_on_expression(const DataFrame &other,
+                                 const std::string &condition,
+                                 const std::string &how);
 
 private:
     std::shared_ptr<spark::connect::SparkConnectService::Stub> stub_;

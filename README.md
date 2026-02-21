@@ -210,7 +210,7 @@ cmake .. \
   -DCTEST_MEMORYCHECK_COMMAND=/usr/bin/valgrind \
   -DCTEST_MEMORYCHECK_TYPE=Valgrind
 
-valgrind --leak-check=full ./test_dataframe
+valgrind --leak-check=full --show-leak-kinds=all ./test_dataframe
 ```
 
 ### 4. Installation & Usage
