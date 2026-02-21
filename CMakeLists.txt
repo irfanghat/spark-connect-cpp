@@ -140,6 +140,7 @@ add_spark_test(test_dataframe tests/dataframe.cpp)
 add_spark_test(test_dataframe_columns tests/dataframe_columns.cpp)
 add_spark_test(test_dataframe_reader tests/dataframe_reader.cpp)
 add_spark_test(test_dataframe_writer tests/dataframe_writer.cpp)
+add_spark_test(test_expressions tests/expressions.cpp)
 
 # -----------------------------------------------------------------------
 # The following tests will be labeled "dbrx" automatically

@@ -16,7 +16,7 @@
 #include <grpcpp/grpcpp.h>
 #include <spark/connect/base.grpc.pb.h>
 #include <spark/connect/commands.pb.h>
-#include <google/protobuf/wrappers.pb.h> 
+#include <google/protobuf/wrappers.pb.h>
 
 #include "dataframe.h"
 #include "types.h"
@@ -688,6 +688,30 @@ DataFrame DataFrame::filter(const std::string &condition)
     return DataFrame(stub_, plan, session_id_, user_id_);
 }
 
+DataFrame DataFrame::filter(const spark::sql::types::Column &condition)
+{
+    Plan plan;
+    auto *filter_rel = plan.mutable_root()->mutable_filter();
+
+    if (this->plan_.has_root())
+    {
+        filter_rel->mutable_input()->CopyFrom(this->plan_.root());
+    }
+
+    auto *condition_expr = filter_rel->mutable_condition();
+
+    if (condition.expr)
+    {
+        condition_expr->CopyFrom(*condition.expr);
+    }
+    else
+    {
+        throw std::runtime_error("Filter condition contains a null expression.");
+    }
+
+    return DataFrame(stub_, plan, session_id_, user_id_);
+}
+
 DataFrame DataFrame::where(const std::string &condition)
 {
     return filter(condition);
@@ -871,12 +895,13 @@ DataFrame DataFrame::join(const DataFrame &other) const
     if (other.plan_.has_root())
         join->mutable_right()->CopyFrom(other.plan_.root());
 
-    // Set join type to INNER
     join->set_join_type(spark::connect::Join::JOIN_TYPE_INNER);
 
+    // -------------------------------
     // Collect common column names
+    // -------------------------------
     std::vector<std::string> common_cols;
-    const auto& other_cols = other.columns();
+    const auto &other_cols = other.columns();
     for (const auto &col : this->columns())
     {
         if (std::find(other_cols.begin(), other_cols.end(), col) != other_cols.end())
@@ -892,136 +917,164 @@ DataFrame DataFrame::join(const DataFrame &other) const
     return DataFrame(stub_, plan, session_id_, user_id_);
 }
 
-DataFrame DataFrame::join(const DataFrame& other, const std::string& on, const std::string& how)
+DataFrame DataFrame::join(const DataFrame &other, const std::string &on, const std::string &how)
 {
     spark::connect::Plan plan;
 
     auto *join = plan.mutable_root()->mutable_join();
 
+    // -----------------------------------------------
     // Set left input(this DataFrame)
-    if(this->plan_.has_root())
+    // -----------------------------------------------
+    if (this->plan_.has_root())
     {
         join->mutable_left()->CopyFrom(this->plan_.root());
     }
 
+    // ----------------------------------------------
     // Set right input(other DataFrame)
-    if(other.plan_.has_root())
+    // ----------------------------------------------
+    if (other.plan_.has_root())
     {
         join->mutable_right()->CopyFrom(other.plan_.root());
     }
 
+    // ----------------------------------------------
     // Normalize the join type
+    // ----------------------------------------------
     std::string join_type = how;
-    // using <algorithm> to transform and <cctype> for tolower
+
+    // ---------------------------------------------------------------
+    // Using <algorithm> to transform and <cctype> for tolower
+    // ---------------------------------------------------------------
     std::transform(join_type.begin(), join_type.end(), join_type.begin(),
-                    [](unsigned char c) { return std::tolower(c); });
+                   [](unsigned char c)
+                   { return std::tolower(c); });
 
     spark::connect::Join::JoinType type;
 
-    if(join_type == "inner")
+    if (join_type == "inner")
         type = spark::connect::Join::JOIN_TYPE_INNER;
-    else if(join_type == "cross")
+    else if (join_type == "cross")
         type = spark::connect::Join::JOIN_TYPE_CROSS;
-    else if(join_type == "outer" || join_type == "full" || join_type == "full_outer" || join_type == "fullouter")
+    else if (join_type == "outer" || join_type == "full" || join_type == "full_outer" || join_type == "fullouter")
         type = spark::connect::Join::JOIN_TYPE_FULL_OUTER;
-    else if(join_type == "left" || join_type == "left_outer" || join_type == "leftouter")
+    else if (join_type == "left" || join_type == "left_outer" || join_type == "leftouter")
         type = spark::connect::Join::JOIN_TYPE_LEFT_OUTER;
-    else if(join_type == "right" || join_type == "right_outer" || join_type == "rightouter")
+    else if (join_type == "right" || join_type == "right_outer" || join_type == "rightouter")
         type = spark::connect::Join::JOIN_TYPE_RIGHT_OUTER;
-    else if(join_type == "semi" || join_type == "left_semi" || join_type == "leftsemi")
+    else if (join_type == "semi" || join_type == "left_semi" || join_type == "leftsemi")
         type = spark::connect::Join::JOIN_TYPE_LEFT_SEMI;
-    else if(join_type == "anti" || join_type == "left_anti" || join_type == "leftanti")
+    else if (join_type == "anti" || join_type == "left_anti" || join_type == "leftanti")
         type = spark::connect::Join::JOIN_TYPE_LEFT_ANTI;
     else
         throw std::invalid_argument("Unsupported join type: " + how);
-    
+
     join->set_join_type(type);
 
+    // ---------------------------------------------
     // Add join column (USING-style equi join)
+    // ---------------------------------------------
     join->add_using_columns(on);
 
     return DataFrame(stub_, plan, session_id_, user_id_);
 }
 
-DataFrame DataFrame::join(const DataFrame& other, const std::vector<std::string>& on, const std::string& how)
+DataFrame DataFrame::join(const DataFrame &other, const std::vector<std::string> &on, const std::string &how)
 {
     spark::connect::Plan plan;
 
     auto *join = plan.mutable_root()->mutable_join();
 
-    if(this->plan_.has_root())
+    if (this->plan_.has_root())
     {
         join->mutable_left()->CopyFrom(this->plan_.root());
     }
 
-    if(other.plan_.has_root())
+    if (other.plan_.has_root())
     {
         join->mutable_right()->CopyFrom(other.plan_.root());
     }
 
-     // Normalize the join type
+    // --------------------------------------
+    // Normalize the join type
+    // --------------------------------------
     std::string join_type = how;
     std::transform(join_type.begin(), join_type.end(), join_type.begin(),
-                    [](unsigned char c) { return std::tolower(c); });
-    
+                   [](unsigned char c)
+                   { return std::tolower(c); });
+
     spark::connect::Join::JoinType type;
 
-    if(join_type == "inner")
+    if (join_type == "inner")
         type = spark::connect::Join::JOIN_TYPE_INNER;
-    else if(join_type == "cross")
+    else if (join_type == "cross")
         type = spark::connect::Join::JOIN_TYPE_CROSS;
-    else if(join_type == "outer" || join_type == "full" || join_type == "full_outer" || join_type == "fullouter")
+    else if (join_type == "outer" || join_type == "full" || join_type == "full_outer" || join_type == "fullouter")
         type = spark::connect::Join::JOIN_TYPE_FULL_OUTER;
-    else if(join_type == "left" || join_type == "left_outer" || join_type == "leftouter")
+    else if (join_type == "left" || join_type == "left_outer" || join_type == "leftouter")
         type = spark::connect::Join::JOIN_TYPE_LEFT_OUTER;
-    else if(join_type == "right" || join_type == "right_outer" || join_type == "rightouter")
+    else if (join_type == "right" || join_type == "right_outer" || join_type == "rightouter")
         type = spark::connect::Join::JOIN_TYPE_RIGHT_OUTER;
-    else if(join_type == "semi" || join_type == "left_semi" || join_type == "leftsemi")
+    else if (join_type == "semi" || join_type == "left_semi" || join_type == "leftsemi")
         type = spark::connect::Join::JOIN_TYPE_LEFT_SEMI;
-    else if(join_type == "anti" || join_type == "left_anti" || join_type == "leftanti")
+    else if (join_type == "anti" || join_type == "left_anti" || join_type == "leftanti")
         type = spark::connect::Join::JOIN_TYPE_LEFT_ANTI;
     else
         throw std::invalid_argument("Unsupported join type: " + how);
 
     join->set_join_type(type);
 
-    // add using columns
-    if(on.empty())
+    // ----------------------------
+    // Add using columns
+    // ----------------------------
+    if (on.empty())
         throw std::invalid_argument("Join columns list cannot be empty.");
 
-    for(const auto& col: on)
+    for (const auto &col : on)
         join->add_using_columns(col);
-    
+
     return DataFrame(stub_, plan, session_id_, user_id_);
 }
 
-
-// is_expression allows the compiler to distinguish the expression-based join from the column-name join
-DataFrame DataFrame::join_on_expression(const DataFrame& other,
-                                        const std::string& condition,
-                                        const std::string& how)
+/**
+ * @brief `is_expression` allows the compiler to distinguish the `expression-based` join from the `column-name` join
+ */
+DataFrame DataFrame::join_on_expression(const DataFrame &other,
+                                        const std::string &condition,
+                                        const std::string &how)
 {
-    if (condition.empty()) {
+    if (condition.empty())
+    {
         throw std::invalid_argument("Join condition cannot be empty.");
     }
 
     spark::connect::Plan plan;
-    auto* join = plan.mutable_root()->mutable_join();
+    auto *join = plan.mutable_root()->mutable_join();
 
+    // -----------------------------------------
     // Set left input (this DataFrame)
-    if (this->plan_.has_root()) {
+    // -----------------------------------------
+    if (this->plan_.has_root())
+    {
         join->mutable_left()->CopyFrom(this->plan_.root());
     }
 
+    // -----------------------------------------
     // Set right input (other DataFrame)
-    if (other.plan_.has_root()) {
+    // -----------------------------------------
+    if (other.plan_.has_root())
+    {
         join->mutable_right()->CopyFrom(other.plan_.root());
     }
 
+    // -----------------------------------------
     // Normalize the join type
+    // -----------------------------------------
     std::string join_type = how;
     std::transform(join_type.begin(), join_type.end(), join_type.begin(),
-                   [](unsigned char c) { return std::tolower(c); });
+                   [](unsigned char c)
+                   { return std::tolower(c); });
 
     spark::connect::Join::JoinType type;
     if (join_type == "inner")
@@ -1043,9 +1096,9 @@ DataFrame DataFrame::join_on_expression(const DataFrame& other,
 
     join->set_join_type(type);
 
-    auto* join_expr = join->mutable_join_condition();
+    auto *join_expr = join->mutable_join_condition();
 
-    auto* expression_string = join_expr->mutable_expression_string();
+    auto *expression_string = join_expr->mutable_expression_string();
     expression_string->set_expression(condition);
 
     return DataFrame(stub_, plan, session_id_, user_id_);
