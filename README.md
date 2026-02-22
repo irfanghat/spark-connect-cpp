@@ -213,7 +213,38 @@ cmake .. \
 valgrind --leak-check=full --show-leak-kinds=all ./test_dataframe
 ```
 
-### 4. Installation & Usage
+### 4. Code Coverage
+This project uses **gcovr** for coverage reporting.
+
+`gcovr` analyzes which parts of the compiled code were executed during the test suite execution.
+
+#### Installation:
+
+```sh
+sudo apt update
+sudo apt install -y gcovr
+```
+
+#### Generate Coverage:
+
+```sh
+cmake -S . -B build -DENABLE_COVERAGE=ON
+cmake --build build -j
+
+gcovr -r src \
+      --object-directory build \
+      --exclude '.*\.pb\.cc' \
+      --exclude '.*\.grpc\.pb\.cc' \
+      --exclude '.*\.h' \
+      --html-details coverage.html \
+      --html-theme green \
+      --print-summary \
+      --fail-under-line 70
+```
+
+This will generate a coverage report in HTML format.
+
+### 5. Installation & Usage
 
 ```sh
 mkdir -p build && cd build

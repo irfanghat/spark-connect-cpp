@@ -55,7 +55,7 @@ jobs:
           cd build
           ctest -LE dbrx --output-on-failure
 
-      - name: Generate Coverage (XML + HTML)
+      - name: Generate Coverage (XML & HTML)
         run: |
           gcovr -r src \
             --object-directory build \
