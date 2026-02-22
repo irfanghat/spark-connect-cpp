@@ -701,3 +701,258 @@ df.summary().show();
 | max                  | Tom                  | 13                   | 44.1                 | 150.5                |
 +----------------------+----------------------+----------------------+----------------------+----------------------+
 ```
+
+## Relations (Joins)
+
+### Default Inner Join on Common Columns
+
+```cpp
+auto df1 = spark->sql(R"(
+    SELECT * FROM VALUES
+        ('Alice', 2),
+        ('Bob', 5),
+        ('Charlie', 7)
+    AS people(name, age)
+)");
+
+auto df2 = spark->sql(R"(
+    SELECT * FROM VALUES
+        ('Tom', 80),
+        ('Bob', 85),
+        ('Alice', 78)
+    AS people(name, height)
+)");
+
+auto joined = df1.join(df2);
+
+joined.show();
+```
+
+**Output:**
+
+```
++----------------------+----------------------+----------------------+
+| name                 | age                  | height               |
++----------------------+----------------------+----------------------+
+| Alice                | 2                    | 78                   |
+| Bob                  | 5                    | 85                   |
++----------------------+----------------------+----------------------+
+```
+
+### Inner Join on Single Column
+
+```cpp
+auto df1 = spark->sql(R"(
+    SELECT * FROM VALUES
+        ('Alice', 2),
+        ('Bob', 5),
+        ('Charlie', 7)
+    AS people(name, age)
+)");
+
+auto df2 = spark->sql(R"(
+    SELECT * FROM VALUES
+        ('Tom', 80),
+        ('Bob', 85),
+        ('Alice', 78)
+    AS people(name, height)
+)");
+
+auto joined = df1.join(df2, "name", "inner");
+joined.show();
+```
+
+**Output:**
+
+```
++----------------------+----------------------+----------------------+
+| name                 | age                  | height               |
++----------------------+----------------------+----------------------+
+| Alice                | 2                    | 78                   |
+| Bob                  | 5                    | 85                   |
++----------------------+----------------------+----------------------+
+```
+
+### Left Outer Join on Single Column
+
+```cpp
+auto df1 = spark->sql(R"(
+    SELECT * FROM VALUES
+        ('Alice', 2),
+        ('Bob', 5),
+        ('Charlie', 7)
+    AS people(name, age)
+)");
+
+auto df2 = spark->sql(R"(
+    SELECT * FROM VALUES
+        ('Tom', 80),
+        ('Bob', 85),
+        ('Alice', 78)
+    AS people(name, height)
+)");
+
+auto joined = df1.join(df2, "name", "left_outer");
+joined.show();
+```
+
+**Output:**
+
+```
++----------------------+----------------------+----------------------+
+| name                 | age                  | height               |
++----------------------+----------------------+----------------------+
+| Alice                | 2                    | 78                   |
+| Bob                  | 5                    | 85                   |
+| Charlie              | 7                    | null                 |
++----------------------+----------------------+----------------------+
+```
+
+### Multi Column Inner Join
+
+```cpp
+auto df1 = spark->sql(R"(
+    SELECT * FROM VALUES
+        ('Alice', 2),
+        ('Bob', 5),
+        ('Charlie', 7)
+    AS people(name, age)
+)");
+
+auto df2 = spark->sql(R"(
+    SELECT * FROM VALUES
+        ('Alice', 10, 80),
+        ('Bob', 5, NULL),
+        ('Tom', NULL, 80),
+        (NULL, NULL, NULL)
+    AS people(name, age, height)
+)");
+
+std::vector<std::string> columns = {"name", "age"};
+auto joined = df1.join(df2, columns, "inner");
+joined.show();
+```
+
+**Output:**
+
+```
++----------------------+----------------------+----------------------+
+| name                 | age                  | height               |
++----------------------+----------------------+----------------------+
+| Bob                  | 5                    | null                 |
++----------------------+----------------------+----------------------+
+```
+
+### Multi Column Outer Join
+
+```cpp
+auto df1 = spark->sql(R"(
+    SELECT * FROM VALUES
+        ('Alice', 2),
+        ('Bob', 5),
+        ('Charlie', 7)
+    AS people(name, age)
+)");
+
+auto df2 = spark->sql(R"(
+    SELECT * FROM VALUES
+        ('Alice', 10, 80),
+        ('Bob', 5, NULL),
+        ('Tom', NULL, 80),
+        (NULL, NULL, NULL)
+    AS people(name, age, height)
+)");
+
+std::vector<std::string> columns = {"name", "age"};
+auto joined = df1.join(df2, columns, "outer");
+joined.show();
+```
+
+**Output:**
+
+```
++----------------------+----------------------+----------------------+
+| name                 | age                  | height               |
++----------------------+----------------------+----------------------+
+| null                 | null                 | null                 |
+| Alice                | 2                    | null                 |
+| Alice                | 10                   | 80                   |
+| Bob                  | 5                    | null                 |
+| Tom                  | null                 | 80                   |
+| Charlie              | 7                    | null                 |
++----------------------+----------------------+----------------------+
+```
+
+### Join On Expression Inner
+
+```cpp
+auto df1 = spark->sql(R"(
+    SELECT * FROM VALUES
+        (1, 'Alice'),
+        (2, 'Bob')
+    AS people(id, name)
+)");
+
+auto df2 = spark->sql(R"(
+    SELECT * FROM VALUES
+        (1, 100),
+        (2, 200),
+        (3, 300)
+    AS orders(custid, amount)
+)");
+
+auto joined = df1.join_on_expression(
+    df2,
+    "id = custid",
+    "inner");
+
+joined.show();
+```
+
+**Output:**
+
+```
++----------------------+----------------------+----------------------+----------------------+
+| id                   | name                 | custid               | amount               |
++----------------------+----------------------+----------------------+----------------------+
+| 1                    | Alice                | 1                    | 100                  |
+| 2                    | Bob                  | 2                    | 200                  |
++----------------------+----------------------+----------------------+----------------------+
+```
+
+### Join On Expression Outer
+
+```cpp
+auto df1 = spark->sql(R"(
+    SELECT * FROM VALUES
+        (1, 'Alice'),
+        (2, 'Bob')
+    AS people(id, name)
+)");
+
+auto df2 = spark->sql(R"(
+    SELECT * FROM VALUES
+        (1, 100),
+        (2, 200),
+        (3, 300)
+    AS orders(custid, amount)
+)");
+auto joined = df1.join_on_expression(
+    df2,
+    "id = custid",
+    "outer");
+
+joined.show();
+```
+
+**Output:**
+
+```
++----------------------+----------------------+----------------------+----------------------+
+| id                   | name                 | custid               | amount               |
++----------------------+----------------------+----------------------+----------------------+
+| 1                    | Alice                | 1                    | 100                  |
+| 2                    | Bob                  | 2                    | 200                  |
+| null                 | null                 | 3                    | 300                  |
++----------------------+----------------------+----------------------+----------------------+
+```

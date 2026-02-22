@@ -1,4 +1,4 @@
-name: Build & Test
+name: Build, Test & Coverage
 
 permissions:
   contents: read
@@ -15,46 +15,66 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Install Java
-      uses: actions/setup-java@v4
-      with:
-        distribution: temurin
-        java-version: 17
+      - name: Install Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
 
-    - name: Install Apache Spark
-      run: |
-        curl -fL --retry 5 --retry-delay 5 \
-          https://dlcdn.apache.org/spark/spark-3.5.8/spark-3.5.8-bin-hadoop3.tgz \
-          -o spark.tgz
+      - name: Install Spark
+        run: |
+          curl -fL https://dlcdn.apache.org/spark/spark-3.5.8/spark-3.5.8-bin-hadoop3.tgz -o spark.tgz
+          tar -xzf spark.tgz
+          mv spark-3.5.8-bin-hadoop3 $HOME/spark
 
-        echo "Validating archive..."
-        file spark.tgz
-        ls -lh spark.tgz
+      - name: Start Spark Connect Server
+        run: |
+          $HOME/spark/sbin/start-connect-server.sh \
+            --packages org.apache.spark:spark-connect_2.12:3.5.1
+          sleep 10
 
-        tar -xzf spark.tgz
-        mv spark-3.5.8-bin-hadoop3 $HOME/spark
+      - name: Install gcovr
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcovr
 
+      - name: Install dependencies
+        run: chmod +x ./install_deps.sh && ./install_deps.sh
 
-    - name: Start Spark Connect Server
-      run: |
-        $HOME/spark/sbin/start-connect-server.sh \
-          --packages org.apache.spark:spark-connect_2.12:3.5.1
-        sleep 10
+      - name: Configure with Coverage
+        run: cmake -S . -B build -DENABLE_COVERAGE=ON
 
-    - name: Install dependencies
-      run: chmod +x ./install_deps.sh && ./install_deps.sh
+      - name: Build
+        run: cmake --build build --parallel
 
-    - name: Configure & Build
-      run: |
-        mkdir -p build
-        cd build
-        cmake ..
-        make -j$(nproc)
+      - name: Run Tests
+        run: |
+          export SPARK_REMOTE=sc://localhost
+          cd build
+          ctest -LE dbrx --output-on-failure
 
-    - name: Run Tests
-      run: |
-        export SPARK_REMOTE=sc://localhost
-        cd build
-        ctest -LE dbrx --output-on-failure
+      - name: Generate Coverage (XML & HTML)
+        run: |
+          gcovr -r src \
+            --object-directory build \
+            --exclude '.*\.pb\.cc' \
+            --exclude '.*\.grpc\.pb\.cc' \
+            --exclude '.*\.h' \
+            --xml-pretty -o coverage.xml \
+            --html-details coverage.html \
+            --fail-under-line 70 \
+            --print-summary
+
+      - name: Upload Coverage XML
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-xml
+          path: coverage.xml
+
+      - name: Upload Coverage HTML
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-html
+          path: coverage.html
