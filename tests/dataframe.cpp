@@ -476,7 +476,6 @@ TEST_F(SparkIntegrationTest, DataFrameSummary)
 }
 TEST_F(SparkIntegrationTest, DefaultInnerJoinOnCommonColumns)
 {
-    // Create first DataFrame
     auto df1 = spark->sql(R"(
         SELECT * FROM VALUES
             ('Alice', 2),
@@ -485,7 +484,6 @@ TEST_F(SparkIntegrationTest, DefaultInnerJoinOnCommonColumns)
         AS people(name, age)
     )");
 
-    // Create second DataFrame
     auto df2 = spark->sql(R"(
         SELECT * FROM VALUES
             ('Tom', 80),
@@ -570,7 +568,7 @@ TEST_F(SparkIntegrationTest, MultiColumnInnerJoin)
         AS people(name, age)
     )");
 
-    auto df3 = spark->sql(R"(
+    auto df2 = spark->sql(R"(
         SELECT * FROM VALUES
             ('Alice', 10, 80),
             ('Bob', 5, NULL),
@@ -579,7 +577,8 @@ TEST_F(SparkIntegrationTest, MultiColumnInnerJoin)
         AS people(name, age, height)
     )");
 
-    auto joined = df1.join(df3, std::vector<std::string>{"name", "age"}, "inner");
+    std::vector<std::string> columns = {"name", "age"};
+    auto joined = df1.join(df2, columns, "inner");
     joined.show();
 
     auto rows = joined.collect();
@@ -598,7 +597,7 @@ TEST_F(SparkIntegrationTest, MultiColumnOuterJoin)
         AS people(name, age)
     )");
 
-    auto df3 = spark->sql(R"(
+    auto df2 = spark->sql(R"(
         SELECT * FROM VALUES
             ('Alice', 10, 80),
             ('Bob', 5, NULL),
@@ -607,7 +606,8 @@ TEST_F(SparkIntegrationTest, MultiColumnOuterJoin)
         AS people(name, age, height)
     )");
 
-    auto joined = df1.join(df3, std::vector<std::string>{"name","age"}, "outer");
+    std::vector<std::string> columns = {"name", "age"};
+    auto joined = df1.join(df2, columns, "outer");
     joined.show();
 
     auto rows = joined.collect();
@@ -634,14 +634,14 @@ TEST_F(SparkIntegrationTest, JoinOnExpressionInner)
     auto joined = df1.join_on_expression(
         df2,
         "id = custid",
-        "inner"
-    );
+        "inner");
 
     joined.show();
 
     auto rows = joined.collect();
     EXPECT_EQ(rows.size(), 2);
 }
+
 TEST_F(SparkIntegrationTest, JoinOnExpressionOuter)
 {
     auto df1 = spark->sql(R"(
@@ -661,8 +661,7 @@ TEST_F(SparkIntegrationTest, JoinOnExpressionOuter)
     auto joined = df1.join_on_expression(
         df2,
         "id = custid",
-        "outer"
-    );
+        "outer");
 
     joined.show();
 
