@@ -51,3 +51,7 @@ Testing
 
 # Environment
 .env
+
+# gcovr
+coverage.xml
+coverage.*

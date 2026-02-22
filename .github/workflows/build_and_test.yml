@@ -44,11 +44,10 @@ jobs:
         run: chmod +x ./install_deps.sh && ./install_deps.sh
 
       - name: Configure with Coverage
-        run: |
-          cmake -S . -B build -DENABLE_COVERAGE=ON
+        run: cmake -S . -B build -DENABLE_COVERAGE=ON
 
       - name: Build
-        run: cmake --build build
+        run: cmake --build build --parallel
 
       - name: Run Tests
         run: |
@@ -56,15 +55,26 @@ jobs:
           cd build
           ctest -LE dbrx --output-on-failure
 
-      - name: Generate Coverage
+      - name: Generate Coverage (XML + HTML)
         run: |
-          gcovr -r . \
-            --exclude '.*proto.*' \
-            --exclude '.*grpc.*' \
-            --xml-pretty -o coverage.xml
+          gcovr -r src \
+            --object-directory build \
+            --exclude '.*\.pb\.cc' \
+            --exclude '.*\.grpc\.pb\.cc' \
+            --exclude '.*\.h' \
+            --xml-pretty -o coverage.xml \
+            --html-details coverage.html \
+            --fail-under-line 70 \
+            --print-summary
 
-      - name: Upload Coverage
+      - name: Upload Coverage XML
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-report
+          name: coverage-xml
           path: coverage.xml
+
+      - name: Upload Coverage HTML
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-html
+          path: coverage.html
