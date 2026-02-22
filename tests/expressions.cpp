@@ -46,24 +46,21 @@ TEST_F(SparkIntegrationTest, ColumnExpressions)
             AS people(name, age)
         )");
 
-        // -----------------------------------------
-        // Define the expression: age + 1
-        // -----------------------------------------
-        auto _col = col("age") + lit(1);
+    // -----------------------------------------
+    // Define the expression: age + 1
+    // -----------------------------------------
+    auto _col = col("age") + lit(1);
 
     // -----------------------------------------------------------------------
     // Use .select() to include the new expression in the output
     // We alias it to "age_plus_one" so we can find it in the resulting Row
     // -----------------------------------------------------------------------
-    
-    // ------------------------------------------------------------------------
-    // Temporarily commenting this out until we figure out overloading for DataFrame::select()
-    //
-    // auto filtered_df = df.filter(col("name") == lit("Alice"))
-    //                        .select({col("name"), _col.alias("age_plus_one")});
-    // ------------------------------------------------------------------------
 
-    auto filtered_df = df.filter(col("name") == lit("Alice"));
+    auto filtered_df = df.filter(col("name") == lit("Alice"))
+                           .select({col("name"), _col.alias("age_plus_one")});
+
+    filtered_df.show();
+
     auto rows = filtered_df.collect();
 
     ASSERT_EQ(rows.size(), 1);
@@ -72,6 +69,6 @@ TEST_F(SparkIntegrationTest, ColumnExpressions)
     // ---------------------------------------------------------------
     // Evaluate the _col expression result (23 + 1 = 24)
     // ---------------------------------------------------------------
-    // int64_t expected_age = 23 + 1;
-    // EXPECT_EQ(rows[0].get_long("age_plus_one"), expected_age);
+    int64_t expected_age = 23 + 1;
+    EXPECT_EQ(rows[0].get_long("age_plus_one"), expected_age);
 }
