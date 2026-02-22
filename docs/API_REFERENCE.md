@@ -3,8 +3,9 @@
 ## Initializing a Spark Session
 
 ```cpp
-#include "client.h"
-#include "config.h"
+#include <spark_connect_cpp/client.h>
+#include <spark_connect_cpp/config.h>
+#include <spark_connect_cpp/session.h>
 
 int main() {
     Config conf;
@@ -16,6 +17,68 @@ int main() {
     df.show(5);
 }
 ```
+
+## Working with Databricks
+### Traditional Databricks Cluster
+
+The following environment variables must be set to enable authentication with a standard (classic) **Databricks Cluster**:
+
+```sh
+DATABRICKS_WORKSPACE_URL=https://<workspace>.cloud.databricks.com
+DATABRICKS_TOKEN=dapi...................................
+DATABRICKS_CLUSTER_ID=0987-126453-5lkjnppm
+```
+
+Create a Spark Session:
+
+```cpp
+#include <spark_connect_cpp/session.h>
+
+int main()
+{
+    load_env("../.env");
+
+    const char *workspace_url = std::getenv("DATABRICKS_WORKSPACE_URL");
+    const char *token = std::getenv("DATABRICKS_TOKEN");
+    const char *cluster_id = std::getenv("DATABRICKS_CLUSTER_ID");
+
+    spark = &SparkSession::builder()
+                    .master(workspace_url)
+                    .databricks(token, cluster_id)
+                    .appName("spark-connect-cpp")
+                    .getOrCreate();
+}
+```
+
+### Serverless Databricks Cluster
+
+The following environment variables must be set to enable authentication with a serverless **Databricks Cluster**:
+
+```sh
+DATABRICKS_WORKSPACE_URL=https://<workspace>.cloud.databricks.com
+DATABRICKS_TOKEN=dapi...................................
+DATABRICKS_WAREHOUSE_ID=102938457899
+```
+
+Create a Spark Session:
+
+```cpp
+int main()
+{
+    load_env("../.env");
+
+        const char *workspace_url = std::getenv("DATABRICKS_WORKSPACE_URL");
+        const char *token = std::getenv("DATABRICKS_TOKEN");
+        const char *warehouse_id = std::getenv("DATABRICKS_WAREHOUSE_ID");
+
+        spark = &SparkSession::builder()
+                     .master(workspace_url)
+                     .serverless(token, warehouse_id)
+                     .appName("spark-connect-cpp")
+                     .getOrCreate();
+}
+```
+
 
 ## DataFrame API
 
