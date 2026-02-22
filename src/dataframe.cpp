@@ -25,7 +25,7 @@
 using namespace spark::connect;
 
 DataFrame::DataFrame(std::shared_ptr<spark::connect::SparkConnectService::Stub> stub,
-                     spark::connect::Plan plan,
+                     Plan plan,
                      std::string session_id,
                      std::string user_id)
     : stub_(stub),
@@ -446,7 +446,7 @@ void DataFrame::printSchema() const
 
 DataFrame DataFrame::select(const std::vector<std::string> &cols)
 {
-    spark::connect::Plan plan;
+    Plan plan;
 
     // ---------------------------------------------------------------------
     // Use the pointer to the root to ensure we are copying the content
@@ -470,9 +470,47 @@ DataFrame DataFrame::select(const std::vector<std::string> &cols)
     return DataFrame(stub_, plan, session_id_, user_id_);
 }
 
+DataFrame DataFrame::select(const std::vector<spark::sql::types::Column> &cols)
+{
+    Plan plan;
+    auto *project = plan.mutable_root()->mutable_project();
+
+    // -------------------------------------------------------------------
+    // Set the input to the current plan's root
+    // We need this in order to support chaining transformations
+    // -------------------------------------------------------------------
+    if (this->plan_.has_root())
+    {
+        project->mutable_input()->CopyFrom(this->plan_.root());
+    }
+
+    for (const auto &column : cols)
+    {
+        // ---------------------------------------------------
+        // Add a new expression to the projection list
+        // ---------------------------------------------------
+        auto *expr = project->add_expressions();
+
+        if (column.expr)
+        {
+            expr->CopyFrom(*column.expr);
+        }
+    }
+
+    return DataFrame(stub_, plan, session_id_, user_id_);
+}
+
+DataFrame DataFrame::select(std::initializer_list<std::string> cols)
+{
+    // ---------------------------------------------------------------
+    // Convert initializer_list to vector and call the string version
+    // ---------------------------------------------------------------
+    return select(std::vector<std::string>(cols));
+}
+
 DataFrame DataFrame::limit(int n)
 {
-    spark::connect::Plan plan;
+    Plan plan;
     auto *limit_rel = plan.mutable_root()->mutable_limit();
     *limit_rel->mutable_input() = this->plan_.root();
     limit_rel->set_limit(n);
@@ -563,7 +601,7 @@ int64_t DataFrame::count()
     // -----------------------------------------------------
     // Initialize the Plan and the Aggregate Relation
     // -----------------------------------------------------
-    spark::connect::Plan plan;
+    Plan plan;
     auto *aggregate = plan.mutable_root()->mutable_aggregate();
 
     // -------------------------------------------------------------------------------
@@ -655,7 +693,7 @@ int64_t DataFrame::count()
 
 DataFrame DataFrame::filter(const std::string &condition)
 {
-    spark::connect::Plan plan;
+    Plan plan;
 
     // ------------------------------------------------------
     // Access the Filter relation in the new plan root
@@ -733,7 +771,7 @@ DataFrame DataFrame::dropDuplicates()
 
 DataFrame DataFrame::dropDuplicates(const std::vector<std::string> &subset)
 {
-    spark::connect::Plan plan;
+    Plan plan;
 
     auto *relation = plan.mutable_root()->mutable_deduplicate();
 
@@ -838,7 +876,7 @@ std::vector<spark::sql::types::Row> DataFrame::collect()
 
 DataFrame DataFrame::distinct()
 {
-    spark::connect::Plan plan;
+    Plan plan;
 
     auto *deduplicate = plan.mutable_root()->mutable_deduplicate();
 
@@ -851,7 +889,7 @@ DataFrame DataFrame::distinct()
 
 DataFrame DataFrame::describe(const std::vector<std::string> &cols)
 {
-    spark::connect::Plan plan;
+    Plan plan;
 
     auto *relation = plan.mutable_root()->mutable_describe();
     relation->mutable_input()->CopyFrom(this->plan_.root());
@@ -866,7 +904,7 @@ DataFrame DataFrame::describe(const std::vector<std::string> &cols)
 
 DataFrame DataFrame::summary(const std::vector<std::string> &statistics)
 {
-    spark::connect::Plan plan;
+    Plan plan;
 
     auto *summary_rel = plan.mutable_root()->mutable_summary();
 
@@ -887,7 +925,7 @@ DataFrame DataFrame::summary()
 
 DataFrame DataFrame::join(const DataFrame &other) const
 {
-    spark::connect::Plan plan;
+    Plan plan;
     auto *join = plan.mutable_root()->mutable_join();
 
     if (this->plan_.has_root())
@@ -919,7 +957,7 @@ DataFrame DataFrame::join(const DataFrame &other) const
 
 DataFrame DataFrame::join(const DataFrame &other, const std::string &on, const std::string &how)
 {
-    spark::connect::Plan plan;
+    Plan plan;
 
     auto *join = plan.mutable_root()->mutable_join();
 
@@ -982,7 +1020,7 @@ DataFrame DataFrame::join(const DataFrame &other, const std::string &on, const s
 
 DataFrame DataFrame::join(const DataFrame &other, const std::vector<std::string> &on, const std::string &how)
 {
-    spark::connect::Plan plan;
+    Plan plan;
 
     auto *join = plan.mutable_root()->mutable_join();
 
@@ -1049,7 +1087,7 @@ DataFrame DataFrame::join_on_expression(const DataFrame &other,
         throw std::invalid_argument("Join condition cannot be empty.");
     }
 
-    spark::connect::Plan plan;
+    Plan plan;
     auto *join = plan.mutable_root()->mutable_join();
 
     // -----------------------------------------

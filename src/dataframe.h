@@ -87,8 +87,19 @@ public:
     /**
      * @brief Projects a set of expressions and returns a new DataFrame.
      * @param cols A vector of column names.
+     * @example auto df_subset = df.select({"b", "a"});
      */
     DataFrame select(const std::vector<std::string> &cols);
+
+    /**
+     * @brief Projects a set of `Column` expressions and returns a new DataFrame.
+     * @param cols A vector of `Column` objects (supporting aliases, math, etc.).
+     * @example auto filtered_df = df.filter(col("name") == lit("Alice"))
+     *                     .select({col("name"), _col.alias("age_plus_one")});
+     */
+    DataFrame select(const std::vector<spark::sql::types::Column> &cols);
+
+    DataFrame select(std::initializer_list<std::string> cols);
 
     /**
      * @brief Filters rows using the given SQL condition string.
