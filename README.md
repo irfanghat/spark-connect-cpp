@@ -281,7 +281,25 @@ Copy contents to global path:
 ```sh
 sudo cp -r ~/spark-connect-cpp/build/spark-connect-cpp-0.0.1-linux-amd64/include/spark_connect_cpp /usr/local/include/
 sudo cp ~/spark-connect-cpp/build/spark-connect-cpp-0.0.1-linux-amd64/lib/libspark_connect_cpp.a /usr/local/lib/
-sudo cp ~/spark-connect-cpp/build/spark-connect-cpp-0.0.1-linux-amd64/lib/pkgconfig/spark_connect_cpp.pc /usr/local/lib/pkgconfig
+
+# --------------------------------------------------------------------------------------------
+# Purpose of the pkgconfig directory
+# --------------------------------------------------------------------------------------------
+#
+# The pkg-config directory serves as a central repository for metadata about installed libraries on a system. 
+#
+# It contains .pc files, which are the metadata files that provide information such as the 
+# location of header files, library binaries, and various descriptive information. 
+# 
+# These files are essential for developers to retrieve package-specific compilation and linking parameters, 
+# ensuring that applications are built correctly with all necessary components. 
+#
+# The pkg-config tool, which is invoked via its command line interface (CLI), reports library information via standard output, 
+# allowing for the sharing of a codebase in a cross-platform way by using host-specific library information 
+# that is stored outside of yet referenced by the codebase.
+# --------------------------------------------------------------------------------------------
+sudo mkdir /usr/local/lib/pkgconfig
+sudo cp ~/spark-connect-cpp/build/spark-connect-cpp-0.0.1-linux-amd64/lib/pkgconfig/spark_connect_cpp.pc /usr/local/lib/pkgconfig/
 ```
 
 Verify that the contents were copied successfully:
@@ -314,16 +332,8 @@ int main()
                      .appName("demo")
                      .getOrCreate();
 
-    auto df = spark->sql(
-        R"(
-            SELECT *
-            FROM VALUES
-                ('Tom', 21),
-                ('Alice', NULL),
-                ('Sharon', 32)
-            AS people(name, age)
-        )"
-    );
+    auto df = spark->sql("SELECT 1 AS id");
+
     df.show();
 }
 ```
