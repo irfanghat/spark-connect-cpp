@@ -94,6 +94,27 @@ The Spark Connect C++ client is **not a replacement** for Python or Scala Spark 
 
 ---
 
+## API Implementation Status
+
+| Category     | API Feature                          | Status | Implementation      |
+|--------------|--------------------------------------|--------|---------------------|
+| Session      | Databricks / Local Conn              | ●      | Implemented         |
+| Reader       | CSV                                  | ●      | Implemented         |
+| Reader       | JSON                                 | ●      | Implemented         |
+| Reader       | Parquet                              | ●      | Implemented         |
+| Writer       | Parquet (Overwrite/Gzip)             | ●      | Implemented         |
+| Schema       | JSON / Print / Column List           | ●      | Implemented         |
+| Action       | Show / Collect / Head / First        | ●      | Implemented         |
+| Query        | SQL / Range                          | ●      | Implemented         |
+| Logic        | Filter / Where / Distinct            | ●      | Implemented         |
+| Relational   | Joins (Inner, Outer, Expr)           | ●      | Implemented         |
+| Group        | GroupBy & Global Aggs                | ●      | Implemented         |
+| Analytics    | Window Functions                     | ○      | Planned             |
+| Catalog      | Table/Database Management            | ○      | Planned             |
+| Streaming    | Structured Streaming                 | ◌      | Not Implemented     |
+
+---
+
 ## Architecture Deep Dive
 
 The Spark Connect C++ client follows the Spark Connect execution model:
