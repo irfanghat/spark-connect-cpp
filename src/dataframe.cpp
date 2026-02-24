@@ -21,6 +21,7 @@
 #include "dataframe.h"
 #include "types.h"
 #include "writer.h"
+#include "group.h"
 
 using namespace spark::connect;
 
@@ -598,97 +599,16 @@ std::optional<spark::sql::types::Row> DataFrame::first()
 
 int64_t DataFrame::count()
 {
-    // -----------------------------------------------------
-    // Initialize the Plan and the Aggregate Relation
-    // -----------------------------------------------------
-    Plan plan;
-    auto *aggregate = plan.mutable_root()->mutable_aggregate();
+    auto result_df = this->groupBy().count();
+    auto rows = result_df.collect();
 
-    // -------------------------------------------------------------------------------
-    // We explicitly set the Group Type to GROUP_TYPE_GROUPBY.
-    // If left as default (0), it is UNSPECIFIED and Spark will complain & reject the plan:
-    // org.apache.spark.sql.connect.common.InvalidPlanInput: Unknown Group Type GROUP_TYPE_UNSPECIFIED
-    // -------------------------------------------------------------------------------
-    aggregate->set_group_type(spark::connect::Aggregate_GroupType_GROUP_TYPE_GROUPBY);
+    if (rows.empty())
+        return 0;
 
-    // -----------------------------------------------------
-    // Set the input to the current DataFrame's plan
-    // -----------------------------------------------------
-    *aggregate->mutable_input() = this->plan_.root();
-
-    // ------------------------------------------------------------------------
-    // Construct the "count(*)" aggregate expression
-    // Path: Aggregate -> AggregateExpression -> Alias -> UnresolvedFunction
-    // ------------------------------------------------------------------------
-    auto *agg_expr = aggregate->add_aggregate_expressions();
-    auto *alias = agg_expr->mutable_alias();
-
-    // ----------------------------------------------------------------
-    // Set Alias Name.
-    // This is useful for identifying the column in the result batch
-    // ----------------------------------------------------------------
-    alias->add_name("count");
-
-    // -------------------------------------------------------
-    // Set function logic inside the alias expression
-    // -------------------------------------------------------
-    auto *func = alias->mutable_expr()->mutable_unresolved_function();
-    func->set_function_name("count");
-
-    // --------------------------------------------------
-    // Add the "*" (star) argument to the function
-    // --------------------------------------------------
-    func->add_arguments()->mutable_unresolved_star();
-
-    ExecutePlanRequest request;
-    request.set_session_id(session_id_);
-    request.mutable_user_context()->set_user_id(user_id_);
-    *request.mutable_plan() = plan;
-
-    grpc::ClientContext context;
-    auto reader = stub_->ExecutePlan(&context, request);
-    ExecutePlanResponse response;
-    int64_t row_count = 0;
-
-    while (reader->Read(&response))
-    {
-        if (!response.has_arrow_batch())
-            continue;
-
-        // -------------------------------------
-        // Deserialize Arrow Batch
-        // -------------------------------------
-        auto buffer = std::make_shared<arrow::Buffer>(
-            reinterpret_cast<const uint8_t *>(response.arrow_batch().data().data()),
-            response.arrow_batch().data().size());
-
-        auto buffer_reader = std::make_shared<arrow::io::BufferReader>(buffer);
-        auto batch_reader = arrow::ipc::RecordBatchStreamReader::Open(buffer_reader).ValueOrDie();
-
-        std::shared_ptr<arrow::RecordBatch> batch;
-        if (batch_reader->ReadNext(&batch).ok() && batch && batch->num_rows() > 0)
-        {
-            // -----------------------------------------------------------
-            // Spark's count() result is in the first column (index 0)
-            // -----------------------------------------------------------
-            auto column = batch->column(0);
-
-            // ------------------------------------------------------------
-            // In Spark SQL, the result of a COUNT() aggregation is always
-            // returned as a LongType (64‑bit integer), regardless of the size of the dataset.
-            // ------------------------------------------------------------
-            auto int_array = std::static_pointer_cast<arrow::Int64Array>(column);
-            row_count = int_array->Value(0);
-        }
-    }
-
-    grpc::Status status = reader->Finish();
-    if (!status.ok())
-    {
-        throw std::runtime_error("gRPC Error: " + status.error_message());
-    }
-
-    return row_count;
+    // -----------------------------------------------------------
+    // Extract the first column of the first row i.e. the count
+    // -----------------------------------------------------------
+    return rows[0].get_long(rows[0].column_names[0]);
 }
 
 DataFrame DataFrame::filter(const std::string &condition)
@@ -1140,4 +1060,43 @@ DataFrame DataFrame::join_on_expression(const DataFrame &other,
     expression_string->set_expression(condition);
 
     return DataFrame(stub_, plan, session_id_, user_id_);
+}
+
+/**
+ * @brief Global aggregation (no columns).
+ * Triggers aggregate functions to run on the entire dataset.
+ */
+GroupedData DataFrame::groupBy()
+{
+    return GroupedData(*this, {});
+}
+
+/**
+ * @brief Grouping by column names (Strings).
+ */
+GroupedData DataFrame::groupBy(const std::vector<std::string> &cols)
+{
+    std::vector<spark::sql::types::Column> col_exprs;
+    col_exprs.reserve(cols.size());
+    for (const auto &name : cols)
+    {
+        col_exprs.push_back(spark::sql::types::col(name));
+    }
+    return GroupedData(*this, std::move(col_exprs));
+}
+
+/**
+ * @brief Grouping by Column expressions. This allows for math/aliases in grouping.
+ */
+GroupedData DataFrame::groupBy(const std::vector<spark::sql::types::Column> &cols)
+{
+    return GroupedData(*this, cols);
+}
+
+/**
+ * @brief Classic initializer list. Resolves ambiguity for `{"col_a", "col_b"}`.
+ */
+GroupedData DataFrame::groupBy(std::initializer_list<std::string> cols)
+{
+    return groupBy(std::vector<std::string>(cols));
 }

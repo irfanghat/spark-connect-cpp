@@ -10,6 +10,7 @@
 #include <types.h>
 
 class DataFrameWriter;
+class GroupedData;
 
 /**
  * @class DataFrame
@@ -328,7 +329,17 @@ public:
                                  const std::string &condition,
                                  const std::string &how);
 
+    /**
+     * @brief Groups the DataFrame using the specified columns.
+     */
+    GroupedData groupBy(const std::vector<std::string> &cols);
+    GroupedData groupBy(const std::vector<spark::sql::types::Column> &cols);
+    GroupedData groupBy(std::initializer_list<std::string> cols);
+    GroupedData groupBy();
+
 private:
+    friend class GroupedData;
+
     std::shared_ptr<spark::connect::SparkConnectService::Stub> stub_;
     spark::connect::Plan plan_;
     std::string session_id_;

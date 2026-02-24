@@ -436,8 +436,12 @@ namespace spark::sql::types
     }
 
     Column Column::operator+(const Column &other) const { return build_binary_op("+", *this, other); }
+    Column Column::operator-(const Column &other) const { return build_binary_op("-", *this, other); }
+    Column Column::operator*(const Column &other) const { return build_binary_op("*", *this, other); }
+    Column Column::operator/(const Column &other) const { return build_binary_op("/", *this, other); }
     Column Column::operator==(const Column &other) const { return build_binary_op("==", *this, other); }
     Column Column::operator>(const Column &other) const { return build_binary_op(">", *this, other); }
+    Column Column::operator<(const Column &other) const { return build_binary_op("<", *this, other); }
 
     Column Column::alias(const std::string &name) const
     {
