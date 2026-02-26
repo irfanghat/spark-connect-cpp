@@ -5,7 +5,9 @@
 #include "session.h"
 #include "config.h"
 #include "dataframe.h"
+#include "types.h"
 
+using namespace spark::sql::types;
 using ::testing::ElementsAre;
 
 class SparkIntegrationTest : public ::testing::Test
@@ -667,4 +669,50 @@ TEST_F(SparkIntegrationTest, JoinOnExpressionOuter)
 
     auto rows = joined.collect();
     EXPECT_EQ(rows.size(), 3);
+}
+
+DataFrame MultiplyColumn(const DataFrame &df, std::string col_name, int factor)
+{
+    return df.select({col(col_name) * lit(factor)});
+}
+
+TEST_F(SparkIntegrationTest, DataFrameTransform)
+{
+    auto df = spark->range(10);
+
+    // --------------------------------------------------------------------
+    // We can also define MultiplyColumn as follows:
+    //
+    // auto MultiplyColumn = [](DataFrame df, std::string name, int factor)
+    // {
+    //     return df.select({(col(name) * lit(factor)).alias(name)});
+    // };
+    //
+    //
+    // The column name in this case will be "id":
+    //
+    // auto results = df.transform(MultiplyColumn, "id", 10).filter("id > 50");
+    // --------------------------------------------------------------------
+
+    auto results = df.transform(MultiplyColumn, "id", 10).filter("(id * 10) > 50");
+
+    EXPECT_NO_THROW(results.show());
+
+    auto rows = results.collect();
+
+    // +----------------------+
+    // | (id * 10)            |
+    // +----------------------+
+    // | 60                   |
+    // | 70                   |
+    // | 80                   |
+    // | 90                   |
+    // +----------------------+
+
+    EXPECT_EQ(rows[0].get_long("(id * 10)"), 60);
+    EXPECT_EQ(rows[1].get_long("(id * 10)"), 70);
+    EXPECT_EQ(rows[2].get_long("(id * 10)"), 80);
+    EXPECT_EQ(rows[3].get_long("(id * 10)"), 90);
+
+    EXPECT_EQ(rows.size(), 4);
 }

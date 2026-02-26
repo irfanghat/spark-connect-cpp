@@ -445,7 +445,7 @@ void DataFrame::printSchema() const
     this->schema().print_tree(std::cout);
 }
 
-DataFrame DataFrame::select(const std::vector<std::string> &cols)
+DataFrame DataFrame::select(const std::vector<std::string> &cols) const
 {
     Plan plan;
 
@@ -471,7 +471,7 @@ DataFrame DataFrame::select(const std::vector<std::string> &cols)
     return DataFrame(stub_, plan, session_id_, user_id_);
 }
 
-DataFrame DataFrame::select(const std::vector<spark::sql::types::Column> &cols)
+DataFrame DataFrame::select(const std::vector<spark::sql::types::Column> &cols) const
 {
     Plan plan;
     auto *project = plan.mutable_root()->mutable_project();
@@ -501,7 +501,7 @@ DataFrame DataFrame::select(const std::vector<spark::sql::types::Column> &cols)
     return DataFrame(stub_, plan, session_id_, user_id_);
 }
 
-DataFrame DataFrame::select(std::initializer_list<std::string> cols)
+DataFrame DataFrame::select(std::initializer_list<std::string> cols) const
 {
     // ---------------------------------------------------------------
     // Convert initializer_list to vector and call the string version
@@ -509,7 +509,7 @@ DataFrame DataFrame::select(std::initializer_list<std::string> cols)
     return select(std::vector<std::string>(cols));
 }
 
-DataFrame DataFrame::limit(int n)
+DataFrame DataFrame::limit(int n) const
 {
     Plan plan;
     auto *limit_rel = plan.mutable_root()->mutable_limit();
@@ -611,7 +611,7 @@ int64_t DataFrame::count()
     return rows[0].get_long(rows[0].column_names[0]);
 }
 
-DataFrame DataFrame::filter(const std::string &condition)
+DataFrame DataFrame::filter(const std::string &condition) const
 {
     Plan plan;
 
@@ -646,7 +646,7 @@ DataFrame DataFrame::filter(const std::string &condition)
     return DataFrame(stub_, plan, session_id_, user_id_);
 }
 
-DataFrame DataFrame::filter(const spark::sql::types::Column &condition)
+DataFrame DataFrame::filter(const spark::sql::types::Column &condition) const
 {
     Plan plan;
     auto *filter_rel = plan.mutable_root()->mutable_filter();
@@ -670,7 +670,7 @@ DataFrame DataFrame::filter(const spark::sql::types::Column &condition)
     return DataFrame(stub_, plan, session_id_, user_id_);
 }
 
-DataFrame DataFrame::where(const std::string &condition)
+DataFrame DataFrame::where(const std::string &condition) const
 {
     return filter(condition);
 }
@@ -684,12 +684,12 @@ DataFrameWriter DataFrame::write()
     return DataFrameWriter(stub_, plan_.root(), config);
 }
 
-DataFrame DataFrame::dropDuplicates()
+DataFrame DataFrame::dropDuplicates() const
 {
     return dropDuplicates({});
 }
 
-DataFrame DataFrame::dropDuplicates(const std::vector<std::string> &subset)
+DataFrame DataFrame::dropDuplicates(const std::vector<std::string> &subset) const
 {
     Plan plan;
 

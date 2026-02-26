@@ -1,0 +1,17 @@
+[SPARK-CONNECT][CPP] <Summarize changes in one line>
+
+<Detailed description of the PR/Implementation>
+
+Key implementation details include:
+- <Detail 1>
+- <Detail 2>
+
+Testing performed:
+- <Test scenario 1>
+- <Test scenario 2>
+
+Why is this change necessary?
+<Rationale>
+
+Does this introduce a user-facing change?
+<Example usage or "No">
