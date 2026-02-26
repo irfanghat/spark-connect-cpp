@@ -1,6 +1,6 @@
 #include "group.h"
 
-GroupedData::GroupedData(DataFrame &df, std::vector<spark::sql::types::Column> grouping_cols)
+GroupedData::GroupedData(DataFrame &df, std::vector<spark::sql::functions::Column> grouping_cols)
     : df_(df), grouping_cols_(grouping_cols) {}
 
 /**

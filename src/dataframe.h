@@ -7,7 +7,10 @@
 #include <spark/connect/base.grpc.pb.h>
 #include <spark/connect/relations.pb.h>
 
-#include <types.h>
+#include "functions.h"
+#include "types.h"
+
+using namespace spark::sql::types;
 
 class DataFrameWriter;
 class GroupedData;
@@ -64,7 +67,7 @@ public:
      * @brief Returns the schema of this DataFrame as a StructType.
      * @return A StructType object containing the full schema metadata.
      */
-    spark::sql::types::StructType schema() const;
+    StructType schema() const;
 
     /**
      * @brief Prints out the schema in the tree format.
@@ -98,7 +101,7 @@ public:
      * @example auto filtered_df = df.filter(col("name") == lit("Alice"))
      *                     .select({col("name"), _col.alias("age_plus_one")});
      */
-    DataFrame select(const std::vector<spark::sql::types::Column> &cols) const;
+    DataFrame select(const std::vector<spark::sql::functions::Column> &cols) const;
 
     DataFrame select(std::initializer_list<std::string> cols) const;
 
@@ -112,7 +115,7 @@ public:
      * @brief Filters rows using a Column expression.
      * @param condition Column expression (e.g., col("age") > lit(21))
      */
-    DataFrame filter(const spark::sql::types::Column &condition) const;
+    DataFrame filter(const spark::sql::functions::Column &condition) const;
 
     /**
      * @brief Alias for filter().
@@ -122,22 +125,22 @@ public:
     /**
      * @brief Returns the first n rows.
      */
-    std::vector<spark::sql::types::Row> take(int n);
+    std::vector<Row> take(int n);
 
     /**
      * @brief Returns the first row.
      */
-    std::optional<spark::sql::types::Row> head();
+    std::optional<Row> head();
 
     /**
      * @brief Returns the first n rows.
      */
-    std::vector<spark::sql::types::Row> head(int n);
+    std::vector<Row> head(int n);
 
     /**
      * @brief Returns the first row.
      */
-    std::optional<spark::sql::types::Row> first();
+    std::optional<Row> first();
 
     /**
      * @brief Returns a new DataFrame by taking the first n rows.
@@ -200,7 +203,7 @@ public:
      * // ------------------------------------------
      * @returns A list of rows.
      */
-    std::vector<spark::sql::types::Row> collect();
+    std::vector<Row> collect();
 
     /**
      * @brief Returns a new `DataFrame` containing the distinct rows.
@@ -333,7 +336,7 @@ public:
      * @brief Groups the DataFrame using the specified columns.
      */
     GroupedData groupBy(const std::vector<std::string> &cols);
-    GroupedData groupBy(const std::vector<spark::sql::types::Column> &cols);
+    GroupedData groupBy(const std::vector<spark::sql::functions::Column> &cols);
     GroupedData groupBy(std::initializer_list<std::string> cols);
     GroupedData groupBy();
 
@@ -353,6 +356,16 @@ public:
         // --------------------------------------------------------------------
         return func(*this, std::forward<Args>(args)...);
     }
+
+    /**
+     * @brief Returns a new `DataFrame` by adding a column or replacing the existing column that has the same name.
+     *
+     * The column expression must be an expression over this `DataFrame`, attempting to add a column from some other DataFrame will raise an error.
+     *
+     * @param colName The name of the new column.
+     * @param col The column expression for the new column.
+     */
+    DataFrame withColumn(const std::string &colName, const spark::sql::functions::Column &col) const;
 
 private:
     friend class GroupedData;

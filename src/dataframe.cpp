@@ -19,6 +19,7 @@
 #include <google/protobuf/wrappers.pb.h>
 
 #include "dataframe.h"
+#include "functions.h"
 #include "types.h"
 #include "writer.h"
 #include "group.h"
@@ -471,7 +472,7 @@ DataFrame DataFrame::select(const std::vector<std::string> &cols) const
     return DataFrame(stub_, plan, session_id_, user_id_);
 }
 
-DataFrame DataFrame::select(const std::vector<spark::sql::types::Column> &cols) const
+DataFrame DataFrame::select(const std::vector<spark::sql::functions::Column> &cols) const
 {
     Plan plan;
     auto *project = plan.mutable_root()->mutable_project();
@@ -646,7 +647,7 @@ DataFrame DataFrame::filter(const std::string &condition) const
     return DataFrame(stub_, plan, session_id_, user_id_);
 }
 
-DataFrame DataFrame::filter(const spark::sql::types::Column &condition) const
+DataFrame DataFrame::filter(const spark::sql::functions::Column &condition) const
 {
     Plan plan;
     auto *filter_rel = plan.mutable_root()->mutable_filter();
@@ -1076,11 +1077,11 @@ GroupedData DataFrame::groupBy()
  */
 GroupedData DataFrame::groupBy(const std::vector<std::string> &cols)
 {
-    std::vector<spark::sql::types::Column> col_exprs;
+    std::vector<spark::sql::functions::Column> col_exprs;
     col_exprs.reserve(cols.size());
     for (const auto &name : cols)
     {
-        col_exprs.push_back(spark::sql::types::col(name));
+        col_exprs.push_back(spark::sql::functions::col(name));
     }
     return GroupedData(*this, std::move(col_exprs));
 }
@@ -1088,7 +1089,7 @@ GroupedData DataFrame::groupBy(const std::vector<std::string> &cols)
 /**
  * @brief Grouping by Column expressions. This allows for math/aliases in grouping.
  */
-GroupedData DataFrame::groupBy(const std::vector<spark::sql::types::Column> &cols)
+GroupedData DataFrame::groupBy(const std::vector<spark::sql::functions::Column> &cols)
 {
     return GroupedData(*this, cols);
 }
@@ -1099,4 +1100,21 @@ GroupedData DataFrame::groupBy(const std::vector<spark::sql::types::Column> &col
 GroupedData DataFrame::groupBy(std::initializer_list<std::string> cols)
 {
     return groupBy(std::vector<std::string>(cols));
+}
+
+DataFrame DataFrame::withColumn(const std::string &colName, const spark::sql::functions::Column &col) const
+{
+    spark::connect::Relation rel;
+    auto *with_cols = rel.mutable_with_columns();
+
+    *with_cols->mutable_input() = this->plan_.root();
+
+    auto *alias = with_cols->add_aliases();
+    alias->add_name(colName);
+    *alias->mutable_expr() = *col.expr;
+
+    spark::connect::Plan new_plan;
+    *new_plan.mutable_root() = rel;
+
+    return DataFrame(stub_, new_plan, session_id_, user_id_);
 }
