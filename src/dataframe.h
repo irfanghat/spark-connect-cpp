@@ -90,7 +90,7 @@ public:
      * @param cols A vector of column names.
      * @example auto df_subset = df.select({"b", "a"});
      */
-    DataFrame select(const std::vector<std::string> &cols);
+    DataFrame select(const std::vector<std::string> &cols) const;
 
     /**
      * @brief Projects a set of `Column` expressions and returns a new DataFrame.
@@ -98,26 +98,26 @@ public:
      * @example auto filtered_df = df.filter(col("name") == lit("Alice"))
      *                     .select({col("name"), _col.alias("age_plus_one")});
      */
-    DataFrame select(const std::vector<spark::sql::types::Column> &cols);
+    DataFrame select(const std::vector<spark::sql::types::Column> &cols) const;
 
-    DataFrame select(std::initializer_list<std::string> cols);
+    DataFrame select(std::initializer_list<std::string> cols) const;
 
     /**
      * @brief Filters rows using the given SQL condition string.
      * @param condition SQL expression (e.g., "age > 3")
      */
-    DataFrame filter(const std::string &condition);
+    DataFrame filter(const std::string &condition) const;
 
     /**
      * @brief Filters rows using a Column expression.
      * @param condition Column expression (e.g., col("age") > lit(21))
      */
-    DataFrame filter(const spark::sql::types::Column &condition);
+    DataFrame filter(const spark::sql::types::Column &condition) const;
 
     /**
      * @brief Alias for filter().
      */
-    DataFrame where(const std::string &condition);
+    DataFrame where(const std::string &condition) const;
 
     /**
      * @brief Returns the first n rows.
@@ -142,7 +142,7 @@ public:
     /**
      * @brief Returns a new DataFrame by taking the first n rows.
      */
-    DataFrame limit(int n);
+    DataFrame limit(int n) const;
 
     /**
      * @brief Returns the number of rows in this DataFrame.
@@ -160,12 +160,12 @@ public:
      * @brief Returns a new DataFrame with duplicate rows removed - equivalent to `distinct()` function
      */
 
-    DataFrame dropDuplicates();
+    DataFrame dropDuplicates() const;
     /**
      * @brief Returns a new DataFrame with duplicate rows removed,
      *          considering only the given subset of columns - equivalent to `distinct()` function
      */
-    DataFrame dropDuplicates(const std::vector<std::string> &subset);
+    DataFrame dropDuplicates(const std::vector<std::string> &subset) const;
 
     /**
      * @brief Alias for `dropDuplicates()`.
@@ -336,6 +336,23 @@ public:
     GroupedData groupBy(const std::vector<spark::sql::types::Column> &cols);
     GroupedData groupBy(std::initializer_list<std::string> cols);
     GroupedData groupBy();
+
+    /**
+     * @brief Returns a new `DataFrame`. Concise syntax for chaining custom transformations.
+     * @tparam F A callable type that takes a DataFrame as the first argument.
+     * @tparam Args Additional argument types to pass to the function.
+     * @param func A function that takes a DataFrame and returns a DataFrame.
+     * @param args Optional additional arguments to pass to func.
+     * @return A transformed `DataFrame`.
+     */
+    template <typename F, typename... Args>
+    DataFrame transform(F func, Args &&...args) const
+    {
+        // --------------------------------------------------------------------
+        // Invoke the function with this DataFrame and any additional arguments
+        // --------------------------------------------------------------------
+        return func(*this, std::forward<Args>(args)...);
+    }
 
 private:
     friend class GroupedData;

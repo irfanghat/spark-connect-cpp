@@ -58,16 +58,17 @@ TEST_F(SparkIntegrationTest, DatabricksNycTaxiAnalysis)
     // This example performs analysis on the trip distance
     // and fare amounts using the 'nyc trips' sample dataset
     // ------------------------------------------------
-    auto df = spark->sql(
-        "SELECT "
-        "  pickup_zip, "
-        "  COUNT(*) as total_trips, "
-        "  ROUND(AVG(fare_amount), 2) as avg_fare, "
-        "  MAX(trip_distance) as longest_trip "
-        "FROM samples.nyctaxi.trips "
-        "WHERE fare_amount > 0 "
-        "GROUP BY pickup_zip "
-        "ORDER BY total_trips DESC");
+    auto df = spark->sql(R"(
+        SELECT 
+            pickup_zip, 
+            COUNT(*) AS total_trips, 
+            ROUND(AVG(fare_amount), 2) AS avg_fare, 
+            MAX(trip_distance) AS longest_trip 
+        FROM samples.nyctaxi.trips 
+        WHERE fare_amount > 0 
+        GROUP BY pickup_zip 
+        ORDER BY total_trips DESC
+    )");
 
     df.show(20);
 
