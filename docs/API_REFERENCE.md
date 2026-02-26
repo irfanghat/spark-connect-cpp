@@ -1077,3 +1077,121 @@ age_group_counts.show();
 | 2.500000             | 1                    |
 +----------------------+----------------------+
 ```
+
+### Transform
+#### Basic
+
+```cpp
+auto df = spark->range(10);
+
+// --------------------------------------------------------------------
+// We can also define MultiplyColumn as follows:
+//
+// auto MultiplyColumn = [](DataFrame df, std::string name, int factor)
+// {
+//     return df.select({(col(name) * lit(factor)).alias(name)});
+// };
+//
+//
+// The column name in this case will be "id":
+//
+// auto results = df.transform(MultiplyColumn, "id", 10).filter("id > 50");
+// --------------------------------------------------------------------
+
+auto results = df.transform(MultiplyColumn, "id", 10).filter("(id * 10) > 50");
+
+results.show();
+```
+
+**Output:**
+
+```
++----------------------+
+| (id * 10)            |
++----------------------+
+| 60                   |
+| 70                   |
+| 80                   |
+| 90                   |
++----------------------+
+```
+
+#### Complex
+
+```cpp
+auto raw_df = spark->sql(
+    R"(
+        SELECT * FROM VALUES 
+            ('John', 'Doe', 25, 'JOHN.DOE@GMAIL.COM'), 
+            ('Jane', 'Smith', 15, 'jane_smith@yahoo.com'), 
+            ('Alice', 'Brown', 30, 'ALICE.B@PROV.EDU'), 
+            ('Bob', 'Wilson', 17, 'bob.wilson@startup.io'), 
+            ('Charlie', 'Davis', 12, 'CHarlie@D-NET.COM'), 
+            ('Diana', 'Prince', 28, 'DIANA.PRINCE@AMAZON.COM'), 
+            ('Ethan', 'Hunt', 45, 'ETHAN_HUNT@IMF.GOV'), 
+            ('Fiona', 'Gallagher', 16, 'fiona.g@southside.net'), 
+            ('Grant', 'Martin', 72, 'GRRM@CMPNY.COM'), 
+            ('Hannah', 'Abbott', 18, 'h.abbott@hogwarts.ac.uk') 
+        AS people(first, last, age, email)
+    )");
+
+raw_df.show();
+
+auto add_full_name = [](const DataFrame &df)
+{
+    return df.withColumn("full_name", spark::sql::functions::concat_ws(" ", {col("first"), col("last")}));
+};
+
+auto clean_email = [](const DataFrame &df)
+{
+    return df.withColumn("email", lower(col("email")));
+};
+
+auto add_status = [](const DataFrame &df)
+{
+    return df.withColumn("status",
+                            when(col("age") > lit(18),
+                                lit("adult"))
+                                .otherwise(lit("minor")));
+};
+
+auto df = raw_df
+                .transform(add_full_name)
+                .transform(clean_email)
+                .transform(add_status);
+
+df.show();
+```
+
+**Output:**
+
+```
++----------------------+----------------------+----------------------+----------------------+
+| first                | last                 | age                  | email                |
++----------------------+----------------------+----------------------+----------------------+
+| John                 | Doe                  | 25                   | JOHN.DOE@GMAIL.COM   |
+| Jane                 | Smith                | 15                   | jane_smith@yahoo.com |
+| Alice                | Brown                | 30                   | ALICE.B@PROV.EDU     |
+| Bob                  | Wilson               | 17                   | bob.wilson@startu... |
+| Charlie              | Davis                | 12                   | CHarlie@D-NET.COM    |
+| Diana                | Prince               | 28                   | DIANA.PRINCE@AMAZ... |
+| Ethan                | Hunt                 | 45                   | ETHAN_HUNT@IMF.GOV   |
+| Fiona                | Gallagher            | 16                   | fiona.g@southside... |
+| Grant                | Martin               | 72                   | GRRM@CMPNY.COM       |
+| Hannah               | Abbott               | 18                   | h.abbott@hogwarts... |
++----------------------+----------------------+----------------------+----------------------+
++----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+
+| first                | last                 | age                  | email                | full_name            | status               |
++----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+
+| John                 | Doe                  | 25                   | john.doe@gmail.com   | John Doe             | adult                |
+| Jane                 | Smith                | 15                   | jane_smith@yahoo.com | Jane Smith           | minor                |
+| Alice                | Brown                | 30                   | alice.b@prov.edu     | Alice Brown          | adult                |
+| Bob                  | Wilson               | 17                   | bob.wilson@startu... | Bob Wilson           | minor                |
+| Charlie              | Davis                | 12                   | charlie@d-net.com    | Charlie Davis        | minor                |
+| Diana                | Prince               | 28                   | diana.prince@amaz... | Diana Prince         | adult                |
+| Ethan                | Hunt                 | 45                   | ethan_hunt@imf.gov   | Ethan Hunt           | adult                |
+| Fiona                | Gallagher            | 16                   | fiona.g@southside... | Fiona Gallagher      | minor                |
+| Grant                | Martin               | 72                   | grrm@cmpny.com       | Grant Martin         | adult                |
+| Hannah               | Abbott               | 18                   | h.abbott@hogwarts... | Hannah Abbott        | minor                |
++----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+
+```
