@@ -295,34 +295,8 @@ namespace spark::sql::types
     /**
      * @brief Converts an Arrow Array value at a specific row into a Spark `ColumnValue`.
      * This acts as a bridge between the Arrow transport layer and the respective C++ Row model.
-     * 
+     *
      * See: `Row` implementation.
      */
     ColumnValue arrayValueToVariant(const std::shared_ptr<arrow::Array> &array, int64_t row);
-
-    struct Column
-    {
-        std::shared_ptr<spark::connect::Expression> expr;
-
-        explicit Column(std::string name);
-        explicit Column(spark::connect::Expression e);
-
-        // ---------------------------
-        // DSL Operators
-        // ---------------------------
-        Column operator+(const Column &other) const;
-        Column operator-(const Column &other) const;
-        Column operator*(const Column &other) const;
-        Column operator/(const Column &other) const;
-        Column operator==(const Column &other) const;
-        Column operator>(const Column &other) const;
-        Column operator<(const Column &other) const;
-
-        Column alias(const std::string &name) const;
-    };
-
-    Column col(const std::string &name);
-    Column lit(int32_t value);
-    Column lit(double value);
-    Column lit(const std::string &value);
 }

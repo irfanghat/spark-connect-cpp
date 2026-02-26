@@ -4,8 +4,10 @@
 #include "session.h"
 #include "dataframe.h"
 #include "config.h"
+#include "functions.h"
 #include "types.h"
 
+using namespace spark::sql::functions;
 using namespace spark::sql::types;
 using ::testing::ElementsAre;
 

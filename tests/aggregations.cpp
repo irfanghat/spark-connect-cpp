@@ -1,12 +1,15 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 #include <gmock/gmock-matchers.h>
+
 #include "session.h"
 #include "config.h"
 #include "dataframe.h"
 #include "group.h"
+#include "functions.h"
 #include "types.h"
 
+using namespace spark::sql::functions;
 using namespace spark::sql::types;
 using ::testing::ElementsAre;
 

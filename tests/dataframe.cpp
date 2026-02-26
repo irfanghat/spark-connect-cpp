@@ -1,12 +1,16 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
+
 #include <iostream>
 #include <sstream>
+
 #include "session.h"
 #include "config.h"
 #include "dataframe.h"
+#include "functions.h"
 #include "types.h"
 
+using namespace spark::sql::functions;
 using namespace spark::sql::types;
 using ::testing::ElementsAre;
 
@@ -715,4 +719,54 @@ TEST_F(SparkIntegrationTest, DataFrameTransform)
     EXPECT_EQ(rows[3].get_long("(id * 10)"), 90);
 
     EXPECT_EQ(rows.size(), 4);
+}
+
+TEST_F(SparkIntegrationTest, ChainedDataFrameTransforms)
+{
+    auto raw_df = spark->sql(
+        R"(
+            SELECT * FROM VALUES 
+                ('John', 'Doe', 25, 'JOHN.DOE@GMAIL.COM'), 
+                ('Jane', 'Smith', 15, 'jane_smith@yahoo.com'), 
+                ('Alice', 'Brown', 30, 'ALICE.B@PROV.EDU'), 
+                ('Bob', 'Wilson', 17, 'bob.wilson@startup.io'), 
+                ('Charlie', 'Davis', 12, 'CHarlie@D-NET.COM'), 
+                ('Diana', 'Prince', 28, 'DIANA.PRINCE@AMAZON.COM'), 
+                ('Ethan', 'Hunt', 45, 'ETHAN_HUNT@IMF.GOV'), 
+                ('Fiona', 'Gallagher', 16, 'fiona.g@southside.net'), 
+                ('Grant', 'Martin', 72, 'GRRM@CMPNY.COM'), 
+                ('Hannah', 'Abbott', 18, 'h.abbott@hogwarts.ac.uk') 
+            AS people(first, last, age, email)
+        )");
+
+    EXPECT_NO_THROW(raw_df.show());
+
+    auto add_full_name = [](const DataFrame &df)
+    {
+        return df.withColumn("full_name", spark::sql::functions::concat_ws(" ", {col("first"), col("last")}));
+    };
+
+    auto clean_email = [](const DataFrame &df)
+    {
+        return df.withColumn("email", lower(col("email")));
+    };
+
+    auto add_status = [](const DataFrame &df)
+    {
+        return df.withColumn("status",
+                             when(col("age") > lit(18),
+                                  lit("adult"))
+                                 .otherwise(lit("minor")));
+    };
+
+    auto df = raw_df
+                  .transform(add_full_name)
+                  .transform(clean_email)
+                  .transform(add_status);
+
+    EXPECT_NO_THROW(df.show());
+
+    auto cols = df.columns();
+
+    EXPECT_GT(cols.size(), raw_df.columns().size());
 }
