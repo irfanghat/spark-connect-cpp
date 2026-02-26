@@ -6,7 +6,7 @@ We prioritize security updates for the current stable release and the previous m
 
 ## Reporting a Vulnerability
 
-We take the security of our Spark Connect C++ client seriously. If you believe you have found a security vulnerability, please do not report it via public GitHub issues.
+If you believe you have found a security vulnerability, please do not report it via public GitHub issues.
 
 ### How to Report
 
