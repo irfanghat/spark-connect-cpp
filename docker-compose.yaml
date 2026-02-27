@@ -3,7 +3,8 @@ services:
     image: "apache/spark:3.5.3-scala2.12-java17-python3-ubuntu"
     command: >
       /opt/spark/sbin/start-connect-server.sh
-      --packages "org.apache.spark:spark-connect_2.12:3.5.3,io.delta:delta-spark_2.12:3.2.0"
+      --packages "org.apache.spark:spark-connect_2.12:3.5.3,io.delta:delta-spark_2.12:3.2.0,io.graphframes:graphframes-spark3_2.12:0.10.0"
+      --conf "spark.connect.extensions.relation.classes=org.apache.spark.sql.graphframes.GraphFramesConnect"
       --conf "spark.driver.extraJavaOptions=-Divy.cache.dir=/tmp -Divy.home=/tmp"
       --conf "spark.sql.extensions=io.delta.sql.DeltaSparkSessionExtension"
       --conf "spark.sql.catalog.spark_catalog=org.apache.spark.sql.delta.catalog.DeltaCatalog"
