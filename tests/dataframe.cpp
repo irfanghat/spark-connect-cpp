@@ -9,34 +9,12 @@
 #include "dataframe.h"
 #include "functions.h"
 #include "types.h"
+#include "spark_integration.h"
 
 using namespace spark::sql::functions;
 using namespace spark::sql::types;
 using ::testing::ElementsAre;
 
-class SparkIntegrationTest : public ::testing::Test
-{
-protected:
-    static SparkSession *spark;
-
-    static void SetUpTestSuite()
-    {
-        spark = &SparkSession::builder()
-                     .master("localhost")
-                     .appName("SparkConnectCppGTest")
-                     .getOrCreate();
-    }
-
-    static void TearDownTestSuite()
-    {
-        if (spark)
-        {
-            spark->stop();
-        }
-    }
-};
-
-SparkSession *SparkIntegrationTest::spark = nullptr;
 
 // ----------------------------------------------------------------
 // The following suite validates Basic Range Query logic,

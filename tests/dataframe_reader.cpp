@@ -7,30 +7,8 @@
 #include "session.h"
 #include "config.h"
 #include "dataframe.h"
+#include "spark_integration.h"
 
-class SparkIntegrationTest : public ::testing::Test
-{
-protected:
-    static SparkSession *spark;
-
-    static void SetUpTestSuite()
-    {
-        spark = &SparkSession::builder()
-                     .master("localhost")
-                     .appName("SparkConnectCppGTest")
-                     .getOrCreate();
-    }
-
-    static void TearDownTestSuite()
-    {
-        if (spark)
-        {
-            spark->stop();
-        }
-    }
-};
-
-SparkSession *SparkIntegrationTest::spark = nullptr;
 
 // ----------------------------------------------------------------
 // The following suite tests reading from various file formats i.e.
