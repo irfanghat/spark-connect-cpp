@@ -12,5 +12,12 @@
         "VCPKG_ROOT": ""
       }
     }
+  ],
+  "buildPresets": [
+    {
+      "name": "",
+      "displayName": "",
+      "configurePreset": "default"
+    }
   ]
 }
