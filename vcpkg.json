@@ -3,7 +3,8 @@
     "arrow",
     "fmt",
     "grpc",
+    "gtest",
     "protobuf",
-    "gtest"
+    "libuuid"
   ]
 }

@@ -18,6 +18,7 @@ find_package(Protobuf CONFIG REQUIRED)
 find_package(gRPC CONFIG REQUIRED)
 find_package(Arrow CONFIG REQUIRED)
 find_package(Parquet CONFIG REQUIRED)
+find_package(unofficial-libuuid CONFIG REQUIRED)
 find_package(GTest REQUIRED)
 
 
@@ -69,8 +70,13 @@ list(FILTER PROJECT_SOURCES EXCLUDE REGEX "${CMAKE_SOURCE_DIR}/src/main.cpp")
 
 add_library(${PROJECT_NAME} STATIC ${PROJECT_SOURCES})
 
-target_link_libraries(${PROJECT_NAME} PRIVATE
+target_link_libraries(${PROJECT_NAME} PUBLIC
         ${SPARK_CONNECT_PROTO_LIB}
+        unofficial::UUID::uuid
+)
+
+target_include_directories(${PROJECT_NAME} PUBLIC
+        "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>"
 )
 
 
