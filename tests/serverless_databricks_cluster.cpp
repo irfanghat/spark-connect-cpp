@@ -6,15 +6,36 @@
 #include "config.h"
 #include "dataframe.h"
 #include "env_loader.h"
-#include "spark_integration.h"
 
 #include <iostream>
 #include <sstream>
 #include <fstream>
 #include <cstdlib>
 
+class DatabricksServerlessIntegrationTest : public ::testing::Test
+{
+protected:
+    static SparkSession *spark;
 
-TEST_F(SparkIntegrationTest, DatabricksNycTaxiAnalysis_Serverless)
+    static void SetUpTestSuite()
+    {
+        load_env("../.env");
+
+        const char *workspace_url = std::getenv("DATABRICKS_WORKSPACE_URL");
+        const char *token = std::getenv("DATABRICKS_TOKEN");
+        const char *warehouse_id = std::getenv("DATABRICKS_WAREHOUSE_ID");
+
+        spark = &SparkSession::builder()
+                     .master(workspace_url)
+                     .serverless(token, warehouse_id)
+                     .appName("spark-connect-cpp")
+                     .getOrCreate();
+    }
+};
+
+SparkSession *DatabricksServerlessIntegrationTest::spark = nullptr;
+
+TEST_F(DatabricksServerlessIntegrationTest, DatabricksNycTaxiAnalysis_Serverless)
 {
     // ------------------------------------------------
     // Querying the public Databricks samples dataset
