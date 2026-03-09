@@ -5,14 +5,15 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 
-# Declare project
-
 set(PROJECT_NAME "spark_connect_cpp")
 
 project(${PROJECT_NAME})
 
 
-# Dependencies - loaded from vcpkg CMake toolchain
+##############################################################################################
+# DEPENDENCIES
+# Loaded from VCPKG Toolchain
+##############################################################################################
 
 find_package(Protobuf CONFIG REQUIRED)
 find_package(gRPC CONFIG REQUIRED)
@@ -22,7 +23,10 @@ find_package(unofficial-libuuid CONFIG REQUIRED)
 find_package(GTest REQUIRED)
 
 
-# Spark Connect Proto library
+##############################################################################################
+# SPARK CONNECT PROTO LIB
+# Generate proto buffer data and gRPC service source files (*.pb.h, *.grpc.pb.h, *.pb.cc, *.grpc.pb.cc)
+##############################################################################################
 
 set(SPARK_CONNECT_PROTO_LIB "spark_connect")
 set(SPARK_CONNECT_PROTO_BUILD "${CMAKE_CURRENT_BINARY_DIR}/gen")
@@ -60,7 +64,9 @@ target_include_directories(${SPARK_CONNECT_PROTO_LIB} PUBLIC
 )
 
 
-# Project library
+##############################################################################################
+# PROJECT LIBRARY
+##############################################################################################
 
 message("Project library and link libraries ${PROJECT_NAME}")
 
@@ -80,7 +86,10 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 )
 
 
-# Test artifact
+##############################################################################################
+# TEST ARTIFACT
+# Integration tests using GTest
+##############################################################################################
 
 message("Project tests with GTest")
 
