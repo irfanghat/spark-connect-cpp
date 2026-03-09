@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "configurePresets": [
+    {
+      "name": "default",
+      "inherits": "vcpkg",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "",
+        "CMAKE_CXX_COMPILER": ""
+      },
+      "environment": {
+        "VCPKG_ROOT": ""
+      }
+    }
+  ]
+}

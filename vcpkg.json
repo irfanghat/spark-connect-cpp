@@ -1,0 +1,9 @@
+{
+  "dependencies": [
+    "arrow",
+    "fmt",
+    "grpc",
+    "protobuf",
+    "gtest"
+  ]
+}
