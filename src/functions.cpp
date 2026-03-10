@@ -67,6 +67,15 @@ namespace spark::sql::functions
         return Column(std::move(e));
     }
 
+    Column Column::cast(const std::string &type) const
+    {
+        spark::connect::Expression e;
+        auto *cast = e.mutable_cast();
+        *cast->mutable_expr() = *this->expr;
+        cast->mutable_type()->mutable_unparsed()->set_data_type_string(type);
+        return Column(std::move(e));
+    }
+
     Column lower(const Column &e)
     {
         spark::connect::Expression expr;
@@ -79,6 +88,13 @@ namespace spark::sql::functions
     Column col(const std::string &name) { return Column(name); }
 
     Column lit(int32_t value)
+    {
+        spark::connect::Expression e;
+        e.mutable_literal()->set_integer(value);
+        return Column(std::move(e));
+    }
+
+    Column lit(int64_t value)
     {
         spark::connect::Expression e;
         e.mutable_literal()->set_integer(value);

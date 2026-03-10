@@ -7,7 +7,9 @@
 #include <chrono>
 
 #include <grpcpp/grpcpp.h>
+
 #include <spark/connect/base.grpc.pb.h>
+
 #include "config.h"
 #include "dataframe.h"
 #include "reader.h"

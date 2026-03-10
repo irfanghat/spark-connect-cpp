@@ -16,7 +16,7 @@ protected:
     static void SetUpTestSuite()
     {
         spark = &SparkSession::builder()
-                     .master("localhost")
+                     .master("sc://localhost")
                      .appName("SparkConnectCppGTest")
                      .getOrCreate();
     }

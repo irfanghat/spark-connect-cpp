@@ -12,6 +12,11 @@
 
 using namespace spark::sql::types;
 
+namespace graphframes
+{
+    class GraphFrame;
+}
+
 class DataFrameWriter;
 class GroupedData;
 
@@ -369,6 +374,7 @@ public:
 
 private:
     friend class GroupedData;
+    friend class graphframes::GraphFrame;
 
     std::shared_ptr<spark::connect::SparkConnectService::Stub> stub_;
     spark::connect::Plan plan_;

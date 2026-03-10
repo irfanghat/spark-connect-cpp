@@ -22,7 +22,7 @@ protected:
     static void SetUpTestSuite()
     {
         spark = &SparkSession::builder()
-                     .master("localhost")
+                     .master("sc://localhost")
                      .appName("SparkConnectCppGTest")
                      .getOrCreate();
     }
@@ -57,6 +57,15 @@ TEST_F(SparkIntegrationTest, BasicRangeQuery)
 {
     auto df = spark->sql("SELECT * FROM range(10000000)");
     EXPECT_NO_THROW(df.show(5));
+}
+
+TEST_F(SparkIntegrationTest, DataFrameLimit)
+{
+    auto df = spark->range(10000);
+    auto result_df = df.limit(10);
+
+    EXPECT_NO_THROW(result_df.show());
+    EXPECT_LT(result_df.count(), df.count());
 }
 
 TEST_F(SparkIntegrationTest, SimpleStringSelection)
