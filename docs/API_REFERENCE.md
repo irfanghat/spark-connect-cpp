@@ -1200,3 +1200,164 @@ df.show();
 | Hannah               | Abbott               | 18                   | h.abbott@hogwarts... | Hannah Abbott        | minor                |
 +----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+
 ```
+
+## GraphFrames
+
+### Page Rank
+
+```cpp
+DataFrame *vertices = nullptr;
+DataFrame *edges = nullptr;
+
+vertices = spark->sql(R"(
+    SELECT CAST(id AS INT) AS id, name, age FROM VALUES
+        (1, 'Alice',   34),
+        (2, 'Bob',     36),
+        (3, 'Charlie', 30),
+        (4, 'Anne',    29)
+    AS people(id, name, age)
+)");
+
+edges = spark->sql(R"(
+    SELECT CAST(src AS INT) AS src, CAST(dst AS INT) AS dst, relationship FROM VALUES
+        (1, 2, 'friend'),
+        (2, 3, 'follow'),
+        (3, 1, 'friend'),
+        (1, 4, 'colleague')
+    AS connections(src, dst, relationship)
+)");
+
+auto gf = GraphFrame(*vertices, *edges);
+
+auto rows = gf().pageRank(0.15, 5).collect();
+gf().pageRank(0.15, 5).show();
+```
+
+### Motif Matching
+
+```cpp
+auto gf = GraphFrame(*vertices, *edges);
+
+gf().find("(a)-[e]->(b)");
+gf().find("(a)-[e1]->(b); (b)-[e2]->(c); (c)-[e3]->(a)");
+gf().find("(a)-[e1]->(b); (b)-[e2]->(c)");
+gf().find("(a)-[e]->(b)");
+gf().find("(a)-[e]->(b)").show();
+```
+
+### Triplets
+
+```cpp
+auto gf = GraphFrame(*vertices, *edges);
+gf().triplets();
+gf().triplets().show();
+```
+
+### Filter Edges
+
+```cpp
+auto gf = GraphFrame(*vertices, *edges);
+gf().filterEdges("relationship = 'friend'");
+gf().filterEdges(col("relationship") == lit("friend"));
+gf().filterEdges("relationship = 'enemy'");
+gf().filterEdges("relationship = 'friend'").show()
+```
+
+### Filter Vertices
+
+```cpp
+auto gf = GraphFrame(*vertices, *edges);
+gf().filterVertices("age < 34");
+gf().filterVertices(col("age") < lit(34));
+gf().filterVertices("age > 100");
+gf().filterVertices("age < 34").show();
+```
+
+### Drop Isolated Vertices
+
+```cpp
+auto gf = GraphFrame(*vertices, *edges);
+gf().dropIsolatedVertices();
+
+auto v_with_isolated = spark->sql(R"(
+    SELECT * FROM VALUES
+        (1, 'Alice',   34),
+        (2, 'Bob',     36),
+        (3, 'Charlie', 30),
+        (4, 'Anne',    29),
+        (99, 'Ghost',  99)
+    AS people(id, name, age)
+)");
+
+GraphFrame(v_with_isolated, *edges).dropIsolatedVertices().show();
+```
+
+### Breadth First Search
+
+```cpp
+auto gf = GraphFrame(*vertices, *edges);
+gf().bfs("id = 1", "id = 3");
+gf().bfs("id = 4", "id = 1");
+gf().bfs("id = 1", "id = 2", "relationship = 'friend'");
+gf().bfs(col("id") == lit(1), col("id") == lit(3));
+gf().bfs("id = 1", "id = 3").show();
+```
+
+### Connected Components
+
+```cpp
+auto gf = GraphFrame(*vertices, *edges);
+gf().connectedComponents();
+gf().connectedComponents().show();
+```
+
+### Strongly Connected Components
+
+```cpp
+auto gf = GraphFrame(*vertices, *edges);
+gf().stronglyConnectedComponents(10);
+gf().stronglyConnectedComponents();
+gf().stronglyConnectedComponents().show();
+```
+
+### Shortest Paths
+
+```cpp
+auto gf = GraphFrame(*vertices, *edges);
+gf().shortestPaths(std::vector<int32_t>{1, 3});
+gf().shortestPaths(std::vector<int32_t>{1});
+gf().shortestPaths(std::vector<int32_t>{1}).show();
+```
+
+### Triangle Count
+
+```cpp
+auto gf = GraphFrame(*vertices, *edges);
+
+gf().triangleCount();
+gf().triangleCount().show();
+
+auto rows = gf().triangleCount().collect();
+
+std::map<int32_t, int64_t> counts;
+for (auto &row : rows)
+    counts[row.get<int32_t>("id")] = row.get<int64_t>("count");
+```
+
+### Label Propagation
+
+```cpp
+auto gf = GraphFrame(*vertices, *edges);
+gf().labelPropagation(5);
+```
+
+### Method Chaining (GraphFrames)
+
+```cpp
+// GraphFrames result into plain DataFrame ops
+auto result = gf()
+                .find("(a)-[e]->(b)")
+                .filter("e.relationship = 'friend'");
+
+auto result = gf().pageRank(0.15, 5).filter("pagerank > 0.0");
+```

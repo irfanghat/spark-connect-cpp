@@ -112,6 +112,7 @@ The Spark Connect C++ client is **not a replacement** for Python or Scala Spark 
 | Analytics    | Window Functions                     | ○      | Planned             |
 | Catalog      | Table/Database Management            | ○      | Planned             |
 | Streaming    | Structured Streaming                 | ◌      | Not Implemented     |
+| GraphFrames  | Graph processing & analytics         | ●      | Implemented         |
 
 ---
 

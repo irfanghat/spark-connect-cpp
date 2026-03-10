@@ -420,7 +420,25 @@ TEST_F(SparkIntegrationTest, TriangleCountShow)
 }
 
 // --------------------------------------------------------------------------
-// Chaining - GraphFrames results into plain DataFrame ops
+// labelPropagation() — omitted
+//
+// Important:
+// Requires increased Spark executor memory in some cases.
+// Especially when running alongside other long-running algorithms
+// (ConnectedComponents, SCC, TriangleCount)
+// --------------------------------------------------------------------------
+TEST_F(SparkIntegrationTest, LabelPropagationReturnsOneRowPerVertex)
+{
+    EXPECT_EQ(gfCount(gf().labelPropagation(5)), 4);
+}
+
+TEST_F(SparkIntegrationTest, LabelPropagationHasLabelColumn)
+{
+    EXPECT_THAT(gfColumns(gf().labelPropagation(5)), Contains("label"));
+}
+
+// --------------------------------------------------------------------------
+// Chaining - GraphFrames result into plain DataFrame ops
 // --------------------------------------------------------------------------
 TEST_F(SparkIntegrationTest, FindThenFilter)
 {
@@ -441,22 +459,4 @@ TEST_F(SparkIntegrationTest, PageRankOnSubgraph)
     auto sub_v = vertices->filter("age >= 30");
     auto sub_e = edges->filter("src IN (1,2,3) AND dst IN (1,2,3)");
     EXPECT_EQ(gfCount(GraphFrame(sub_v, sub_e).pageRank(0.15, 3)), 3);
-}
-
-// --------------------------------------------------------------------------
-// labelPropagation() — omitted
-//
-// Important:
-// Requires increased Spark executor memory in some cases.
-// Especially when running alongside other long-running algorithms
-// (ConnectedComponents, SCC, TriangleCount)
-// --------------------------------------------------------------------------
-TEST_F(SparkIntegrationTest, LabelPropagationReturnsOneRowPerVertex)
-{
-    EXPECT_EQ(gfCount(gf().labelPropagation(5)), 4);
-}
-
-TEST_F(SparkIntegrationTest, LabelPropagationHasLabelColumn)
-{
-    EXPECT_THAT(gfColumns(gf().labelPropagation(5)), Contains("label"));
 }
