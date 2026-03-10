@@ -25,9 +25,9 @@ jobs:
 
       - name: Install Spark
         run: |
-          curl -fL https://dlcdn.apache.org/spark/spark-3.5.3/spark-3.5.3-bin-hadoop3.tgz -o spark.tgz
+          curl -fL https://dlcdn.apache.org/spark/spark-3.5.8/spark-3.5.8-bin-hadoop3.tgz -o spark.tgz
           tar -xzf spark.tgz
-          mv spark-3.5.3-bin-hadoop3 $HOME/spark
+          mv spark-3.5.8-bin-hadoop3 $HOME/spark
 
       - name: Start Spark Connect Server
         run: |
