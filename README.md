@@ -349,7 +349,7 @@ Running a sample application:
 int main()
 {
     auto spark = &SparkSession::builder()
-                     .master("localhost")
+                     .master("sc://localhost")
                      .appName("demo")
                      .getOrCreate();
 

@@ -10,7 +10,12 @@
 int main() {
     Config conf;
     conf.setHost("localhost").setPort(15002);
+    // -----------------------------------------------------------
+    // Alternatively...
+    // conf.setHost("sc://localhost").setPort(15002);
     // conf.setHost("123.45.67.8").setPort(15002);
+    // ...
+    // -----------------------------------------------------------
     SparkSession spark(conf);
 
     auto df = spark->sql("SELECT * FROM range(100)");

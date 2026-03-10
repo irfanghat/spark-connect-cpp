@@ -603,12 +603,9 @@ int64_t DataFrame::count()
     auto result_df = this->groupBy().count();
     auto rows = result_df.collect();
 
-    if (rows.empty())
+    if (rows.empty() || rows[0].values.empty())
         return 0;
 
-    // -----------------------------------------------------------
-    // Extract the first column of the first row i.e. the count
-    // -----------------------------------------------------------
     return rows[0].get_long(rows[0].column_names[0]);
 }
 

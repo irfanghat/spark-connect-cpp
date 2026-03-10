@@ -37,6 +37,7 @@ namespace spark::sql::functions
 
         Column alias(const std::string &name) const;
         Column otherwise(const Column &value) const;
+        Column cast(const std::string &type) const;
     };
 
     /**
@@ -48,6 +49,7 @@ namespace spark::sql::functions
      * @brief Creates a `Column` of literal value.
      */
     Column lit(int32_t value);
+    Column lit(int64_t value);
     Column lit(double value);
     Column lit(const std::string &value);
 
