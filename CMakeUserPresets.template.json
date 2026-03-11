@@ -2,7 +2,7 @@
   "version": 2,
   "configurePresets": [
     {
-      "name": "default",
+      "name": "spark",
       "inherits": "vcpkg",
       "cacheVariables": {
         "CMAKE_C_COMPILER": "",
@@ -11,13 +11,32 @@
       "environment": {
         "VCPKG_ROOT": ""
       }
+    },
+    {
+      "name": "debug",
+      "inherits": "spark",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "release",
+      "inherits": "spark",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
     }
   ],
   "buildPresets": [
     {
-      "name": "",
-      "displayName": "",
-      "configurePreset": "default"
+      "name": "debug",
+      "displayName": "Spark Debug Build",
+      "configurePreset": "debug"
+    },
+    {
+      "name": "release",
+      "displayName": "Spark Release Build",
+      "configurePreset": "release"
     }
   ]
 }
