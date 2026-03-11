@@ -163,6 +163,27 @@ SparkSession SparkSession::newSession()
 }
 
 /**
+ * @brief Runtime configuration interface for Spark.
+ * This is the interface through which the user can get and set all Spark and Hadoop configurations that are relevant to Spark SQL.
+ * When getting the value of a config, this defaults to the value set in the underlying `SparkContext`, if any.
+ */
+RuntimeConfig SparkSession::conf()
+{
+    return RuntimeConfig(stub_, config_.session_id, config_.user_id);
+}
+
+/**
+ * @brief Set the directory under which RDDs are going to be checkpointed.
+ * The directory must be an HDFS path if running on a cluster.
+ *
+ * @param path path to the directory where checkpoint files will be stored (must be HDFS path if running in cluster)
+ */
+void SparkSession::setCheckpointDir(const std::string &path)
+{
+    conf().set("spark.checkpoint.dir", path);
+}
+
+/**
  * @brief Stops the underlying Spark session.
  */
 void SparkSession::stop()
