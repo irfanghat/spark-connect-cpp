@@ -145,6 +145,7 @@ endmacro()
 # Test Suite Definitions
 ######################################################
 
+add_spark_test(test_configuration tests/configuration.cpp)
 add_spark_test(test_dataframe tests/dataframe.cpp)
 add_spark_test(test_graphframes tests/graphframes.cpp)
 add_spark_test(test_risk_management tests/risk_management.cpp)

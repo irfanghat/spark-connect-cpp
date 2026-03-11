@@ -38,6 +38,11 @@ public:
     void set(const std::string &key, int64_t value);
 
     /**
+     * @brief Sets a config key to a string value.
+     */
+    void set(const std::string &key, const char *value);
+
+    /**
      * @brief Gets a config value. Throws if the key is not set.
      */
     std::string get(const std::string &key) const;

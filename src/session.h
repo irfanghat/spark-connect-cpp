@@ -13,6 +13,7 @@
 #include "config.h"
 #include "dataframe.h"
 #include "reader.h"
+#include "runtime_config.h"
 
 class DataFrameReader;
 
@@ -38,7 +39,7 @@ public:
     public:
         /**
          * @brief Sets the master URL for the SparkSession.
-         * @param master The master URL (e.g., "adb-xxx.azuredatabricks.net").
+         * @param master The master URL (e.g., "sc://localhost" or "adb-xxx.azuredatabricks.net").
          * @return A reference to the Builder for chaining calls.
          */
         Builder &master(const std::string &master)
@@ -122,9 +123,32 @@ public:
     void stop();
 
     /**
-     * @brief Access the session configuration.
+     * @brief Returns a RuntimeConfig for reading and writing Spark session config.
+     *
+     * Changes are applied on the server and survive across DataFrame operations within this session.
+     *
+     * @example
+     * spark.conf().set("spark.sql.shuffle.partitions", "8");
+     *
+     * auto val = spark.conf().get("spark.sql.shuffle.partitions");
      */
-    Config &conf() { return config_; }
+    RuntimeConfig conf();
+
+    /**
+     * @brief Sets the Spark checkpoint directory for this session.
+     *
+     * Required by algorithms that use checkpointing internally, such as
+     * GraphFrames ConnectedComponents. Equivalent to calling `spark.conf().set("spark.checkpoint.dir", path)`
+     *
+     * @param path A path writable by the Spark executors (e.g. `/tmp/checkpoints`,
+     *             `hdfs:///checkpoints`, or an `ABFS/S3` URI for cloud deployments).
+     */
+    void setCheckpointDir(const std::string &path);
+
+    /**
+     * @brief Access the internal connection configuration (host, port, auth, etc.)
+     */
+    Config &connection() { return config_; }
 
     std::string session_id() const { return config_.session_id; }
     std::string user_id() const { return config_.user_id; }
@@ -139,7 +163,7 @@ private:
     static std::once_flag once_flag_;
 
     /**
-     * @brief  Internal Spark Configuration
+     * @brief  Internal Spark connection configuration
      */
     Config config_;
     std::shared_ptr<spark::connect::SparkConnectService::Stub> stub_;
