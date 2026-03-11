@@ -5,12 +5,12 @@
 #include "session.h"
 #include "config.h"
 #include "dataframe.h"
-#include "env_loader.h"
 
 #include <iostream>
 #include <sstream>
 #include <fstream>
 #include <cstdlib>
+#include "../util/env_loader.h"
 
 
 class DatabaricksIntegrationTest : public ::testing::Test

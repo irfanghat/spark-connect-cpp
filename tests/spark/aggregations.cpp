@@ -8,7 +8,7 @@
 #include "group.h"
 #include "functions.h"
 #include "types.h"
-#include "spark_integration.h"
+#include "spark_fixture.h"
 
 using namespace spark::sql::functions;
 using namespace spark::sql::types;

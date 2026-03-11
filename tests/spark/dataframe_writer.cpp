@@ -9,7 +9,7 @@
 #include "config.h"
 #include "dataframe.h"
 #include "writer.h"
-#include "spark_integration.h"
+#include "spark_fixture.h"
 
 using ::testing::ElementsAre;
 

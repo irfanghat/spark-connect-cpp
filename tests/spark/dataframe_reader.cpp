@@ -7,7 +7,7 @@
 #include "session.h"
 #include "config.h"
 #include "dataframe.h"
-#include "spark_integration.h"
+#include "spark_fixture.h"
 
 
 // ----------------------------------------------------------------
