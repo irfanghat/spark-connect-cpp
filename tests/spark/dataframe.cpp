@@ -37,6 +37,15 @@ TEST_F(SparkIntegrationTest, BasicRangeQuery)
     EXPECT_NO_THROW(df.show(5));
 }
 
+TEST_F(SparkIntegrationTest, DataFrameLimit)
+{
+    auto df = spark->range(10000);
+    auto result_df = df.limit(10);
+
+    EXPECT_NO_THROW(result_df.show());
+    EXPECT_LT(result_df.count(), df.count());
+}
+
 TEST_F(SparkIntegrationTest, SimpleStringSelection)
 {
     auto df = spark->sql("SELECT 'John' AS name");
