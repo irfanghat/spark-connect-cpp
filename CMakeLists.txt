@@ -10,10 +10,10 @@ set(PROJECT_NAME "spark_connect_cpp")
 project(${PROJECT_NAME})
 
 
-##############################################################################################
+#######################################################################################################
 # DEPENDENCIES
 # Loaded from VCPKG Toolchain
-##############################################################################################
+#######################################################################################################
 
 find_package(Protobuf CONFIG REQUIRED)
 find_package(gRPC CONFIG REQUIRED)
@@ -23,10 +23,10 @@ find_package(unofficial-libuuid CONFIG REQUIRED)
 find_package(GTest REQUIRED)
 
 
-##############################################################################################
+#######################################################################################################
 # SPARK CONNECT PROTO LIB
 # Generate proto buffer data and gRPC service source files (*.pb.h, *.grpc.pb.h, *.pb.cc, *.grpc.pb.cc)
-##############################################################################################
+#######################################################################################################
 
 set(SPARK_CONNECT_PROTO_LIB "spark_connect")
 set(SPARK_CONNECT_PROTO_BUILD "${CMAKE_CURRENT_BINARY_DIR}/gen")
@@ -64,9 +64,9 @@ target_include_directories(${SPARK_CONNECT_PROTO_LIB} PUBLIC
 )
 
 
-##############################################################################################
+#######################################################################################################
 # PROJECT LIBRARY
-##############################################################################################
+#######################################################################################################
 
 message("Project library and link libraries ${PROJECT_NAME}")
 
@@ -86,10 +86,10 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 )
 
 
-##############################################################################################
+#######################################################################################################
 # TEST ARTIFACT
 # Integration tests using GTest
-##############################################################################################
+#######################################################################################################
 
 message("Project tests with GTest")
 
@@ -125,3 +125,35 @@ gtest_discover_tests(
         ${PROJECT_NAME}_databricks_test
         LABELS "dbrx"
 )
+
+
+#######################################################################################################
+# PROJECT INSTALLATION
+#######################################################################################################
+
+include(GNUInstallDirs)
+
+install(TARGETS ${PROJECT_NAME}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
+
+install(DIRECTORY src/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME})
+install(DIRECTORY ${SPARK_CONNECT_PROTO_BUILD}/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME})
+
+configure_file(${PROJECT_NAME}.pc.in ${PROJECT_NAME}.pc @ONLY)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
+
+
+#######################################################################################################
+# PROJECT DISTRIBUTION
+#######################################################################################################
+
+set(CPACK_PACKAGE_NAME "spark-connect-cpp")
+set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Spark Connect C++ Static Library")
+set(CPACK_PACKAGE_VENDOR "Irfan M. Ghat")
+set(CPACK_PACKAGE_FILE_NAME "spark-connect-cpp-${PROJECT_VERSION}-linux-amd64")
+set(CPACK_GENERATOR "TGZ")
+
+include(CPack)
