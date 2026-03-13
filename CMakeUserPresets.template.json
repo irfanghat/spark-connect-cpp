@@ -1,0 +1,40 @@
+{
+  "version": 2,
+  "configurePresets": [
+    {
+      "name": "dev",
+      "inherits": "vcpkg",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "",
+        "CMAKE_CXX_COMPILER": "",
+        "CMAKE_BUILD_TYPE": "Debug"
+      },
+      "environment": {
+        "ENABLE_COVERAGE": "ON",
+        "VCPKG_ROOT": ""
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "debug",
+      "displayName": "Spark Debug Build",
+      "configurePreset": "dev"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "dev_coverage",
+      "displayName": "Spark Local Test Coverage",
+      "configurePreset": "dev",
+      "filter": {
+        "exclude": {
+          "name": "Databricks"
+        }
+      },
+      "output": {
+        "outputOnFailure": true
+      }
+    }
+  ]
+}

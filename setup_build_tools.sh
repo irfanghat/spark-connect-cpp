@@ -1,0 +1,52 @@
+#!/bin/bash
+
+# Exit on error
+set -e
+
+echo "🚀 Starting installation of CMake, Ninja, and vcpkg..."
+
+# 1. Update and install system dependencies
+sudo apt update
+sudo apt install -y \
+    build-essential \
+    tar \
+    curl \
+    zip \
+    unzip \
+    pkg-config \
+    git \
+    libtool \
+    autoconf \
+    automake
+
+# 2. Install CMake and Ninja
+echo "📦 Installing CMake and Ninja via apt..."
+sudo apt install -y cmake ninja-build
+
+# 3. Setup vcpkg
+VCPKG_ROOT="$HOME/vcpkg"
+
+if [ -d "$VCPKG_ROOT" ]; then
+    echo "directory $VCPKG_ROOT already exists. Skipping clone..."
+else
+    echo "git cloning vcpkg into $VCPKG_ROOT..."
+    git clone https://github.com/microsoft/vcpkg.git "$VCPKG_ROOT"
+fi
+
+# Bootstrap vcpkg
+echo "🛠️ Bootstrapping vcpkg..."
+"$VCPKG_ROOT/bootstrap-vcpkg.sh"
+
+# 4. Set Environment Variables
+# Adding to .bashrc so they persist in new terminals
+if ! grep -q "VCPKG_ROOT" "$HOME/.bashrc"; then
+    echo "📝 Adding VCPKG_ROOT to .bashrc..."
+    echo "export VCPKG_ROOT=$VCPKG_ROOT" >> "$HOME/.bashrc"
+    echo "export PATH=\$VCPKG_ROOT:\$PATH" >> "$HOME/.bashrc"
+fi
+
+echo "-------------------------------------------------------"
+echo "✅ Installation complete!"
+echo "Please run: 'source ~/.bashrc' to update your current shell."
+echo "You can then run 'vcpkg help' to verify."
+echo "-------------------------------------------------------"

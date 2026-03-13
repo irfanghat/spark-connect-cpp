@@ -13,9 +13,40 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      # Set the vcpkg root directory
+      VCPKG_ROOT: ${{ github.workspace }}/vcpkg
+      # Set the path to the vcpkg binary cache
+      VCPKG_BINARY_CACHE: ${{ github.workspace }}/vcpkg-cache
 
     steps:
       - uses: actions/checkout@v4
+
+      # ---------------- vcpkg Setup and Caching ----------------
+
+      - name: Bootstrap vcpkg
+        run: |
+          git clone https://github.com/microsoft/vcpkg.git ${{ env.VCPKG_ROOT }}
+          ${{ env.VCPKG_ROOT }}/bootstrap-vcpkg.sh
+        shell: bash
+
+      - name: Cache vcpkg binaries
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.VCPKG_BINARY_CACHE }}
+          key: ${{ runner.os }}-vcpkg-${{ hashFiles('**/vcpkg.json') }}
+          restore-keys: |
+            ${{ runner.os }}-vcpkg-
+
+      # ---------------- Install Dependencies ----------------
+
+      - name: Install dependencies via vcpkg
+        run: |
+          export VCPKG_BINARY_SOURCES="clear;files,${{ env.VCPKG_BINARY_CACHE }},readwrite"
+          ${{ env.VCPKG_ROOT }}/vcpkg install --triplet x64-linux
+        shell: bash
+
+      # ---------------- Spark and System Setup ----------------
 
       - name: Install Java
         uses: actions/setup-java@v4
@@ -57,16 +88,15 @@ jobs:
         run: chmod +x ./install_deps.sh && ./install_deps.sh
 
       - name: Configure with Coverage
-        run: cmake -S . -B build -DENABLE_COVERAGE=ON
+        run: cmake --preset prod
 
       - name: Build
-        run: cmake --build build --parallel
+        run: cmake --build --preset release
 
       - name: Run Tests
         run: |
-          export SPARK_REMOTE=sc://localhost:15002
-          cd build
-          ctest -LE dbrx --output-on-failure
+          export SPARK_REMOTE=sc://localhost
+          ctest --preset test_coverage
 
       - name: Generate Coverage (XML & HTML)
         run: |

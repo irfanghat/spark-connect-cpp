@@ -55,3 +55,6 @@ Testing
 # gcovr
 coverage.xml
 coverage.*
+
+# CMake
+CMakeUserPresets.json

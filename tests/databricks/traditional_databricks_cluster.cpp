@@ -10,24 +10,10 @@
 #include <sstream>
 #include <fstream>
 #include <cstdlib>
+#include "../util/env_loader.h"
 
-void load_env(const std::string &path)
-{
-    std::ifstream file(path);
-    std::string line;
-    while (std::getline(file, line))
-    {
-        auto pos = line.find('=');
-        if (pos != std::string::npos)
-        {
-            auto key = line.substr(0, pos);
-            auto val = line.substr(pos + 1);
-            setenv(key.c_str(), val.c_str(), 1);
-        }
-    }
-}
 
-class SparkIntegrationTest : public ::testing::Test
+class DatabaricksIntegrationTest : public ::testing::Test
 {
 protected:
     static SparkSession *spark;
@@ -48,9 +34,9 @@ protected:
     }
 };
 
-SparkSession *SparkIntegrationTest::spark = nullptr;
+SparkSession *DatabaricksIntegrationTest::spark = nullptr;
 
-TEST_F(SparkIntegrationTest, DatabricksNycTaxiAnalysis)
+TEST_F(DatabaricksIntegrationTest, DatabricksNycTaxiAnalysis)
 {
     // ------------------------------------------------
     // This example validates Unity Catalog access

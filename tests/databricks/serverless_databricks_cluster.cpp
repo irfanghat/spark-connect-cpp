@@ -5,29 +5,14 @@
 #include "session.h"
 #include "config.h"
 #include "dataframe.h"
+#include "../util/env_loader.h"
 
 #include <iostream>
 #include <sstream>
 #include <fstream>
 #include <cstdlib>
 
-void load_env(const std::string &path)
-{
-    std::ifstream file(path);
-    std::string line;
-    while (std::getline(file, line))
-    {
-        auto pos = line.find('=');
-        if (pos != std::string::npos)
-        {
-            auto key = line.substr(0, pos);
-            auto val = line.substr(pos + 1);
-            setenv(key.c_str(), val.c_str(), 1);
-        }
-    }
-}
-
-class SparkIntegrationTest : public ::testing::Test
+class DatabricksServerlessIntegrationTest : public ::testing::Test
 {
 protected:
     static SparkSession *spark;
@@ -48,9 +33,9 @@ protected:
     }
 };
 
-SparkSession *SparkIntegrationTest::spark = nullptr;
+SparkSession *DatabricksServerlessIntegrationTest::spark = nullptr;
 
-TEST_F(SparkIntegrationTest, DatabricksNycTaxiAnalysis)
+TEST_F(DatabricksServerlessIntegrationTest, DatabricksNycTaxiAnalysis_Serverless)
 {
     // ------------------------------------------------
     // Querying the public Databricks samples dataset
