@@ -8,6 +8,41 @@
       "cacheVariables": {
         "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
       }
+    },
+    {
+      "name": "prod",
+      "inherits": "vcpkg",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "/usr/bin/cc",
+        "CMAKE_CXX_COMPILER": "/usr/bin/c++",
+        "CMAKE_BUILD_TYPE": "Release"
+      },
+      "environment": {
+        "ENABLE_COVERAGE": "ON",
+        "VCPKG_ROOT": "env{HOME}/vcpkg"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "release",
+      "displayName": "Spark Release Build",
+      "configurePreset": "prod"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "test_coverage",
+      "displayName": "Spark Test Coverage",
+      "configurePreset": "prod",
+      "filter": {
+        "exclude": {
+          "name": "Databricks"
+        }
+      },
+      "output": {
+        "outputOnFailure": true
+      }
     }
   ]
 }

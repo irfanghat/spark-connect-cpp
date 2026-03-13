@@ -2,28 +2,16 @@
   "version": 2,
   "configurePresets": [
     {
-      "name": "spark",
+      "name": "dev",
       "inherits": "vcpkg",
       "cacheVariables": {
         "CMAKE_C_COMPILER": "",
-        "CMAKE_CXX_COMPILER": ""
+        "CMAKE_CXX_COMPILER": "",
+        "CMAKE_BUILD_TYPE": "Debug"
       },
       "environment": {
+        "ENABLE_COVERAGE": "ON",
         "VCPKG_ROOT": ""
-      }
-    },
-    {
-      "name": "debug",
-      "inherits": "spark",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug"
-      }
-    },
-    {
-      "name": "release",
-      "inherits": "spark",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release"
       }
     }
   ],
@@ -31,12 +19,22 @@
     {
       "name": "debug",
       "displayName": "Spark Debug Build",
-      "configurePreset": "debug"
-    },
+      "configurePreset": "dev"
+    }
+  ],
+  "testPresets": [
     {
-      "name": "release",
-      "displayName": "Spark Release Build",
-      "configurePreset": "release"
+      "name": "dev_coverage",
+      "displayName": "Spark Local Test Coverage",
+      "configurePreset": "dev",
+      "filter": {
+        "exclude": {
+          "name": "Databricks"
+        }
+      },
+      "output": {
+        "outputOnFailure": true
+      }
     }
   ]
 }
