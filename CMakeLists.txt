@@ -120,12 +120,7 @@ target_link_libraries(${PROJECT_NAME}_databricks_test PRIVATE
 enable_testing()
 
 gtest_discover_tests(${PROJECT_NAME}_test)
-
-gtest_discover_tests(
-        ${PROJECT_NAME}_databricks_test
-        LABELS "dbrx"
-)
-
+gtest_discover_tests(${PROJECT_NAME}_databricks_test)
 
 #######################################################################################################
 # PROJECT INSTALLATION
