@@ -27,7 +27,8 @@
     {
       "name": "release",
       "displayName": "Spark Release Build",
-      "configurePreset": "prod"
+      "configurePreset": "prod",
+      "jobs": 0
     }
   ],
   "testPresets": [
