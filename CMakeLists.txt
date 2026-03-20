@@ -93,24 +93,11 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 
 message("Project tests with GTest")
 
-file(GLOB_RECURSE UTIL_TEST_SRC_FILES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/tests/util/*.cpp")
+file(GLOB_RECURSE TEST_SRC_FILES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/tests/*.cpp")
 
-file(GLOB_RECURSE SPARK_TEST_SRC_FILES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/tests/spark/*.cpp")
-
-file(GLOB_RECURSE DATABRICKS_TEST_SRC_FILES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/tests/databricks/*.cpp")
-
-add_executable(${PROJECT_NAME}_test ${SPARK_TEST_SRC_FILES} ${UTIL_TEST_SRC_FILES})
+add_executable(${PROJECT_NAME}_test ${TEST_SRC_FILES})
 
 target_link_libraries(${PROJECT_NAME}_test PRIVATE
-        ${PROJECT_NAME}
-        GTest::gtest
-        GTest::gmock 
-        GTest::gtest_main
-)
-
-add_executable(${PROJECT_NAME}_databricks_test ${DATABRICKS_TEST_SRC_FILES} ${UTIL_TEST_SRC_FILES})
-
-target_link_libraries(${PROJECT_NAME}_databricks_test PRIVATE
         ${PROJECT_NAME}
         GTest::gtest
         GTest::gmock 
@@ -120,7 +107,6 @@ target_link_libraries(${PROJECT_NAME}_databricks_test PRIVATE
 enable_testing()
 
 gtest_discover_tests(${PROJECT_NAME}_test)
-gtest_discover_tests(${PROJECT_NAME}_databricks_test)
 
 #######################################################################################################
 # PROJECT INSTALLATION
