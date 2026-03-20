@@ -19,7 +19,7 @@
       },
       "environment": {
         "ENABLE_COVERAGE": "ON",
-        "VCPKG_ROOT": "env{HOME}/vcpkg"
+        "VCPKG_ROOT": "$env{HOME}/vcpkg"
       }
     }
   ],
