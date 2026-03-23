@@ -20,7 +20,8 @@ sudo apt install -y \
     automake \
     gnupg \
     wget \
-    lsb-release
+    lsb-release \
+    flex
 
 # 2. Install CMake and Ninja
 echo "📦 Setting up Kitware repository for latest CMake..."
