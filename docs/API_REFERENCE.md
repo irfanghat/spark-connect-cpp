@@ -44,7 +44,7 @@ int main() {
 ```
 
 ### Set Spark configuration properties before creating or retrieving a SparkSession
-Customize Spark’s behavior such as memory allocation, shuffle partitions, warehouse location, etc. at the time of building the Spark session
+Customize Spark’s behavior such as memory allocation, shuffle partitions, warehouse location, etc. at the time of building the Spark Session.
 
 ```cpp
 auto spark = &SparkSession::builder()
