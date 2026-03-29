@@ -19,8 +19,7 @@
         "CMAKE_BUILD_TYPE": "Release"
       },
       "environment": {
-        "ENABLE_COVERAGE": "ON",
-        "VCPKG_ROOT": "$env{HOME}/vcpkg"
+        "ENABLE_COVERAGE": "ON"
       }
     }
   ],
