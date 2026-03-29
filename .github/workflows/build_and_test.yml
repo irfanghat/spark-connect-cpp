@@ -84,16 +84,13 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y gcovr
 
-      - name: Install dependencies
-        run: chmod +x ./install_deps.sh && ./install_deps.sh
-
-      - name: Configure with Coverage
+      - name: Configure
         run: cmake --preset prod
 
       - name: Build
         run: cmake --build --preset release
 
-      - name: Run Tests
+      - name: Test
         run: |
           export SPARK_REMOTE=sc://localhost
           ctest --preset test_coverage
