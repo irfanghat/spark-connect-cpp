@@ -4,6 +4,10 @@
 #include <map>
 #include <vector>
 
+/**
+ * @class Config
+ * @brief Internal configuration state for the Spark connection.
+ */
 class Config
 {
 public:
@@ -13,7 +17,12 @@ public:
     std::string user_id = "cpp-client";
     std::string user_agent = "spark-connect-cpp";
     bool use_ssl = false;
+
+    // Transport-level headers (Auth, Routing hints)
     std::map<std::string, std::string> headers;
+
+    // Spark-level runtime configurations set via Builder.config()
+    std::map<std::string, std::string> runtime_configs;
 
     Config();
 
@@ -22,6 +31,11 @@ public:
     Config &setUserId(const std::string &u);
     Config &setUseSSL(bool ssl);
     Config &setHeader(const std::string &key, const std::string &value);
+
+    /**
+     * @brief An internal helper that stores Spark-level configs, set via Builder.config().
+     */
+    Config &setRuntimeConfig(const std::string &key, const std::string &value);
 
     /**
      * @brief This sets Databricks specific headers

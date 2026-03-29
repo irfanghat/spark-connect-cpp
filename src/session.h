@@ -92,9 +92,61 @@ public:
         }
 
         /**
-         * @brief Gets or creates a new SparkSession with the specified configurations.
-         * @return The singleton SparkSession instance.
+         * @brief Sets a Spark runtime configuration key-value pair.
+         *
+         * @see PySpark SparkSession.builder.config() API.
+         * Configs are applied to the session immediately after it is created.
+         *
+         * @example
+         * SparkSession::builder()
+         *     .master("sc://localhost")
+         *     .config("spark.sql.shuffle.partitions", "8")
+         *     .config("spark.executor.memory", "4g")
+         *     .getOrCreate();
          */
+        Builder &config(const std::string &key, const std::string &value)
+        {
+            config_.setRuntimeConfig(key, value);
+            return *this;
+        }
+
+        Builder &config(const std::string &key, const char *value)
+        {
+            config_.setRuntimeConfig(key, std::string(value));
+            return *this;
+        }
+
+        Builder &config(const std::string &key, bool value)
+        {
+            config_.setRuntimeConfig(key, value ? "true" : "false");
+            return *this;
+        }
+
+        Builder &config(const std::string &key, int64_t value)
+        {
+            config_.setRuntimeConfig(key, std::to_string(value));
+            return *this;
+        }
+
+        Builder &config(const std::string &key, int value)
+        {
+            config_.setRuntimeConfig(key, std::to_string(value));
+            return *this;
+        }
+
+        Builder &config(const std::string &key, double value)
+        {
+            config_.setRuntimeConfig(key, std::to_string(value));
+            return *this;
+        }
+
+        Builder &config(const std::map<std::string, std::string> &configs)
+        {
+            for (const auto &[key, value] : configs)
+                config_.setRuntimeConfig(key, value);
+            return *this;
+        }
+
         SparkSession &getOrCreate();
 
     private:

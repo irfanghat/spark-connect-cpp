@@ -96,6 +96,14 @@ SparkSession &SparkSession::Builder::getOrCreate()
 {
     std::call_once(SparkSession::once_flag_, [this]()
                    { SparkSession::instance_ = new SparkSession(this->config_); });
+
+    if (!config_.runtime_configs.empty())
+    {
+        RuntimeConfig rc = SparkSession::instance_->conf();
+        for (const auto &[key, value] : config_.runtime_configs)
+            rc.set(key, value);
+    }
+
     return *SparkSession::instance_;
 }
 

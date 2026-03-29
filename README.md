@@ -94,28 +94,6 @@ The Spark Connect C++ client is **not a replacement** for Python or Scala Spark 
 
 ---
 
-## API Implementation Status
-
-| Category     | API Feature                          | Status | Implementation      |
-|--------------|--------------------------------------|--------|---------------------|
-| Session      | Databricks / Local Conn              | ●      | Implemented         |
-| Reader       | CSV                                  | ●      | Implemented         |
-| Reader       | JSON                                 | ●      | Implemented         |
-| Reader       | Parquet                              | ●      | Implemented         |
-| Writer       | Parquet (Overwrite/Gzip)             | ●      | Implemented         |
-| Schema       | JSON / Print / Column List           | ●      | Implemented         |
-| Action       | Show / Collect / Head / First        | ●      | Implemented         |
-| Query        | SQL / Range                          | ●      | Implemented         |
-| Logic        | Filter / Where / Distinct            | ●      | Implemented         |
-| Relational   | Joins (Inner, Outer, Expr)           | ●      | Implemented         |
-| Group        | GroupBy & Global Aggs                | ●      | Implemented         |
-| Analytics    | Window Functions                     | ○      | Planned             |
-| Catalog      | Table/Database Management            | ○      | Planned             |
-| Streaming    | Structured Streaming                 | ◌      | Not Implemented     |
-| GraphFrames  | Graph processing & analytics         | ●      | Implemented         |
-
----
-
 ## Architecture Deep Dive
 
 The Spark Connect C++ client follows the Spark Connect execution model:
@@ -198,27 +176,32 @@ docker compose up spark --build
 # ---------------------------
 # Run Full Test Suite
 # ---------------------------
+cd build
 ctest --output-on-failure --verbose
 # ctest --verbose --test-arguments=--gtest_color=yes
 
 # -----------------------------
 # Run Single Test Suite
 # -----------------------------
+cd build
 ctest -R test_dataframe_reader --verbose
 
 # ------------------------------
 # Run Single Test Case
 # ------------------------------
-ctest -R test_dataframe_writer --test-args --gtest_filter=SparkIntegrationTest.ParquetWrite
+cd build
+./test_dataframe_writer --test-args --gtest_filter=SparkIntegrationTest.ParquetWrite
 
 # --------------------------------
 # Run Test Suite directly
 # --------------------------------
+cd build
 ./test_<suite_name>
 
 # --------------------------------
-# Run Single Test Case directly - show output
+# Run Single Test Case directly (Show output)
 # --------------------------------
+cd build
 ./test_dataframe --gtest_filter=SparkIntegrationTest.DropDuplicates
 ```
 
