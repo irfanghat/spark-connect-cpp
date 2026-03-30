@@ -38,6 +38,8 @@ message MlCommand {
     Evaluate evaluate = 6;
     CleanCache clean_cache = 7;
     GetCacheInfo get_cache_info = 8;
+    CreateSummary create_summary = 9;
+    GetModelSize get_model_size = 10;
   }
 
   // Command for estimator.fit(dataset)
@@ -50,24 +52,13 @@ message MlCommand {
     Relation dataset = 3;
   }
 
-  // Command to fetch attributes or parameters from ML operators
-  // This can be used to retrieve specific attributes from estimators, evaluators, or cached models
-  message Fetch {
-    // ML operator information - can be an estimator/evaluator or a cached model
-    oneof type {
-      // Estimator or evaluator
-      MlOperator operator = 1;
-      // The cached model
-      ObjectRef obj_ref = 2;
-    }
-    // (Required) The name of the attribute to fetch
-    string attribute = 3;
-  }
-
   // Command to delete the cached objects which could be a model
   // or summary evaluated by a model
   message Delete {
     repeated ObjectRef obj_refs = 1;
+    // if set `evict_only` to true, only evict the cached model from memory,
+    // but keep the offloaded model in Spark driver local disk.
+    optional bool evict_only = 2;
   }
 
   // Force to clean up all the ML cached objects
@@ -112,6 +103,18 @@ message MlCommand {
     // (Required) the evaluating dataset
     Relation dataset = 3;
   }
+
+  // This is for re-creating the model summary when the model summary is lost
+  // (model summary is lost when the model is offloaded and then loaded back)
+  message CreateSummary {
+    ObjectRef model_ref = 1;
+    Relation dataset = 2;
+  }
+
+  // This is for query the model estimated in-memory size
+  message GetModelSize {
+    ObjectRef model_ref = 1;
+  }
 }
 
 // The result of MlCommand
@@ -138,5 +141,7 @@ message MlCommandResult {
     optional string uid = 3;
     // (Optional) parameters
     optional MlParams params = 4;
+    // (Optional) warning message generated during the ML command execution
+    optional string warning_message = 5;
   }
 }

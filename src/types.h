@@ -176,6 +176,7 @@ namespace spark::sql::types
     {
         std::vector<ColumnValue> elements;
     };
+
     struct MapData
     {
         std::vector<ColumnValue> keys;
@@ -206,38 +207,63 @@ namespace spark::sql::types
             const auto &val = values.at(col_index(name));
 
             return std::visit([](auto &&arg) -> T
-                              {
-        using ArgType = std::decay_t<decltype(arg)>;
-        
-        // ---------------------------------
-        // Handle exact Type Match
-        // ---------------------------------
-        if constexpr (std::is_same_v<T, ArgType>) {
-            return arg;
-        } 
+            {
+                using ArgType = std::decay_t<decltype(arg)>;
+                
+                // --------------------------------------------------------------------
+                // Handle exact Type Match
+                // --------------------------------------------------------------------
+                if constexpr (std::is_same_v<T, ArgType>) {
+                    return arg;
+                }
 
-        // -------------------------------------------------
-        // Null Handling 
-        // std::monostate to "null"
-        // -------------------------------------------------
-        else if constexpr (std::is_same_v<T, std::string> && std::is_same_v<ArgType, std::monostate>) {
-            return "null";
-        }
+                // --------------------------------------------------------------------
+                // Null Handling 
+                // std::monostate to "null"
+                // --------------------------------------------------------------------
+                else if constexpr (std::is_same_v<T, std::string> && std::is_same_v<ArgType, std::monostate>) {
+                    return "null";
+                }
 
-        // --------------------------------------------------------------------
-        // Widening / Numeric Conversion
-        // This supports get<double> on int32_t columns
-        // --------------------------------------------------------------------
-        else if constexpr (std::is_arithmetic_v<T> && std::is_arithmetic_v<ArgType>) {
-            return static_cast<T>(arg);
-        }
+                // --------------------------------------------------------------------
+                // Widening / Numeric Conversion
+                // This supports get<double> on int32_t columns
+                // --------------------------------------------------------------------
+                else if constexpr (std::is_arithmetic_v<T> && std::is_arithmetic_v<ArgType>) {
+                    return static_cast<T>(arg);
+                }
 
-        // -----------------------------------------------
-        // Failure State
-        // -----------------------------------------------
-        else {
-            throw std::runtime_error("Row::get Type Mismatch: requested type does not match variant state.");
-        } }, val);
+                // --------------------------------------------------------------------
+                // Handle Nulls (Returning an empty vector for a null list)
+                // --------------------------------------------------------------------
+                else if constexpr (std::is_same_v<T, std::vector<std::string>> && std::is_same_v<ArgType, std::monostate>) {
+                    return {};
+                }
+
+                // --------------------------------------------------------------------
+                // Handle vector list
+                // --------------------------------------------------------------------
+                else if constexpr (std::is_same_v<T, std::vector<std::string>> && std::is_same_v<ArgType, std::shared_ptr<ArrayData>>) {
+
+                    std::vector<std::string> string_list;
+
+                    for (int i = 0; i < arg->elements.size(); i++) {
+                        auto string_value = std::get<std::string>(arg->elements[i]);
+
+                        string_list.push_back(string_value);
+                    }
+
+                    return string_list;
+                }
+
+                // --------------------------------------------------------------------
+                // Failure State
+                // --------------------------------------------------------------------
+                else {
+                    throw std::runtime_error("Row::get Type Mismatch: requested type does not match variant state: " + std::string(typeid(ArgType).name()));
+                } 
+            },
+            val);
         }
 
         /**

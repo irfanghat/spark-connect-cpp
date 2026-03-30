@@ -152,6 +152,35 @@ static std::string arrayValueToString(std::shared_ptr<arrow::Array> array, int64
         oss << std::put_time(std::gmtime(&tt), "%Y-%m-%d %H:%M:%S");
         return oss.str();
     }
+    case arrow::Type::LIST:
+    {
+        auto list_array = std::static_pointer_cast<arrow::ListArray>(array);
+
+        if (list_array->IsNull(row)) {
+            return "null";
+        }
+
+        int64_t start = list_array->value_offset(row);
+        int64_t end = list_array->value_offset(row + 1);
+        auto values = list_array->values();
+
+        std::ostringstream oss;
+
+        oss << "[";
+
+        for (int64_t i = start; i < end; i++) {
+            oss << arrayValueToString(list_array->values(), i);
+
+            if (i < end - 1) {
+                oss << ", ";
+            }
+        }
+
+        oss << "]";
+
+        return oss.str();
+    }
+
     default:
         return "(unsupported)";
     }
@@ -168,6 +197,10 @@ void DataFrame::show(int max_rows, int truncate)
     else
         *request.mutable_plan() = plan_;
 
+    std::cout << "============== GRPC LOGICAL PLAN ==============\n";
+    std::cout << plan_.DebugString();
+    std::cout << "============== GRPC LOGICAL PLAN ==============\n";
+
     grpc::ClientContext context;
     auto reader = stub_->ExecutePlan(&context, request);
     ExecutePlanResponse response;
@@ -180,6 +213,15 @@ void DataFrame::show(int max_rows, int truncate)
 
     while (reader->Read(&response))
     {
+        // Print Spark Response Schema
+
+
+        if (response.has_schema()) {
+            std::cout << "============== GRPC Response Schema ==============" << std::endl;
+            std::cout << response.schema().DebugString();
+            std::cout << "============== GRPC Response Schema ==============" << std::endl;
+        }
+
         if (!response.has_arrow_batch())
             continue;
 
