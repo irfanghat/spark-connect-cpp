@@ -58,3 +58,7 @@ coverage.*
 
 # CMake
 CMakeUserPresets.json
+
+# VCPKG
+vcpkg_installed/
+vcpkg_export/

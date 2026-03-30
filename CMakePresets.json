@@ -6,9 +6,9 @@
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/build",
       "cacheVariables": {
-        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
-        "VCPKG_INSTALL_OPTIONS": "--clean-after-build"
-      }
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/build/vcpkg-package/scripts/buildsystems/vcpkg.cmake"
+      },
+      "hidden": true
     },
     {
       "name": "prod",

@@ -14,21 +14,13 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      # Set the vcpkg root directory
-      VCPKG_ROOT: ${{ github.workspace }}/vcpkg
       # Set the path to the vcpkg binary cache
-      VCPKG_BINARY_CACHE: ${{ github.workspace }}/vcpkg-cache
+      VCPKG_BINARY_CACHE: ${{ github.workspace }}/build/vcpkg-package
 
     steps:
       - uses: actions/checkout@v4
 
-      # ---------------- vcpkg Setup and Caching ----------------
-
-      - name: Bootstrap vcpkg
-        run: |
-          git clone https://github.com/microsoft/vcpkg.git ${{ env.VCPKG_ROOT }}
-          ${{ env.VCPKG_ROOT }}/bootstrap-vcpkg.sh
-        shell: bash
+      # ---------------- VCPKG Caching ----------------
 
       - name: Cache vcpkg binaries
         uses: actions/cache@v4
@@ -37,14 +29,6 @@ jobs:
           key: ${{ runner.os }}-vcpkg-${{ hashFiles('**/vcpkg.json') }}
           restore-keys: |
             ${{ runner.os }}-vcpkg-
-
-      # ---------------- Install Dependencies ----------------
-
-      - name: Install dependencies via vcpkg
-        run: |
-          export VCPKG_BINARY_SOURCES="clear;files,${{ env.VCPKG_BINARY_CACHE }},readwrite"
-          ${{ env.VCPKG_ROOT }}/vcpkg install --triplet x64-linux
-        shell: bash
 
       # ---------------- Spark and System Setup ----------------
 
