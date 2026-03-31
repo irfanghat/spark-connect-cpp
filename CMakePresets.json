@@ -33,17 +33,17 @@
   ],
   "testPresets": [
     {
-      "name": "test_all_coverage",
-      "displayName": "Spark & Databricks Local Test Coverage",
-      "configurePreset": "dev",
+      "name": "test_prod_coverage",
+      "displayName": "Spark & Databricks Prod Test Coverage",
+      "configurePreset": "prod",
       "output": {
         "outputOnFailure": true
       }
     },
     {
-      "name": "test_spark_coverage",
+      "name": "test_prod_spark_coverage",
       "displayName": "Spark Local Test Coverage",
-      "inherits": "test_all_coverage",
+      "inherits": "test_prod_coverage",
       "filter": {
         "exclude": {
           "name": "Databricks"
@@ -51,9 +51,9 @@
       }
     },
     {
-      "name": "test_databricks_coverage",
+      "name": "test_prod_databricks_coverage",
       "displayName": "Spark Local Test Coverage",
-      "inherits": "test_all_coverage",
+      "inherits": "test_prod_coverage",
       "filter": {
         "exclude": {
           "name": "Spark"

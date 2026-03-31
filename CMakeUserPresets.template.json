@@ -17,5 +17,35 @@
       "displayName": "Spark Debug Build",
       "configurePreset": "dev"
     }
+  ],
+  "testPresets": [
+    {
+      "name": "test_dev_coverage",
+      "displayName": "Spark & Databricks Prod Test Coverage",
+      "configurePreset": "dev",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "test_dev_spark_coverage",
+      "displayName": "Spark Local Test Coverage",
+      "inherits": "test_dev_coverage",
+      "filter": {
+        "exclude": {
+          "name": "Databricks"
+        }
+      }
+    },
+    {
+      "name": "test_dev_databricks_coverage",
+      "displayName": "Spark Local Test Coverage",
+      "inherits": "test_dev_coverage",
+      "filter": {
+        "exclude": {
+          "name": "Spark"
+        }
+      }
+    }
   ]
 }
