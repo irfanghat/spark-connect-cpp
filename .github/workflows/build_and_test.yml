@@ -23,7 +23,7 @@ jobs:
       - name: Setup CMake 4.x
         uses: jwlawson/actions-setup-cmake@v2
         with:
-          cmake-version: '4.3.0-rc1'
+          cmake-version: '4.2.2'
 
       - name: Verify CMake version
         run: cmake --version
