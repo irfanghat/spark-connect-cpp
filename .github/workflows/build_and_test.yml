@@ -20,8 +20,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install CMake and Ninja
-        run: chmod +x ./.devops/vcpkg-setup-pipeline-tools.sh && ./.devops/vcpkg-setup-pipeline-tools.sh
+      - name: Setup CMake 4.x
+        uses: jwlawson/actions-setup-cmake@v2
+        with:
+          cmake-version: '4.3.0-rc1'
+
+      - name: Verify CMake version
+        run: cmake --version
 
       # ---------------- VCPKG Caching ----------------
 
