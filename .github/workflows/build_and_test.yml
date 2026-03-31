@@ -34,7 +34,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ env.VCPKG_BINARY_CACHE }}
-          key: ${{ runner.os }}-vcpkg-${{ hashFiles('.devops/vcpkg.json') }}
+          key: ${{ runner.os }}-vcpkg-v1.0.0
           restore-keys: |
             ${{ runner.os }}-vcpkg-
 
