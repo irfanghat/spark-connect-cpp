@@ -21,7 +21,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install CMake and Ninja
-        run: chmod +x ./.devops/build-pipeline-setup-tools.sh && ./.devops/build-pipeline-setup-tools.sh
+        run: chmod +x ./.devops/vcpkg-setup-pipeline-tools.sh && ./.devops/vcpkg-setup-pipeline-tools.sh
 
       # ---------------- VCPKG Caching ----------------
 
@@ -80,7 +80,7 @@ jobs:
       - name: Test
         run: |
           export SPARK_REMOTE=sc://localhost
-          ctest --preset test_coverage
+          ctest --preset test_spark_coverage
 
       - name: Generate Coverage (XML & HTML)
         run: |

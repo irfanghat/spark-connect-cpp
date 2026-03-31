@@ -26,23 +26,38 @@
   "buildPresets": [
     {
       "name": "release",
-      "displayName": "Spark Release Build",
+      "displayName": "Release Artifacts",
       "configurePreset": "prod",
       "jobs": 0
     }
   ],
   "testPresets": [
     {
-      "name": "test_coverage",
-      "displayName": "Spark Test Coverage",
-      "configurePreset": "prod",
+      "name": "test_all_coverage",
+      "displayName": "Spark & Databricks Local Test Coverage",
+      "configurePreset": "dev",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "test_spark_coverage",
+      "displayName": "Spark Local Test Coverage",
+      "inherits": "test_all_coverage",
       "filter": {
         "exclude": {
           "name": "Databricks"
         }
-      },
-      "output": {
-        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "test_databricks_coverage",
+      "displayName": "Spark Local Test Coverage",
+      "inherits": "test_all_coverage",
+      "filter": {
+        "exclude": {
+          "name": "Spark"
+        }
       }
     }
   ]

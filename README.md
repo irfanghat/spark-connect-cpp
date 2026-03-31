@@ -179,48 +179,46 @@ This separation enables native applications to leverage Spark’s distributed en
 # --------------------------------
 # Install all required dependencies
 # --------------------------------
-chmod +x ./install_deps.sh
-./install_deps.sh
+cd ./.devops
+chmod +x ./vcpkg-setup-local-tools.sh
+./vcpkg-setup-local-tools.sh
 
-mkdir build && cd build
 
 # ----------------------------------
-# Build the Spark Connect Client
+# Configure CMake Preset for local development
 # ----------------------------------
-cmake ..
-make -j$(nproc)
+cmake --preset dev
+
+
+# ----------------------------------
+# Generate a debug build
+# ----------------------------------
+cmake --build --preset debug
+
 
 # --------------------------------
 # Make sure Spark is running...
 # --------------------------------
 docker compose up spark --build
 
+
+# ----------------------------------
+# Run tests for Spark coverage
+# ----------------------------------
+ctest --preset test_spark_coverage
+
+
+# ----------------------------------
+# Run tests for Databricks coverage
+# ----------------------------------
+ctest --preset test_databricks_coverage
+
+
 # ---------------------------
 # Run Full Test Suite
 # ---------------------------
-ctest --output-on-failure --verbose
-# ctest --verbose --test-arguments=--gtest_color=yes
+ctest --preset test_all_coverage
 
-# -----------------------------
-# Run Single Test Suite
-# -----------------------------
-ctest -R test_dataframe_reader --verbose
-
-# ------------------------------
-# Run Single Test Case
-# ------------------------------
-ctest -R test_dataframe_writer --test-args --gtest_filter=SparkIntegrationTest.ParquetWrite
-
-# --------------------------------
-# Run Test Suite directly
-# --------------------------------
-./test_<suite_name>
-
-# --------------------------------
-# Run Single Test Case directly - show output
-# --------------------------------
-./test_dataframe --gtest_filter=SparkIntegrationTest.DropDuplicates
-```
 
 ### 3. Mem Checks (Valgrind)
 
