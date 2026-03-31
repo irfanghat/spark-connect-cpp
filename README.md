@@ -158,8 +158,8 @@ This separation enables native applications to leverage Spark’s distributed en
 # Install all required dependencies
 # --------------------------------
 cd ./.devops
-chmod +x ./vcpkg-setup-local-tools.sh
-./vcpkg-setup-local-tools.sh
+chmod +x ./vcpkg-setup.sh
+./vcpkg-setup.sh
 
 
 # ----------------------------------
