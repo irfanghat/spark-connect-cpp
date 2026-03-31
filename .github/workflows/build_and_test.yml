@@ -77,10 +77,10 @@ jobs:
           sudo apt-get install -y gcovr
 
       - name: Configure
-        run: cmake --preset prod
+        run: cmake --preset pr
 
       - name: Build
-        run: cmake --build --preset release
+        run: cmake --build --preset pr
 
       - name: Test
         run: |
