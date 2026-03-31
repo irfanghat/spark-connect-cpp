@@ -2,22 +2,36 @@
 #include <gmock/gmock.h>
 #include <gmock/gmock-matchers.h>
 
+#include "runtime_config.h"
+
+#include <sstream>
+
 #include "session.h"
 #include "dataframe.h"
 
 using ::testing::Contains;
 using ::testing::Pair;
 
-class SparkConfigurationIntegrationTest : public ::testing::Test
+class SparkIntegrationTest : public ::testing::Test
 {
 protected:
     static SparkSession *spark;
 
     static void SetUpTestSuite()
     {
+        // ------------------------------------------------------------------
+        // Exercise builder.config() at session creation time
+        // This is the primary use-case:
+        //
+        // Configs set before the session exists are flushed
+        // immediately after the gRPC channel is established.
+        // ------------------------------------------------------------------
         spark = &SparkSession::builder()
                      .master("sc://localhost")
                      .appName("SparkConnectCppGTest")
+                     .config("spark.sql.shuffle.partitions", int64_t(42))
+                     .config("spark.sql.ansi.enabled", true)
+                     .config("spark.sql.session.timeZone", std::string("America/New_York"))
                      .getOrCreate();
     }
 
@@ -55,13 +69,6 @@ protected:
         }
         try
         {
-            spark->conf().unset("spark.checkpoint.dir");
-        }
-        catch (...)
-        {
-        }
-        try
-        {
             spark->conf().unset("spark.app.name");
         }
         catch (...)
@@ -70,7 +77,69 @@ protected:
     }
 };
 
-SparkSession *SparkConfigurationIntegrationTest::spark = nullptr;
+SparkSession *SparkIntegrationTest::spark = nullptr;
+
+// ----------------------------------------------------------------------------------
+// builder.config() - configs set on the builder are flushed to the live session.
+//
+// The three assertions verify configs applied at session creation time in SetUpTestSuite.
+// Testing them this way avoids key resets between assertions (Calling TearDown() after each fixture).
+// ----------------------------------------------------------------------------------
+TEST_F(SparkIntegrationTest, BuilderConfigAppliedAtCreation)
+{
+    EXPECT_EQ(spark->conf().get("spark.sql.shuffle.partitions"), "42");
+    EXPECT_EQ(spark->conf().get("spark.sql.ansi.enabled"), "true");
+    EXPECT_EQ(spark->conf().get("spark.sql.session.timeZone"), "America/New_York");
+}
+
+TEST_F(SparkIntegrationTest, BuilderConfigFlushesOnSubsequentGetOrCreate)
+{
+    // ------------------------------------------------------------------
+    // builder.config() on an already-running singleton still flushes —
+    // getOrCreate() applies runtime_configs regardless of whether the
+    // session was just created or already existed.
+    // ------------------------------------------------------------------
+    SparkSession::builder()
+        .config("spark.sql.shuffle.partitions", int64_t(99))
+        .getOrCreate();
+
+    EXPECT_EQ(spark->conf().get("spark.sql.shuffle.partitions"), "99");
+}
+
+TEST_F(SparkIntegrationTest, BuilderConfigRawIntOverloading)
+{
+    SparkSession::builder()
+        .config("spark.sql.shuffle.partitions", 99)
+        .getOrCreate();
+
+    EXPECT_EQ(spark->conf().get("spark.sql.shuffle.partitions"), "99");
+}
+
+TEST_F(SparkIntegrationTest, BuilderConfigChainingMultipleKeys)
+{
+    SparkSession::builder()
+        .config("spark.sql.shuffle.partitions", int64_t(8))
+        .config("spark.sql.ansi.enabled", false)
+        .config("spark.sql.session.timeZone", std::string("UTC"))
+        .getOrCreate();
+
+    EXPECT_EQ(spark->conf().get("spark.sql.shuffle.partitions"), "8");
+    EXPECT_EQ(spark->conf().get("spark.sql.ansi.enabled"), "false");
+    EXPECT_EQ(spark->conf().get("spark.sql.session.timeZone"), "UTC");
+}
+
+TEST_F(SparkIntegrationTest, BuilderConfigMapOverload)
+{
+    SparkSession::builder()
+        .config(std::map<std::string, std::string>{
+            {"spark.sql.shuffle.partitions", "12"},
+            {"spark.sql.session.timeZone", "America/Chicago"},
+        })
+        .getOrCreate();
+
+    EXPECT_EQ(spark->conf().get("spark.sql.shuffle.partitions"), "12");
+    EXPECT_EQ(spark->conf().get("spark.sql.session.timeZone"), "America/Chicago");
+}
 
 // ----------------------------------------------------------------------------------
 // set() / get() - round-trip
@@ -85,31 +154,31 @@ SparkSession *SparkConfigurationIntegrationTest::spark = nullptr;
 // spark.app.name is NOT modifiable at runtime - set() is silently
 // ignored and get() returns the value baked in at session creation.
 // ----------------------------------------------------------------------------------
-TEST_F(SparkConfigurationIntegrationTest, SetAndGetString)
+TEST_F(SparkIntegrationTest, SetAndGetString)
 {
     spark->conf().set("spark.sql.session.timeZone", "America/New_York");
     EXPECT_EQ(spark->conf().get("spark.sql.session.timeZone"), "America/New_York");
 }
 
-TEST_F(SparkConfigurationIntegrationTest, SetBoolTrue)
+TEST_F(SparkIntegrationTest, SetBoolTrue)
 {
     spark->conf().set("spark.sql.ansi.enabled", true);
     EXPECT_EQ(spark->conf().get("spark.sql.ansi.enabled"), "true");
 }
 
-TEST_F(SparkConfigurationIntegrationTest, SetBoolFalse)
+TEST_F(SparkIntegrationTest, SetBoolFalse)
 {
     spark->conf().set("spark.sql.ansi.enabled", false);
     EXPECT_EQ(spark->conf().get("spark.sql.ansi.enabled"), "false");
 }
 
-TEST_F(SparkConfigurationIntegrationTest, SetInt64)
+TEST_F(SparkIntegrationTest, SetInt64)
 {
     spark->conf().set("spark.sql.shuffle.partitions", int64_t(16));
     EXPECT_EQ(spark->conf().get("spark.sql.shuffle.partitions"), "16");
 }
 
-TEST_F(SparkConfigurationIntegrationTest, OverwriteExistingKey)
+TEST_F(SparkIntegrationTest, OverwriteExistingKey)
 {
     spark->conf().set("spark.sql.shuffle.partitions", int64_t(10));
     spark->conf().set("spark.sql.shuffle.partitions", int64_t(20));
@@ -119,13 +188,13 @@ TEST_F(SparkConfigurationIntegrationTest, OverwriteExistingKey)
 // ----------------------------------------------------------------------------------
 // get() with default
 // ----------------------------------------------------------------------------------
-TEST_F(SparkConfigurationIntegrationTest, GetWithDefaultReturnsValueWhenSet)
+TEST_F(SparkIntegrationTest, GetWithDefaultReturnsValueWhenSet)
 {
     spark->conf().set("spark.sql.shuffle.partitions", int64_t(8));
     EXPECT_EQ(spark->conf().get("spark.sql.shuffle.partitions", "200"), "8");
 }
 
-TEST_F(SparkConfigurationIntegrationTest, GetWithDefaultReturnsDefaultWhenUnset)
+TEST_F(SparkIntegrationTest, GetWithDefaultReturnsDefaultWhenUnset)
 {
     const std::string key = "spark.cpp.test.nonexistent.key";
     EXPECT_EQ(spark->conf().get(key, "fallback"), "fallback");
@@ -134,7 +203,7 @@ TEST_F(SparkConfigurationIntegrationTest, GetWithDefaultReturnsDefaultWhenUnset)
 // ----------------------------------------------------------------------------------
 // getOption()
 // ----------------------------------------------------------------------------------
-TEST_F(SparkConfigurationIntegrationTest, GetOptionReturnsSomeWhenSet)
+TEST_F(SparkIntegrationTest, GetOptionReturnsSomeWhenSet)
 {
     spark->conf().set("spark.sql.shuffle.partitions", int64_t(7));
     auto val = spark->conf().getOption("spark.sql.shuffle.partitions");
@@ -142,7 +211,7 @@ TEST_F(SparkConfigurationIntegrationTest, GetOptionReturnsSomeWhenSet)
     EXPECT_EQ(*val, "7");
 }
 
-TEST_F(SparkConfigurationIntegrationTest, GetOptionReturnsNulloptWhenUnset)
+TEST_F(SparkIntegrationTest, GetOptionReturnsNulloptWhenUnset)
 {
     auto val = spark->conf().getOption("spark.cpp.test.nonexistent.key");
     EXPECT_FALSE(val.has_value());
@@ -151,17 +220,17 @@ TEST_F(SparkConfigurationIntegrationTest, GetOptionReturnsNulloptWhenUnset)
 // ----------------------------------------------------------------------------------
 // unset()
 // ----------------------------------------------------------------------------------
-TEST_F(SparkConfigurationIntegrationTest, UnsetRevertsToDefault)
+TEST_F(SparkIntegrationTest, UnsetRevertsToDefault)
 {
     // -----------------------------------------------------------------
-    // spark.sql.shuffle.partitions is set to 200 by default
+    // spark.sql.shuffle.partitions default is 200
     // -----------------------------------------------------------------
     spark->conf().set("spark.sql.shuffle.partitions", int64_t(42));
     spark->conf().unset("spark.sql.shuffle.partitions");
     EXPECT_EQ(spark->conf().get("spark.sql.shuffle.partitions", "200"), "200");
 }
 
-TEST_F(SparkConfigurationIntegrationTest, UnsetMakesGetOptionReturnNullopt)
+TEST_F(SparkIntegrationTest, UnsetMakesGetOptionReturnNullopt)
 {
     spark->conf().set("spark.app.name", "to-be-removed");
     spark->conf().unset("spark.app.name");
@@ -172,13 +241,13 @@ TEST_F(SparkConfigurationIntegrationTest, UnsetMakesGetOptionReturnNullopt)
 // ----------------------------------------------------------------------------------
 // getAll()
 // ----------------------------------------------------------------------------------
-TEST_F(SparkConfigurationIntegrationTest, GetAllReturnsNonEmptyMap)
+TEST_F(SparkIntegrationTest, GetAllReturnsNonEmptyMap)
 {
     auto all = spark->conf().getAll();
     EXPECT_FALSE(all.empty());
 }
 
-TEST_F(SparkConfigurationIntegrationTest, GetAllContainsSetKey)
+TEST_F(SparkIntegrationTest, GetAllContainsSetKey)
 {
     spark->conf().set("spark.sql.shuffle.partitions", int64_t(33));
     auto all = spark->conf().getAll();
@@ -188,12 +257,12 @@ TEST_F(SparkConfigurationIntegrationTest, GetAllContainsSetKey)
 // ----------------------------------------------------------------------------------
 // isModifiable()
 // ----------------------------------------------------------------------------------
-TEST_F(SparkConfigurationIntegrationTest, ShufflePartitionsIsModifiable)
+TEST_F(SparkIntegrationTest, ShufflePartitionsIsModifiable)
 {
     EXPECT_TRUE(spark->conf().isModifiable("spark.sql.shuffle.partitions"));
 }
 
-TEST_F(SparkConfigurationIntegrationTest, SparkMasterIsNotModifiable)
+TEST_F(SparkIntegrationTest, SparkMasterIsNotModifiable)
 {
     // -------------------------------------------------------------------------
     // spark.master is locked at session creation and cannot be changed
@@ -203,16 +272,27 @@ TEST_F(SparkConfigurationIntegrationTest, SparkMasterIsNotModifiable)
 
 // ----------------------------------------------------------------------------------
 // setCheckpointDir()
+//
+// spark.checkpoint.dir is NOT modifiable via the Spark Connect Config RPC.
+// The server rejects changes with CANNOT_MODIFY_CONFIG. It must be set
+// at cluster creation time in the cluster/session configuration.
 // ----------------------------------------------------------------------------------
-TEST_F(SparkConfigurationIntegrationTest, SetCheckpointDirIsReadBack)
+TEST_F(SparkIntegrationTest, SetCheckpointDirIsNotModifiable)
 {
-    spark->setCheckpointDir("/tmp/cpp-test-checkpoints");
-    auto val = spark->conf().getOption("spark.checkpoint.dir");
-    ASSERT_TRUE(val.has_value());
-    EXPECT_EQ(*val, "/tmp/cpp-test-checkpoints");
+    EXPECT_FALSE(spark->conf().isModifiable("spark.checkpoint.dir"));
 }
 
-TEST_F(SparkConfigurationIntegrationTest, GetUnknownKeyThrows)
+TEST_F(SparkIntegrationTest, SetCheckpointDirThrows)
+{
+    EXPECT_THROW(
+        spark->setCheckpointDir("/tmp/cpp-test-checkpoints"),
+        std::runtime_error);
+}
+
+// ----------------------------------------------------------------------------------
+// get() - error handling
+// ----------------------------------------------------------------------------------
+TEST_F(SparkIntegrationTest, GetUnknownKeyThrows)
 {
     EXPECT_THROW(
         spark->conf().get("spark.cpp.test.nonexistent.key"),

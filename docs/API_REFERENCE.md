@@ -1,5 +1,25 @@
 # Spark Connect C++ API Reference
 
+## API Status
+
+| Category     | API Feature                          | Status | Implementation      |
+|--------------|--------------------------------------|--------|---------------------|
+| Session      | Databricks / Local Conn              | :heavy_check_mark:  | Implemented         |
+| Reader       | CSV                                  | :heavy_check_mark:  | Implemented         |
+| Reader       | JSON                                 | :heavy_check_mark:  | Implemented         |
+| Reader       | Parquet                              | :heavy_check_mark:  | Implemented         |
+| Writer       | Parquet (Overwrite/Gzip)             | :heavy_check_mark:  | Implemented         |
+| Schema       | JSON / Print / Column List           | :heavy_check_mark:  | Implemented         |
+| Action       | Show / Collect / Head / First        | :heavy_check_mark:  | Implemented         |
+| Query        | SQL / Range                          | :heavy_check_mark:  | Implemented         |
+| Logic        | Filter / Where / Distinct            | :heavy_check_mark:  | Implemented         |
+| Relational   | Joins (Inner, Outer, Expr)           | :heavy_check_mark:  | Implemented         |
+| Group        | GroupBy & Global Aggs                | :heavy_check_mark:  | Implemented         |
+| Analytics    | Window Functions                     | :x:  | Planned             |
+| Catalog      | Table/Database Management            | :x:  | Planned             |
+| Streaming    | Structured Streaming                 | :x:  | Not Implemented     |
+| GraphFrames  | Graph processing (Algorithms)         | :heavy_check_mark:  | Implemented         |
+
 ## Initializing a Spark Session
 
 ```cpp
@@ -21,6 +41,40 @@ int main() {
     auto df = spark->sql("SELECT * FROM range(100)");
     df.show(5);
 }
+```
+
+### Set Spark configuration properties before creating or retrieving a SparkSession
+Customize Spark’s behavior such as memory allocation, shuffle partitions, warehouse location, etc. at the time of building the Spark Session.
+
+```cpp
+auto spark = &SparkSession::builder()
+            .master("sc://localhost")
+            .appName("spark-connect-cpp")
+            .config("spark.sql.shuffle.partitions", 42)
+            // .config("spark.sql.shuffle.partitions", int64_t(42))
+            .config("spark.sql.ansi.enabled", true)
+            .config("spark.sql.session.timeZone", "America/New_York")
+            // .config("spark.sql.session.timeZone", std::string("America/New_York"))
+            .getOrCreate();
+
+
+spark->conf().set("spark.sql.shuffle.partitions", int64_t(10));
+spark->conf().set("spark.sql.shuffle.partitions", int64_t(20));
+// EXPECT_EQ(spark->conf().get("spark.sql.shuffle.partitions"), "20");
+
+spark->conf().set("spark.sql.ansi.enabled", true);
+// EXPECT_EQ(spark->conf().get("spark.sql.ansi.enabled"), "true");
+
+spark->conf().set("spark.sql.ansi.enabled", false);
+// EXPECT_EQ(spark->conf().get("spark.sql.ansi.enabled"), "false");
+
+spark->conf().set("spark.app.name", "to-be-removed");
+spark->conf().unset("spark.app.name");
+auto val = spark->conf().getOption("spark.cpp.test.nonexistent.key");
+// EXPECT_FALSE(val.has_value());
+
+auto all = spark->conf().getAll();
+// EXPECT_FALSE(all.empty());
 ```
 
 ## Working with Databricks

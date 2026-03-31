@@ -57,6 +57,12 @@ Config &Config::setHeader(const std::string &key, const std::string &value)
     return *this;
 }
 
+Config &Config::setRuntimeConfig(const std::string &key, const std::string &value)
+{
+    runtime_configs[key] = value;
+    return *this;
+}
+
 Config &Config::setDatabricksAuth(const std::string &token, const std::string &cluster_id)
 {
     this->setUseSSL(true);
@@ -71,15 +77,15 @@ Config &Config::setServerlessAuth(const std::string &token, const std::string &w
     this->setUseSSL(true);
     this->setPort(443);
     this->setHeader("authorization", "Bearer " + token);
-    
+
     // ----------------------------------------------------------------------
     // Serverless needs the Session ID header (With Spark Connect)
     // We have to use the <warehouse_id> as the routing hint as well as
     // the internal <session_id>.
     // ----------------------------------------------------------------------
     this->setHeader("x-databricks-session-id", this->session_id);
-    this->setHeader("x-databricks-sql-endpoint-id", warehouse_id); 
-    
+    this->setHeader("x-databricks-sql-endpoint-id", warehouse_id);
+
     return *this;
 }
 
