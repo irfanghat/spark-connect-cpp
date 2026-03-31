@@ -34,7 +34,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ env.VCPKG_BINARY_CACHE }}
-          key: ${{ runner.os }}-vcpkg-${{ hashFiles('**/vcpkg.json') }}
+          key: ${{ runner.os }}-vcpkg-${{ hashFiles('.devops/vcpkg.json') }}
           restore-keys: |
             ${{ runner.os }}-vcpkg-
 
@@ -48,14 +48,14 @@ jobs:
 
       - name: Install Spark
         run: |
-          curl -fL https://dlcdn.apache.org/spark/spark-3.5.8/spark-3.5.8-bin-hadoop3.tgz -o spark.tgz
+          curl -fL https://dlcdn.apache.org/spark/spark-4.0.2/spark-4.0.2-bin-hadoop3.tgz -o spark.tgz
           tar -xzf spark.tgz
-          mv spark-3.5.8-bin-hadoop3 $HOME/spark
+          mv spark-4.0.2-bin-hadoop3 $HOME/spark
 
       - name: Start Spark Connect Server
         run: |
           $HOME/spark/sbin/start-connect-server.sh \
-            --packages "org.apache.spark:spark-connect_2.12:3.5.3,io.delta:delta-spark_2.12:3.2.0,io.graphframes:graphframes-spark3_2.12:0.10.0,io.graphframes:graphframes-connect-spark3_2.12:0.10.0" \
+            --packages "org.apache.spark:spark-connect_2.13:4.0.2,io.delta:delta-spark_2.13:4.0.0,io.graphframes:graphframes-spark4_2.13:0.10.0,io.graphframes:graphframes-connect-spark4_2.13:0.10.0" \
             --conf "spark.connect.extensions.relation.classes=org.apache.spark.sql.graphframes.GraphFramesConnect" \
             --conf "spark.driver.extraJavaOptions=-Divy.cache.dir=/tmp -Divy.home=/tmp -XX:+UseG1GC -XX:+HeapDumpOnOutOfMemoryError" \
             --conf "spark.sql.extensions=io.delta.sql.DeltaSparkSessionExtension" \
