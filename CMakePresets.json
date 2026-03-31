@@ -6,44 +6,45 @@
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/build",
       "cacheVariables": {
-        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/build/vcpkg-package/scripts/buildsystems/vcpkg.cmake"
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/build/vcpkg-package/scripts/buildsystems/vcpkg.cmake",
+        "CMAKE_C_COMPILER": "/usr/bin/cc",
+        "CMAKE_CXX_COMPILER": "/usr/bin/c++",
+        "CMAKE_CXX_FLAGS": "--coverage",
+        "CMAKE_C_FLAGS": "--coverage",
+        "CMAKE_EXE_LINKER_FLAGS": "--coverage"
       },
       "hidden": true
     },
     {
-      "name": "prod",
+      "name": "pr",
+      "displayName": "PR Pipeline",
       "inherits": "vcpkg",
       "cacheVariables": {
-        "CMAKE_C_COMPILER": "/usr/bin/cc",
-        "CMAKE_CXX_COMPILER": "/usr/bin/c++",
-        "CMAKE_BUILD_TYPE": "Release"
-      },
-      "environment": {
-        "ENABLE_COVERAGE": "ON"
+        "CMAKE_BUILD_TYPE": "Debug"
       }
     }
   ],
   "buildPresets": [
     {
-      "name": "release",
-      "displayName": "Release Artifacts",
-      "configurePreset": "prod",
+      "name": "pr",
+      "displayName": "PR Artifacts",
+      "configurePreset": "pr",
       "jobs": 0
     }
   ],
   "testPresets": [
     {
-      "name": "test_prod_coverage",
-      "displayName": "Spark & Databricks Prod Test Coverage",
-      "configurePreset": "prod",
+      "name": "test_pr_coverage",
+      "displayName": "Spark & Databricks PR Test Coverage",
+      "configurePreset": "pr",
       "output": {
         "outputOnFailure": true
       }
     },
     {
-      "name": "test_prod_spark_coverage",
-      "displayName": "Spark Local Test Coverage",
-      "inherits": "test_prod_coverage",
+      "name": "test_pr_spark_coverage",
+      "displayName": "Spark PR Test Coverage",
+      "inherits": "test_pr_coverage",
       "filter": {
         "exclude": {
           "name": "Databricks"
@@ -51,9 +52,9 @@
       }
     },
     {
-      "name": "test_prod_databricks_coverage",
-      "displayName": "Spark Local Test Coverage",
-      "inherits": "test_prod_coverage",
+      "name": "test_pr_databricks_coverage",
+      "displayName": "Databricks PR Test Coverage",
+      "inherits": "test_pr_coverage",
       "filter": {
         "exclude": {
           "name": "Spark"
