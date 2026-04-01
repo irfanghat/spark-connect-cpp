@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       # Set the path to the vcpkg binary cache
-      VCPKG_BINARY_CACHE: ${{ github.workspace }}/build/vcpkg-package
+      VCPKG_BINARY_CACHE: ${{ github.workspace }}/.devops/vcpkg_toolchain/vcpkg-package
 
     steps:
       - uses: actions/checkout@v4
