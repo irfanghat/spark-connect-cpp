@@ -94,9 +94,6 @@ jobs:
             --exclude '.*\.pb\.cc' \
             --exclude '.*\.grpc\.pb\.cc' \
             --exclude '.*\.h' \
-            --exclude '.*CMakeCCompilerId.*' \
-            --exclude '.*CMakeCXXCompilerId.*' \
-            --exclude '.*vcpkg.*' \
             --xml-pretty -o coverage.xml \
             --html-details coverage.html \
             --fail-under-line 70 \
