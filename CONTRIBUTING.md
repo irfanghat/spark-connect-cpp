@@ -36,14 +36,14 @@ All libraries are tracked in the `vcpkg.json` manifest file. To add a new librar
 
 If you update `vcpkg.json`, you must generate a new binary archive for the team:
 
-1.  Run the export script:
+*  Run the export script:
     ```bash
     ./vcpkg-package-export.sh
     ```
 
-2.  This script builds the dependencies and creates a zip archive inside the `vcpkg_export` folder.
+*  This script builds the dependencies and creates a zip archive inside the `vcpkg_export` folder.
 
-3.  The resulting file will be named `vcpkg-package.zip`.
+*  The resulting file will be named `vcpkg-package.zip`.
 
 ### 3. Local Development Workflow
 
@@ -64,34 +64,37 @@ This allows you to continue development and consume the new library locally with
 
 Once your local development is complete and you are ready to share the changes:
 
-1.  Ensure vcpkg-package-export.sh has been run to generate the final vcpkg-package.zip.
+*  Ensure vcpkg-package-export.sh has been run to generate the final vcpkg-package.zip.
 
-2.  This zip contains the pre-built binaries including your recent additions.
+*  This zip contains the pre-built binaries including your recent additions.
 
 
 ## Distribution and Consumption
 
 ### Distributing via GitHub
 
-To share updated dependencies with the team:
+To share updated dependencies with the team, we use an automated GitHub Actions pipeline:
 
-*   Upload the `vcpkg-package.zip` to the **GitHub Releases** page as a new SDK release
-*   Note the **Version Tag** you assign to the release
+*   Update the Version: In your Pull Request, update the SDK_VERSION variable in the GitHub Action YAML file to your desired new version tag (e.g., v2.0.1).
+
+*   Merge to Main/Develop: Once your changes to vcpkg.json are merged into the protected branches, the pipeline triggers automatically.
+
+*   Automated Release: The pipeline runs the export script and automatically uploads the vcpkg-package.zip to the GitHub Releases page under the specified Version Tag
 
 ### Updating the Project to Use the New SDK
 
-After uploading the new release, you must update the project configuration:
+After the pipeline completes the release, you must update the project configuration to consume it:
 
-1.  Open `vcpkg-package.cmake`
-2.  Locate the `PACKAGE_VERSION` variable
-3.  Update it to point to the new version tag on GitHub
+*   Open .devops/vcpkg-package.cmake.
 
-```cmake
-# Example update in vcpkg-package.cmake
-set(PACKAGE_VERSION "v1.x.x")
-```
+*   Update the PACKAGE_VERSION variable to match the new GitHub Release tag.
 
-Once committed, `vcpkg-package.cmake` will automatically handle downloading and extracting the updated binaries for all other developers during their next CMake configuration.
+    ```cmake
+    # Update in .devops/vcpkg-package.cmake
+    set(PACKAGE_VERSION "vX.Y.Z")
+    ```
+
+Once this change is committed, vcpkg-package.cmake will automatically handle downloading and extracting the updated binaries for all other team members during their next CMake configuration.
 
 
 ## File Summary

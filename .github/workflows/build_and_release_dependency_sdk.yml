@@ -1,0 +1,58 @@
+name: Build and Release Dependency SDK
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+      - branch-4.1
+  workflow_dispatch:
+
+env:
+  # MANUALLY UPDATE THIS VERSION TO MATCH vcpkg-package.cmake
+  SDK_VERSION: "v1.0.1"
+
+jobs:
+  build-and-release:
+    # Only run if the PR was actually merged (not just closed)
+    # OR if the workflow was triggered manually (workflow_dispatch)
+    if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
+
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Environment
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build
+          chmod +x .devops/vcpkg-setup.sh
+          chmod +x .devops/vcpkg-package-export.sh
+          cd .devops && ./vcpkg-setup.sh
+
+      - name: Run Package Export
+        run: |
+          cd .devops
+          ./vcpkg-package-export.sh
+        shell: bash
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.SDK_VERSION }}
+          name: SDK Release ${{ env.SDK_VERSION }}
+          body: |
+            Manual SDK build for version ${{ env.SDK_VERSION }}.
+            
+            **Instructions:**
+            Ensure `.devops/vcpkg-package.cmake` has `PACKAGE_VERSION` set to `${{ env.SDK_VERSION }}`.
+          files: |
+            .devops/vcpkg_toolchain/vcpkg-package.zip
+          fail_on_unmatched_files: true
+          draft: false
+          prerelease: false
