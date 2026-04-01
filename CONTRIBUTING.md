@@ -14,14 +14,12 @@ Before configuring the project for the first time, you must ensure your local en
 1. Run the setup script:
    ```bash
    ./vcpkg-setup.sh
-````
+    ```
 
 2.  This will verify or install:
     *   **CMake**
     *   **Ninja-build**
     *   **vcpkg**
-
-***
 
 
 ## Managing Dependencies
