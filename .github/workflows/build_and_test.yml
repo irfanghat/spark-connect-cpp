@@ -91,7 +91,6 @@ jobs:
         run: |
           gcovr -r src \
             --object-directory build \
-            --filter src \
             --exclude '.*\.pb\.cc' \
             --exclude '.*\.grpc\.pb\.cc' \
             --exclude '.*\.h' \
@@ -102,7 +101,6 @@ jobs:
             --html-details coverage.html \
             --fail-under-line 70 \
             --print-summary
-            --gcov-ignore-errors=no_working_dir_found
 
       - name: Upload Coverage XML
         uses: actions/upload-artifact@v4
