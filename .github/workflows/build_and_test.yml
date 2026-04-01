@@ -76,6 +76,9 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y gcovr
 
+      - name: Verify Gcovr version
+        run: gcovr --version
+
       - name: Configure
         run: cmake --preset pr
 
