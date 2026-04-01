@@ -1,0 +1,53 @@
+{
+  "version": 2,
+  "configurePresets": [
+    {
+      "name": "local",
+      "displayName": "Local Environment",
+      "inherits": "vcpkg",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "",
+        "CMAKE_CXX_COMPILER": "",
+        "CMAKE_BUILD_TYPE": "Debug",
+        "ENABLE_COVERAGE": "ON"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "local",
+      "displayName": "Local Artifacts",
+      "configurePreset": "dev"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "test_local_coverage",
+      "displayName": "Spark & Databricks Local Test Coverage",
+      "configurePreset": "dev",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "test_dev_spark_coverage",
+      "displayName": "Spark Local Test Coverage",
+      "inherits": "test_local_coverage",
+      "filter": {
+        "exclude": {
+          "name": "Databricks"
+        }
+      }
+    },
+    {
+      "name": "test_dev_databricks_coverage",
+      "displayName": "Spark Local Test Coverage",
+      "inherits": "test_local_coverage",
+      "filter": {
+        "exclude": {
+          "name": "Spark"
+        }
+      }
+    }
+  ]
+}

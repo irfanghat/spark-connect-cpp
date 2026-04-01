@@ -1,0 +1,10 @@
+{
+  "dependencies": [
+    "arrow",
+    "fmt",
+    "grpc",
+    "gtest",
+    "protobuf",
+    "libuuid"
+  ]
+}

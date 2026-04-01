@@ -1,9 +1,9 @@
 services:
   spark:
-    image: "apache/spark:4.0.0-scala2.13-java17-python3-ubuntu"
+    image: "apache/spark:4.0.2-scala2.13-java17-python3-ubuntu"
     command: >
       /opt/spark/sbin/start-connect-server.sh
-      --packages "org.apache.spark:spark-connect_2.13:4.0.0,io.delta:delta-spark_2.13:4.0.0,io.graphframes:graphframes-spark4_2.13:0.10.0,io.graphframes:graphframes-connect-spark4_2.13:0.10.0"
+      --packages "org.apache.spark:spark-connect_2.13:4.0.2,io.delta:delta-spark_2.13:4.0.0,io.graphframes:graphframes-spark4_2.13:0.10.0,io.graphframes:graphframes-connect-spark4_2.13:0.10.0"
       --conf "spark.connect.extensions.relation.classes=org.apache.spark.sql.graphframes.GraphFramesConnect"
       --conf "spark.driver.extraJavaOptions=-Divy.cache.dir=/tmp -Divy.home=/tmp -XX:+UseG1GC -XX:+HeapDumpOnOutOfMemoryError"
       --conf "spark.sql.extensions=io.delta.sql.DeltaSparkSessionExtension"

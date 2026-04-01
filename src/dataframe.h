@@ -45,6 +45,34 @@ public:
               std::string user_id);
 
     /**
+     * @brief Gets the service stub. Returns by value to share ownership.
+     */
+    std::shared_ptr<spark::connect::SparkConnectService::Stub> stub() const {
+        return stub_;
+    }
+
+    /**
+     * @brief Gets the current plan. Returns by const reference to avoid copies.
+     */
+    const spark::connect::Plan& plan() const {
+        return plan_;
+    }
+
+    /**
+     * @brief Gets the active Session ID.
+     */
+    const std::string& session_id() const {
+        return session_id_;
+    }
+
+    /**
+     * @brief Gets the User ID associated with the client.
+     */
+    const std::string& user_id() const {
+        return user_id_;
+    }
+
+    /**
      * @brief Displays the contents of the DataFrame in a tabular format.
      *
      * This method prints the data returned from a Spark SQL query or transformation.
