@@ -8,7 +8,7 @@ set(PACKAGE_DOWNLOAD "${CMAKE_SOURCE_DIR}/.devops/vcpkg_toolchain/vcpk-package.z
 
 if(NOT EXISTS "${CMAKE_SOURCE_DIR}/.devops/vcpkg_toolchain/vcpkg-package")
 
-    message(STATUS "VCPKG PACKAGE not found. Downloading version ${PACKAGE_VERSION}...")
+    message(STATUS "VCPKG TOOLCHAIN not found. Downloading version ${PACKAGE_VERSION}...")
     
     file(DOWNLOAD "${PACKAGE_URL}" "${PACKAGE_DOWNLOAD}" 
         SHOW_PROGRESS 
