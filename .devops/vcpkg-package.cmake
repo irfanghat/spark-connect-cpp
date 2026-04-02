@@ -2,7 +2,7 @@ set(VCPKG_MANIFEST_MODE OFF CACHE BOOL "Disable vcpkg manifest install" FORCE)
 
 set(PACKAGE_VERSION "v1.0.0")
 
-set(PACKAGE_URL "https://github.com/irfanghat/spark-connect-cpp/releases/download/vcpkg-package-${PACKAGE_VERSION}/vcpkg-package.zip")
+set(PACKAGE_URL "https://github.com/irfanghat/spark-connect-cpp/releases/download/${PACKAGE_VERSION}/vcpkg-package.zip")
 set(PACKAGE_DOWNLOAD "${CMAKE_SOURCE_DIR}/.devops/vcpkg_toolchain/vcpk-package.zip")
 
 
