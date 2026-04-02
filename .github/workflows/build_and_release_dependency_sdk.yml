@@ -9,8 +9,9 @@ on:
   workflow_dispatch:
 
 env:
-  # MANUALLY UPDATE THIS VERSION TO MATCH vcpkg-package.cmake
-  SDK_VERSION: "v1.0.1"
+  SDK_VERSION: "v1.0.1" # MANUALLY UPDATE THIS VERSION TO MATCH vcpkg-package.cmake
+  VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
+  VCPKG_INSTALL_OPTIONS: "--debug"
 
 jobs:
   build-and-release:
@@ -26,6 +27,30 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+
+      - name: Export GitHub Actions cache environment variables
+        uses: actions/github-script@v7
+        with:
+          script: |
+            core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
+            core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
+
+      - name: Verify GitHub Actions cache environment
+        shell: bash
+        run: |
+          if [ -z "$ACTIONS_CACHE_URL" ]; then
+            echo "❌ ACTIONS_CACHE_URL is NOT set"
+            exit 1
+          else
+            echo "✅ ACTIONS_CACHE_URL is set"
+          fi
+
+          if [ -z "$ACTIONS_RUNTIME_TOKEN" ]; then
+            echo "❌ ACTIONS_RUNTIME_TOKEN is NOT set"
+            exit 1
+          else
+            echo "✅ ACTIONS_RUNTIME_TOKEN is set"
+          fi
 
       - name: Set up Environment
         run: |
