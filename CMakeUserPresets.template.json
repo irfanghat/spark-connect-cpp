@@ -6,10 +6,7 @@
       "displayName": "Local Environment",
       "inherits": "vcpkg",
       "cacheVariables": {
-        "CMAKE_C_COMPILER": "",
-        "CMAKE_CXX_COMPILER": "",
-        "CMAKE_BUILD_TYPE": "Debug",
-        "ENABLE_COVERAGE": "ON"
+        "CMAKE_BUILD_TYPE": "Debug"
       }
     }
   ],
@@ -17,14 +14,14 @@
     {
       "name": "local",
       "displayName": "Local Artifacts",
-      "configurePreset": "dev"
+      "configurePreset": "local"
     }
   ],
   "testPresets": [
     {
       "name": "test_local_coverage",
       "displayName": "Spark & Databricks Local Test Coverage",
-      "configurePreset": "dev",
+      "configurePreset": "local",
       "output": {
         "outputOnFailure": true
       }

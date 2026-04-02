@@ -2,7 +2,7 @@
 
 ## Overview
 
-This repository provides a **native C++ client for Apache Spark Connect**, enabling C++ applications to execute Spark SQL workloads against remote Spark clusters without requiring JVM dependencies.
+This repository provides a **C++ client for Apache Spark Connect**, enabling C++ applications to execute Spark SQL workloads against remote Spark clusters without requiring JVM dependencies.
 
 Spark Connect introduces a **decoupled client–server architecture** for Apache Spark, where client applications construct logical query plans that are executed remotely by a Spark server. This project delivers an **idiomatic, high-performance C++ interface** for building and submitting Spark queries, with efficient **Apache Arrow–based columnar data exchange** over gRPC.
 
@@ -131,90 +131,6 @@ The Spark Connect server:
 * returns Arrow-encoded results to the client
 
 This separation enables native applications to leverage Spark’s distributed engine without embedding Spark or JVM runtimes locally.
-
----
-
-## Getting Started
-
-### 1. Prerequisites
-
-* **Apache Spark 3.5+** with Spark Connect enabled
-* **C++17 or later**
-* Required libraries:
-
-  * `gRPC`
-  * `Protobuf`
-  * `Apache Arrow`
-  * `uuid`
-
----
-
-### 2. Build & Run Tests
-
-#### Linux (Ubuntu/Debian)
-
-```bash
-# --------------------------------
-# Install all required dependencies
-# --------------------------------
-cd ./.devops
-chmod +x ./vcpkg-setup.sh
-./vcpkg-setup.sh
-
-
-# ----------------------------------
-# Configure CMake Preset for local development
-# ----------------------------------
-cmake --preset dev
-
-
-# ----------------------------------
-# Generate a debug build
-# ----------------------------------
-cmake --build --preset debug
-
-
-# --------------------------------
-# Make sure Spark is running...
-# --------------------------------
-docker compose up spark --build
-
-
-# ----------------------------------
-# Run tests for Spark coverage
-# ----------------------------------
-ctest --preset test_spark_coverage
-
-
-# ----------------------------------
-# Run tests for Databricks coverage
-# ----------------------------------
-ctest --preset test_databricks_coverage
-
-
-# ---------------------------
-# Run Full Test Suite
-# ---------------------------
-ctest --preset test_all_coverage
-
-
-### 3. Mem Checks (Valgrind)
-
-```sh
-mkdir -p build && cd build
-
-cmake .. \
-  -DCMAKE_BUILD_TYPE=Debug \
-  -DCTEST_MEMORYCHECK_COMMAND=/usr/bin/valgrind \
-  -DCTEST_MEMORYCHECK_TYPE=Valgrind
-
-valgrind --leak-check=full --show-leak-kinds=all ./test_dataframe
-```
-
-### 4. Code Coverage
-This project uses **gcovr** for coverage reporting.
-
-`gcovr` analyzes which parts of the compiled code were executed during the test suite execution.
 
 #### Installation:
 

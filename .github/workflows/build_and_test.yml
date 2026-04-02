@@ -5,16 +5,15 @@ permissions:
 
 on:
   push:
-    branches: ["main", "branch-4.1"]
+    branches: [ "main", "branch-4.1" ]
   pull_request:
-    branches: ["main", "branch-4.1"]
+    branches: [ "main", "branch-4.1" ]
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      # Set the path to the vcpkg binary cache
       VCPKG_BINARY_CACHE: ${{ github.workspace }}/.devops/vcpkg_toolchain/vcpkg-package
 
     steps:
@@ -28,8 +27,6 @@ jobs:
       - name: Verify CMake version
         run: cmake --version
 
-      # ---------------- VCPKG Caching ----------------
-
       - name: Cache vcpkg binaries
         uses: actions/cache@v4
         with:
@@ -37,8 +34,6 @@ jobs:
           key: ${{ runner.os }}-vcpkg-{{ hashFiles('**/vcpkg.json') }}
           restore-keys: |
             ${{ runner.os }}-vcpkg-
-
-      # ---------------- Spark and System Setup ----------------
 
       - name: Install Java
         uses: actions/setup-java@v4
