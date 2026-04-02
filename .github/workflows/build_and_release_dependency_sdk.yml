@@ -68,6 +68,8 @@ jobs:
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ env.SDK_VERSION }}
           name: SDK Release ${{ env.SDK_VERSION }}
@@ -77,7 +79,7 @@ jobs:
             **Instructions:**
             Ensure `.devops/vcpkg-package.cmake` has `PACKAGE_VERSION` set to `${{ env.SDK_VERSION }}`.
           files: |
-            .devops/vcpkg_toolchain/vcpkg-package.zip
+            .devops/vcpkg_export/vcpkg-package.zip
           fail_on_unmatched_files: true
           draft: false
           prerelease: false
