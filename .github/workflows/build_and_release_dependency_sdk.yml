@@ -75,7 +75,7 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.CICD_TOKEN }}
         with:
           tag_name: ${{ env.SDK_VERSION }}
           name: SDK Release ${{ env.SDK_VERSION }}
