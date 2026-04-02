@@ -1,11 +1,9 @@
 #!/bin/bash
 
-# Exit on error
 set -e
 
-echo "🚀 Starting installation of CMake, Ninja, and vcpkg..."
+echo "Installing CMake, Ninja, and vcpkg..."
 
-# 1. Update and install system dependencies
 sudo apt update
 sudo apt install -y \
     build-essential \
@@ -23,8 +21,7 @@ sudo apt install -y \
     lsb-release \
     flex
 
-# 2. Install CMake and Ninja
-echo "📦 Setting up Kitware repository for latest CMake..."
+echo "Setting up Kitware repository for latest CMake..."
 wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | sudo tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null
 
 echo "deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/kitware.list >/dev/null
@@ -32,7 +29,9 @@ echo "deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://ap
 sudo apt update
 sudo apt install -y cmake ninja-build
 
-# 3. Setup vcpkg
+# -------------------------------------------------
+# Setup vcpkg
+# -------------------------------------------------
 VCPKG_ROOT="$HOME/vcpkg"
 
 if [ -d "$VCPKG_ROOT" ]; then
@@ -42,20 +41,17 @@ else
     git clone https://github.com/microsoft/vcpkg.git "$VCPKG_ROOT"
 fi
 
-# Bootstrap vcpkg
-echo "🛠️ Bootstrapping vcpkg..."
+echo "Bootstrapping vcpkg..."
 "$VCPKG_ROOT/bootstrap-vcpkg.sh"
 
-# 4. Set Environment Variables
-# Adding to .bashrc so they persist in new terminals
 if ! grep -q "VCPKG_ROOT" "$HOME/.bashrc"; then
-    echo "📝 Adding VCPKG_ROOT to .bashrc..."
+    echo "Adding VCPKG_ROOT to .bashrc..."
     echo "export VCPKG_ROOT=$VCPKG_ROOT" >> "$HOME/.bashrc"
     echo "export PATH=\$VCPKG_ROOT:\$PATH" >> "$HOME/.bashrc"
 fi
 
 echo "-------------------------------------------------------"
-echo "✅ Installation complete!"
+echo "Installation complete..."
 echo "Please run: 'source ~/.bashrc' to update your current shell."
 echo "You can then run 'vcpkg help' to verify."
 echo "-------------------------------------------------------"

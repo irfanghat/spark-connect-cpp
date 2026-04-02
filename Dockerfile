@@ -1,53 +1,30 @@
-FROM debian:12-slim
 
-WORKDIR /workspace
-
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    cmake \
-    pkg-config \
-    libgtest-dev \
-    libgmock-dev \
-    protobuf-compiler \
-    libprotobuf-dev \
-    libgrpc-dev \
-    libgrpc++-dev \
-    protobuf-compiler-grpc \
-    uuid-dev \
-    libabsl-dev \
-    ca-certificates \
-    lsb-release \
-    wget \
-    netcat-traditional \
-    gnupg \
-    && rm -rf /var/lib/apt/lists/*
-
-RUN DISTRO=$(lsb_release --id --short | tr 'A-Z' 'a-z') && \
-    CODENAME=$(lsb_release --codename --short) && \
-    ARROW_PKG="apache-arrow-apt-source-latest-${CODENAME}.deb" && \
-    ARROW_URL="https://packages.apache.org/artifactory/arrow/${DISTRO}/${ARROW_PKG}" && \
-    echo "Downloading from: ${ARROW_URL}" && \
-    wget -q "${ARROW_URL}" -O "${ARROW_PKG}" && \
-    apt-get update && \
-    apt-get install -y -V "./${ARROW_PKG}" && \
-    apt-get update && \
-    apt-get install -y -V \
-        libarrow-dev \
-        libarrow-glib-dev \
-        libarrow-dataset-dev \
-        libarrow-dataset-glib-dev \
-        libarrow-acero-dev \
-        libarrow-flight-dev \
-        libarrow-flight-glib-dev \
-        libarrow-flight-sql-dev \
-        libarrow-flight-sql-glib-dev \
-        libgandiva-dev \
-        libgandiva-glib-dev \
-        libparquet-dev \
-        libparquet-glib-dev && \
-    rm -f "./${ARROW_PKG}" && \
-    rm -rf /var/lib/apt/lists/*
-
-COPY . .
-
-RUN mkdir -p build
+    [SPARK-CONNECT][CPP] Sync protocol with Spark v4.1 and refine RuntimeConfig validation
+    
+    This PR updates the C++ connector to support the Apache Spark v4.1.0 protocol and refines how session configurations are handled to align with Spark 4.x server-side strictness.
+    
+    Key implementation details include:
+    
+    * Protocol Sync: Updated all `.proto` definitions (base, commands, relations, etc.) to v4.1.0 and added untracked `ml.proto`, `pipelines.proto`, and `example_plugins.proto`.
+    * Builder Overloads: Improve API parity with PySpark.
+    * Handle Spark v4's `CANNOT_MODIFY_CONFIG` restrictions for properties like `spark.master`.
+    
+    Testing performed:
+    
+    * Suite: Ran entire suite against a standalone Spark 4.x Connect server.
+    
+    Why is this change necessary?
+    Spark v4 introduces stricter validation for session-level properties and new protocol fields.
+    Moving to a runtime-first configuration pattern ensures local development remains stable while providing the necessary structures for Spark 4.1 compatibility.
+    
+    Does this introduce a user-facing change?
+    Yes. Users can now customize Spark’s behavior such as memory allocation, shuffle partitions, warehouse location, etc. at the time of building the Spark Session via the builder.config() pattern
+:
+    
+    ```cpp
+    auto spark = SparkSession::builder()
+        .master("sc://localhost")
+        .config("spark.sql.shuffle.partitions", 200)
+        .appName("spark-connect-cpp")
+        .getOrCreate();
+    ```

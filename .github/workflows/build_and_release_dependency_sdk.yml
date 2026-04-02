@@ -3,19 +3,21 @@ name: Build and Release Dependency SDK
 on:
   pull_request:
     types: [closed]
-    branches:
-      - main
-      - branch-4.1
+    branches: [ "main", "branch-4.1" ]
   workflow_dispatch:
 
 env:
+  # -----------------------------------------------------------------------
   # MANUALLY UPDATE THIS VERSION TO MATCH vcpkg-package.cmake
+  # -----------------------------------------------------------------------
   SDK_VERSION: "v1.0.1"
 
 jobs:
   build-and-release:
-    # Only run if the PR was actually merged (not just closed)
-    # OR if the workflow was triggered manually (workflow_dispatch)
+    # -----------------------------------------------------------------------
+    # Only runs if the PR was actually merged (not just closed)
+    # or if the workflow was triggered manually (workflow_dispatch)
+    # -----------------------------------------------------------------------
     if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
 
     runs-on: ubuntu-latest
