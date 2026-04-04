@@ -20,5 +20,3 @@ if(NOT EXISTS "${CMAKE_SOURCE_DIR}/.devops/vcpkg_toolchain/vcpkg-package")
     file(REMOVE "${PACKAGE_DOWNLOAD}")
 
 endif()
-
-# vcpkg-package.cmake

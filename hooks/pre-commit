@@ -8,28 +8,23 @@ BLUE='\033[0;34m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
+PRESET="pr"
+TEST_PRESET="test_pr_coverage"
+
 echo -e "${BLUE}********************************************${NC}"
-echo -e "${BLUE}  Pre-Commit Hook: CMake Build Check${NC}"
+echo -e "${BLUE}  Pre-Commit Hook: CMake Preset Check${NC}"
 echo -e "${BLUE}********************************************${NC}"
 echo ""
 
-if [ ! -d "build" ]; then
-    echo -e "${RED}Error: build/ directory not found.${NC}"
-    echo -e "${YELLOW}Create it with:${NC}"
-    echo -e "${YELLOW}  mkdir build && cd build && cmake ..${NC}"
-    exit 1
-fi
-
-echo -e "${BLUE}Configuring project (cmake ..)...${NC}"
-cd build
-if ! cmake ..; then
+echo -e "${BLUE}Configuring project (preset: ${PRESET})...${NC}"
+if ! cmake --preset ${PRESET}; then
     echo -e "${RED}CMake configuration failed${NC}"
     exit 1
 fi
 
 echo ""
-echo -e "${BLUE}Building project (make)...${NC}"
-if ! make -j$(nproc); then
+echo -e "${BLUE}Building project...${NC}"
+if ! cmake --build --preset ${PRESET}; then
     echo ""
     echo -e "${RED}Build failed${NC}"
     echo -e "${YELLOW}Fix build errors before committing.${NC}"
@@ -38,7 +33,7 @@ if ! make -j$(nproc); then
 fi
 
 echo ""
-echo -e "${GREEN}Build successful${NC}"
+echo -e "${GREEN}All checks passed${NC}"
 echo ""
 
 exit 0
