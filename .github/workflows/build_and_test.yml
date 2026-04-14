@@ -13,8 +13,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      VCPKG_BINARY_CACHE: ${{ github.workspace }}/.devops/vcpkg_toolchain/vcpkg-package
 
     steps:
       - uses: actions/checkout@v4
@@ -26,14 +24,6 @@ jobs:
 
       - name: Verify CMake version
         run: cmake --version
-
-      - name: Cache vcpkg binaries
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.VCPKG_BINARY_CACHE }}
-          key: ${{ runner.os }}-vcpkg-{{ hashFiles('**/vcpkg.json') }}
-          restore-keys: |
-            ${{ runner.os }}-vcpkg-
 
       - name: Install Java
         uses: actions/setup-java@v4
