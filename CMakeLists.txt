@@ -1,16 +1,18 @@
+#######################################################################################################
+# CMAKE CONFIGURATION
+# Specify CMake version and C++ standard
+#######################################################################################################
+
 cmake_minimum_required(VERSION 4.2.2)
-
-
-#######################################################################################################
-# DOWNLOAD DEPENDENCIES
-# Fetched from VCPKG Export Release
-#######################################################################################################
-include(.devops/vcpkg-package.cmake)
-
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+
+#######################################################################################################
+# PROJECT DECLARATION
+# Define project name and version
+#######################################################################################################
 
 set(PROJECT_NAME "spark_connect_cpp")
 
@@ -19,15 +21,21 @@ project(${PROJECT_NAME})
 
 #######################################################################################################
 # FIND DEPENDENCIES
-# Loaded from VCPKG Toolchain
+# Loaded with PkgConfig
 #######################################################################################################
+message(STATUS "Using PKG_CONFIG_PATH: $ENV{PKG_CONFIG_PATH}")
 
-find_package(Protobuf CONFIG REQUIRED)
-find_package(gRPC CONFIG REQUIRED)
-find_package(Arrow CONFIG REQUIRED)
-find_package(Parquet CONFIG REQUIRED)
-find_package(unofficial-libuuid CONFIG REQUIRED)
-find_package(GTest REQUIRED)
+find_package(PkgConfig REQUIRED)
+
+pkg_check_modules(PROTOBUF REQUIRED IMPORTED_TARGET protobuf)
+pkg_check_modules(GRPC REQUIRED IMPORTED_TARGET grpc++)
+pkg_check_modules(ARROW REQUIRED IMPORTED_TARGET arrow)
+pkg_check_modules(PARQUET REQUIRED IMPORTED_TARGET parquet)
+pkg_check_modules(UUID REQUIRED IMPORTED_TARGET uuid)
+pkg_check_modules(GTEST REQUIRED IMPORTED_TARGET gtest_main gmock)
+
+find_package(Protobuf REQUIRED)
+find_program(GRPC_CPP_PLUGIN NAMES grpc_cpp_plugin)
 
 
 #######################################################################################################
@@ -43,10 +51,10 @@ file(GLOB_RECURSE SPARK_CONNECT_PROTO_SRC CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}
 add_library(${SPARK_CONNECT_PROTO_LIB} STATIC ${SPARK_CONNECT_PROTO_SRC})
 
 target_link_libraries(${SPARK_CONNECT_PROTO_LIB} PUBLIC
-        protobuf::libprotobuf
-        gRPC::grpc++
-        "$<IF:$<BOOL:${ARROW_BUILD_STATIC}>,Arrow::arrow_static,Arrow::arrow_shared>"
-        "$<IF:$<BOOL:${ARROW_BUILD_STATIC}>,Parquet::parquet_static,Parquet::parquet_shared>"
+        PkgConfig::PROTOBUF
+        PkgConfig::GRPC
+        PkgConfig::ARROW
+        PkgConfig::PARQUET
 )
 
 message("Spark Connect C++ source and header files build in ${SPARK_CONNECT_PROTO_BUILD}")
@@ -61,7 +69,7 @@ protobuf_generate(
         TARGET "${SPARK_CONNECT_PROTO_LIB}"
         LANGUAGE grpc
         GENERATE_EXTENSIONS .grpc.pb.h .grpc.pb.cc
-        PLUGIN "protoc-gen-grpc=\$<TARGET_FILE:gRPC::grpc_cpp_plugin>"
+        PLUGIN "protoc-gen-grpc=${GRPC_CPP_PLUGIN}"
         IMPORT_DIRS "${CMAKE_SOURCE_DIR}/src"
         PROTOC_OUT_DIR "${SPARK_CONNECT_PROTO_BUILD}"
 )
@@ -85,7 +93,7 @@ add_library(${PROJECT_NAME} STATIC ${PROJECT_SOURCES})
 
 target_link_libraries(${PROJECT_NAME} PUBLIC
         ${SPARK_CONNECT_PROTO_LIB}
-        unofficial::UUID::uuid
+        PkgConfig::UUID
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC
@@ -106,10 +114,10 @@ add_executable(${PROJECT_NAME}_test ${TEST_SRC_FILES})
 
 target_link_libraries(${PROJECT_NAME}_test PRIVATE
         ${PROJECT_NAME}
-        GTest::gtest
-        GTest::gmock 
-        GTest::gtest_main
+        PkgConfig::GTEST
 )
+
+include(GoogleTest)
 
 enable_testing()
 
