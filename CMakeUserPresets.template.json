@@ -4,7 +4,7 @@
     {
       "name": "local",
       "displayName": "Local Environment",
-      "inherits": "vcpkg",
+      "inherits": "default",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug"
       }
@@ -27,7 +27,7 @@
       }
     },
     {
-      "name": "test_dev_spark_coverage",
+      "name": "test_local_spark_coverage",
       "displayName": "Spark Local Test Coverage",
       "inherits": "test_local_coverage",
       "filter": {
@@ -37,8 +37,8 @@
       }
     },
     {
-      "name": "test_dev_databricks_coverage",
-      "displayName": "Spark Local Test Coverage",
+      "name": "test_local_databricks_coverage",
+      "displayName": "Databricks Local Test Coverage",
       "inherits": "test_local_coverage",
       "filter": {
         "exclude": {
