@@ -4,7 +4,7 @@
     {
       "name": "local",
       "displayName": "Local Environment",
-      "inherits": "vcpkg",
+      "inherits": "default",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug"
       }
