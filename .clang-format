@@ -1,3 +1,4 @@
+DisableFormat: false
 BasedOnStyle: Microsoft
 
 IndentWidth: 4

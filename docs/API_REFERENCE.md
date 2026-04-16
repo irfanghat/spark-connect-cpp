@@ -1415,3 +1415,40 @@ auto result = gf()
 
 auto result = gf().pageRank(0.15, 5).filter("pagerank > 0.0");
 ```
+
+## Spark ML
+
+### Tokenization
+The `Tokenizer` is a feature transformer that splits text into individual words (tokens) based on whitespace. It is commonly used in text preprocessing for **machine learning pipelines**.
+
+```cpp
+auto df = spark->sql(
+    R"(
+        SELECT *
+        FROM
+        VALUES
+            ('Hello World'),
+            ('Spark Connect C++'),
+            ('Tokenizer Test')
+        AS sentences(sentence)
+    )");
+
+Tokenizer tokenizer("sentence", "words");
+
+auto transformed_df = tokenizer.transform(df);
+auto result_df = transformed_df.select({"sentence", "words"});
+
+result_df.show();
+```
+
+**Output:**
+
+```
++----------------------+----------------------+
+| sentence             | words                |
++----------------------+----------------------+
+| Hello World          | [hello, world]       |
+| Spark Connect C++    | [spark, connect, ... |
+| Tokenizer Test       | [tokenizer, test]    |
++----------------------+----------------------+
+```
