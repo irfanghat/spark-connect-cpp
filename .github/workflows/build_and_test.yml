@@ -58,7 +58,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          cd .devops
+          cd scripts
           chmod +x install-deps.sh
           ./install-deps.sh
 

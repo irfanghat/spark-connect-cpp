@@ -164,7 +164,7 @@ Does this introduce a user-facing change?
 This project relies on **pkg-config** for dependency management. Contributors are expected to install the required libraries on their local systems and ensure that the corresponding `.pc` files are available for discovery.
  
 ## IMPORTANT
-**Note:** You can use the provided script in **`.devops/install-deps.sh`** to install the required dependencies on supported Linux distributions.
+**Note:** You can use the provided script in **`scripts/install-deps.sh`** to install the required dependencies on supported Linux distributions.
 
 ## Initial Environment Setup
 
@@ -213,7 +213,7 @@ If you introduce a new dependency to the project:
 
 | File                      | Description                                           |
 | ------------------------- | ----------------------------------------------------- |
-| `.devops/install-deps.sh` | Shell script to install core dependencies on Linux    |
+| `scripts/install-deps.sh` | Shell script to install core dependencies on Linux    |
 
 ## Recognition
 
