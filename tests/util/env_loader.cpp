@@ -3,8 +3,7 @@
 #include <fstream>
 #include <sstream>
 
-static inline std::string trim(const std::string& s)
-{
+static inline std::string trim(const std::string& s){
     auto start = s.find_first_not_of(" \t\r\n");
     auto end = s.find_last_not_of(" \t\r\n");
     if (start == std::string::npos)
