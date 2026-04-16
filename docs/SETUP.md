@@ -145,6 +145,30 @@ If the build fails with `terminated signal terminated program cc1plus`, the syst
 cmake --build build -j2
 ```
 
+#### Generate Coverage:
+
+```sh
+sudo apt update
+sudo apt install -y gcovr
+```
+
+```sh
+cmake -S . -B build -DENABLE_COVERAGE=ON
+cmake --build build -j
+
+gcovr -r src \
+      --object-directory build \
+      --exclude '.*\.pb\.cc' \
+      --exclude '.*\.grpc\.pb\.cc' \
+      --exclude '.*\.h' \
+      --html-details coverage.html \
+      --html-theme green \
+      --print-summary \
+      --fail-under-line 70
+```
+
+This will generate a coverage report in HTML format.
+
 ---
 
 ## License
