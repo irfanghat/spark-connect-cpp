@@ -1,7 +1,7 @@
 #pragma once
 
-#include <string>
 #include <map>
+#include <string>
 #include <vector>
 
 /**
@@ -10,7 +10,7 @@
  */
 class Config
 {
-public:
+  public:
     std::string host = "localhost";
     int port = 15002;
     std::string session_id;
@@ -26,31 +26,32 @@ public:
 
     Config();
 
-    Config &setHost(const std::string &h);
-    Config &setPort(int p);
-    Config &setUserId(const std::string &u);
-    Config &setUseSSL(bool ssl);
-    Config &setHeader(const std::string &key, const std::string &value);
+    Config& setHost(const std::string& h);
+    Config& setPort(int p);
+    Config& setUserId(const std::string& u);
+    Config& setUseSSL(bool ssl);
+    Config& setHeader(const std::string& key, const std::string& value);
 
     /**
-     * @brief An internal helper that stores Spark-level configs, set via Builder.config().
+     * @brief An internal helper that stores Spark-level configs, set via
+     * Builder.config().
      */
-    Config &setRuntimeConfig(const std::string &key, const std::string &value);
+    Config& setRuntimeConfig(const std::string& key, const std::string& value);
 
     /**
      * @brief This sets Databricks specific headers
      * @param token Personal Access Token (PAT)
      * @param cluster_id The cluster ID (e.g., 1234-567890-abc123)
      */
-    Config &setDatabricksAuth(const std::string &token, const std::string &cluster_id);
+    Config& setDatabricksAuth(const std::string& token, const std::string& cluster_id);
 
     /**
      * @brief Sets Databricks Serverless specific headers
      * @param token Personal Access Token (PAT)
      * @param warehouse_id The SQL Warehouse ID (e.g., 12341a102456ee789)
      */
-    Config &setServerlessAuth(const std::string &token, const std::string &warehouse_id);
+    Config& setServerlessAuth(const std::string& token, const std::string& warehouse_id);
 
-private:
+  private:
     static std::string generate_uuid();
 };

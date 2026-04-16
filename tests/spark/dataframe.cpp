@@ -1,20 +1,19 @@
-#include <gtest/gtest.h>
 #include <gmock/gmock.h>
+#include <gtest/gtest.h>
 
 #include <iostream>
 #include <sstream>
 
-#include "session.h"
 #include "config.h"
 #include "dataframe.h"
 #include "functions.h"
-#include "types.h"
+#include "session.h"
 #include "spark_fixture.h"
+#include "types.h"
 
 using namespace spark::sql::functions;
 using namespace spark::sql::types;
 using ::testing::ElementsAre;
-
 
 // ----------------------------------------------------------------
 // The following suite validates Basic Range Query logic,
@@ -123,8 +122,10 @@ TEST_F(SparkIntegrationTest, SchemaIntrospection)
     std::string schema_json = df.schema().json();
 
     std::string expected = "{\"type\":\"struct\",\"fields\":["
-                           "{\"name\":\"age\",\"type\":\"integer\",\"nullable\":false,\"metadata\":{}},"
-                           "{\"name\":\"name\",\"type\":\"string\",\"nullable\":false,\"metadata\":{}}]}";
+                           "{\"name\":\"age\",\"type\":\"integer\","
+                           "\"nullable\":false,\"metadata\":{}},"
+                           "{\"name\":\"name\",\"type\":\"string\","
+                           "\"nullable\":false,\"metadata\":{}}]}";
 
     EXPECT_EQ(schema_json, expected);
 
@@ -136,7 +137,9 @@ TEST_F(SparkIntegrationTest, AssertPrintSchema)
     // --------------------------------------------------------
     // Explicit casts to ensure the test is deterministic
     // --------------------------------------------------------
-    auto df = spark->sql("SELECT CAST(1 AS INT) AS id, array(CAST(1.1 AS DOUBLE), CAST(2.2 AS DOUBLE)) AS vals");
+    auto df = spark->sql("SELECT CAST(1 AS INT) AS id, array(CAST(1.1 AS "
+                         "DOUBLE), CAST(2.2 AS DOUBLE)) AS "
+                         "vals");
 
     std::ostringstream oss;
     df.schema().print_tree(oss);
@@ -149,11 +152,10 @@ TEST_F(SparkIntegrationTest, AssertPrintSchema)
     // Array nullability is on the field line
     // Indentation for nested elements uses 3 spaces after the pipe
     // --------------------------------------------------------------------
-    std::string expected_tree =
-        "root\n"
-        " |-- id: integer (nullable = false)\n"
-        " |-- vals: array\n"
-        " |   |-- element: double (nullable = false)\n";
+    std::string expected_tree = "root\n"
+                                " |-- id: integer (nullable = false)\n"
+                                " |-- vals: array\n"
+                                " |   |-- element: double (nullable = false)\n";
 
     EXPECT_EQ(actual_tree, expected_tree);
 }
@@ -184,7 +186,7 @@ TEST_F(SparkIntegrationTest, Head)
 
     auto rows = df.head(1);
     ASSERT_FALSE(rows.empty());
-    const auto &row = rows[0];
+    const auto& row = rows[0];
     std::stringstream ss;
     ss << row;
 
@@ -371,9 +373,10 @@ TEST_F(SparkIntegrationTest, DataFrameDistinct)
     auto rows = distinct_df.collect();
     std::set<std::string> unique_rows;
 
-    for (const auto &row : rows)
+    for (const auto& row : rows)
     {
-        std::string row_str = std::get<std::string>(row["name"]) + std::to_string(row.get_long("id"));
+        std::string row_str =
+            std::get<std::string>(row["name"]) + std::to_string(row.get_long("id"));
         unique_rows.insert(row_str);
     }
 
@@ -440,13 +443,16 @@ TEST_F(SparkIntegrationTest, DataFrameSummary)
     // ROWS returned:
     //
     // Row(summary='count', name='3', age='3', weight='3', height='3')
-    // Row(summary='mean', name=null, age='12.0', weight='40.73333', height='145.00000')
-    // Row(summary='stddev', name=null, age='1.0', weight='3.1722757341273704', height='4.763402145525822')
-    // Row(summary='min', name='Alice', age='11', weight='37.8', height='142.2')
-    // Row(summary='25%', name=null, age='11', weight='37.8', height='142.2')
-    // Row(summary='50%', name=null, age='12', weight='40.3', height='142.3')
-    // Row(summary='75%', name=null, age='13', weight='44.1', height='150.5')
-    // Row(summary='max', name='Tom', age='13', weight='44.1', height='150.5')
+    // Row(summary='mean', name=null, age='12.0', weight='40.73333',
+    // height='145.00000') Row(summary='stddev', name=null, age='1.0',
+    // weight='3.1722757341273704', height='4.763402145525822')
+    // Row(summary='min', name='Alice', age='11', weight='37.8',
+    // height='142.2') Row(summary='25%', name=null, age='11',
+    // weight='37.8', height='142.2') Row(summary='50%', name=null,
+    // age='12', weight='40.3', height='142.3') Row(summary='75%',
+    // name=null, age='13', weight='44.1', height='150.5')
+    // Row(summary='max', name='Tom', age='13', weight='44.1',
+    // height='150.5')
     // ----------------------------------------------------------------------
 
     EXPECT_EQ(df_stats[0].get<std::string>("summary"), "count");
@@ -494,7 +500,7 @@ TEST_F(SparkIntegrationTest, DefaultInnerJoinOnCommonColumns)
     EXPECT_EQ(rows.size(), 2);
 
     std::set<std::string> names;
-    for (const auto &row : rows)
+    for (const auto& row : rows)
         names.insert(row.get<std::string>("name"));
 
     EXPECT_TRUE(names.count("Alice") == 1);
@@ -624,10 +630,7 @@ TEST_F(SparkIntegrationTest, JoinOnExpressionInner)
         AS orders(custid, amount)
     )");
 
-    auto joined = df1.join_on_expression(
-        df2,
-        "id = custid",
-        "inner");
+    auto joined = df1.join_on_expression(df2, "id = custid", "inner");
 
     joined.show();
 
@@ -651,10 +654,7 @@ TEST_F(SparkIntegrationTest, JoinOnExpressionOuter)
             (3, 300)
         AS orders(custid, amount)
     )");
-    auto joined = df1.join_on_expression(
-        df2,
-        "id = custid",
-        "outer");
+    auto joined = df1.join_on_expression(df2, "id = custid", "outer");
 
     joined.show();
 
@@ -662,7 +662,7 @@ TEST_F(SparkIntegrationTest, JoinOnExpressionOuter)
     EXPECT_EQ(rows.size(), 3);
 }
 
-DataFrame MultiplyColumn(const DataFrame &df, std::string col_name, int factor)
+DataFrame MultiplyColumn(const DataFrame& df, std::string col_name, int factor)
 {
     return df.select({col(col_name) * lit(factor)});
 }
@@ -682,7 +682,8 @@ TEST_F(SparkIntegrationTest, DataFrameTransform)
     //
     // The column name in this case will be "id":
     //
-    // auto results = df.transform(MultiplyColumn, "id", 10).filter("id > 50");
+    // auto results = df.transform(MultiplyColumn, "id", 10).filter("id >
+    // 50");
     // --------------------------------------------------------------------
 
     auto results = df.transform(MultiplyColumn, "id", 10).filter("(id * 10) > 50");
@@ -728,28 +729,22 @@ TEST_F(SparkIntegrationTest, ChainedDataFrameTransforms)
 
     EXPECT_NO_THROW(raw_df.show());
 
-    auto add_full_name = [](const DataFrame &df)
+    auto add_full_name = [](const DataFrame& df)
     {
-        return df.withColumn("full_name", spark::sql::functions::concat_ws(" ", {col("first"), col("last")}));
+        return df.withColumn("full_name",
+                             spark::sql::functions::concat_ws(" ", {col("first"), col("last")}));
     };
 
-    auto clean_email = [](const DataFrame &df)
-    {
-        return df.withColumn("email", lower(col("email")));
-    };
+    auto clean_email = [](const DataFrame& df)
+    { return df.withColumn("email", lower(col("email"))); };
 
-    auto add_status = [](const DataFrame &df)
+    auto add_status = [](const DataFrame& df)
     {
         return df.withColumn("status",
-                             when(col("age") > lit(18),
-                                  lit("adult"))
-                                 .otherwise(lit("minor")));
+                             when(col("age") > lit(18), lit("adult")).otherwise(lit("minor")));
     };
 
-    auto df = raw_df
-                  .transform(add_full_name)
-                  .transform(clean_email)
-                  .transform(add_status);
+    auto df = raw_df.transform(add_full_name).transform(clean_email).transform(add_status);
 
     EXPECT_NO_THROW(df.show());
 

@@ -1,13 +1,12 @@
 #pragma once
 
-#include <gtest/gtest.h>
 #include "session.h"
+#include <gtest/gtest.h>
 
 class DatabricksServerlessIntegrationTest : public ::testing::Test
 {
-    protected:
+  protected:
+    static SparkSession* spark;
 
-        static SparkSession *spark;
-
-        static void SetUpTestSuite();
+    static void SetUpTestSuite();
 };

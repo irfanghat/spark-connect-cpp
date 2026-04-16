@@ -1,13 +1,13 @@
 #include "config.h"
-#include <uuid/uuid.h>
 #include <algorithm>
+#include <uuid/uuid.h>
 
 Config::Config()
 {
     session_id = generate_uuid();
 }
 
-Config &Config::setHost(const std::string &h)
+Config& Config::setHost(const std::string& h)
 {
     std::string cleaned_host = h;
 
@@ -33,37 +33,37 @@ Config &Config::setHost(const std::string &h)
     return *this;
 }
 
-Config &Config::setPort(int p)
+Config& Config::setPort(int p)
 {
     port = p;
     return *this;
 }
 
-Config &Config::setUserId(const std::string &u)
+Config& Config::setUserId(const std::string& u)
 {
     user_id = u;
     return *this;
 }
 
-Config &Config::setUseSSL(bool ssl)
+Config& Config::setUseSSL(bool ssl)
 {
     use_ssl = ssl;
     return *this;
 }
 
-Config &Config::setHeader(const std::string &key, const std::string &value)
+Config& Config::setHeader(const std::string& key, const std::string& value)
 {
     headers[key] = value;
     return *this;
 }
 
-Config &Config::setRuntimeConfig(const std::string &key, const std::string &value)
+Config& Config::setRuntimeConfig(const std::string& key, const std::string& value)
 {
     runtime_configs[key] = value;
     return *this;
 }
 
-Config &Config::setDatabricksAuth(const std::string &token, const std::string &cluster_id)
+Config& Config::setDatabricksAuth(const std::string& token, const std::string& cluster_id)
 {
     this->setUseSSL(true);
     this->setPort(443);
@@ -72,7 +72,7 @@ Config &Config::setDatabricksAuth(const std::string &token, const std::string &c
     return *this;
 }
 
-Config &Config::setServerlessAuth(const std::string &token, const std::string &warehouse_id)
+Config& Config::setServerlessAuth(const std::string& token, const std::string& warehouse_id)
 {
     this->setUseSSL(true);
     this->setPort(443);

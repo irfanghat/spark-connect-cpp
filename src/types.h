@@ -1,227 +1,237 @@
 #pragma once
 
-#include <string>
-#include <vector>
-#include <memory>
-#include <variant>
-#include <optional>
-#include <cstdint>
 #include <algorithm>
+#include <cstdint>
 #include <iostream>
+#include <memory>
+#include <optional>
 #include <stdexcept>
+#include <string>
+#include <variant>
+#include <vector>
 
 #include <arrow/array.h>
 
 namespace spark::connect
 {
-    class DataType;
-    class Expression;
-}
+class DataType;
+class Expression;
+} // namespace spark::connect
 
 namespace spark::sql::types
 {
-    /**
-     * @brief Basic Spark Types
-     */
-    struct NullType
-    {
-    };
-    struct BooleanType
-    {
-    };
-    struct ByteType
-    {
-    };
-    struct ShortType
-    {
-    };
-    struct IntegerType
-    {
-    };
-    struct LongType
-    {
-    };
-    struct FloatType
-    {
-    };
-    struct DoubleType
-    {
-    };
-    struct StringType
-    {
-    };
-    struct BinaryType
-    {
-    };
-    struct DateType
-    {
-    };
-    struct TimestampType
-    {
-    };
-    struct TimestampNtzType
-    {
-    };
+/**
+ * @brief Basic Spark Types
+ */
+struct NullType
+{
+};
+struct BooleanType
+{
+};
+struct ByteType
+{
+};
+struct ShortType
+{
+};
+struct IntegerType
+{
+};
+struct LongType
+{
+};
+struct FloatType
+{
+};
+struct DoubleType
+{
+};
+struct StringType
+{
+};
+struct BinaryType
+{
+};
+struct DateType
+{
+};
+struct TimestampType
+{
+};
+struct TimestampNtzType
+{
+};
+
+/**
+ * @brief Parameterized Types
+ */
+struct DecimalType
+{
+    int32_t precision = 10;
+    int32_t scale = 0;
+    DecimalType() = default;
+    DecimalType(int32_t p, int32_t s) : precision(p), scale(s) {}
+};
+
+struct CharType
+{
+    int32_t length;
+};
+struct VarCharType
+{
+    int32_t length;
+};
+
+class DataType;
+struct StructField;
+
+/**
+ * @brief Complex Types
+ */
+struct ArrayType
+{
+    std::shared_ptr<DataType> element_type;
+    bool contains_null;
+};
+
+struct MapType
+{
+    std::shared_ptr<DataType> key_type;
+    std::shared_ptr<DataType> value_type;
+    bool value_contains_null;
+};
+
+struct StructType
+{
+    std::vector<StructField> fields;
+    std::string json() const;
+    void print_tree(std::ostream& os) const;
+};
+
+/**
+ * @brief Variant and Wrapper for Spark Schemas
+ */
+using DataTypeVariant =
+    std::variant<NullType, BooleanType, ByteType, ShortType, IntegerType, LongType, FloatType,
+                 DoubleType, StringType, BinaryType, DateType, TimestampType, TimestampNtzType,
+                 DecimalType, CharType, VarCharType, ArrayType, MapType, StructType>;
+
+class DataType
+{
+  public:
+    DataTypeVariant kind;
+    DataType(DataTypeVariant k) : kind(std::move(k)) {}
 
     /**
-     * @brief Parameterized Types
+     * @brief Returns the JSON representation of the type, compatible with
+     * Spark's StructType.json().
      */
-    struct DecimalType
-    {
-        int32_t precision = 10;
-        int32_t scale = 0;
-        DecimalType() = default;
-        DecimalType(int32_t p, int32_t s) : precision(p), scale(s) {}
-    };
-
-    struct CharType
-    {
-        int32_t length;
-    };
-    struct VarCharType
-    {
-        int32_t length;
-    };
-
-    class DataType;
-    struct StructField;
+    std::string json() const;
 
     /**
-     * @brief Complex Types
+     * @brief Returns a simple string name for the type (e.g., "integer",
+     * "struct").
      */
-    struct ArrayType
-    {
-        std::shared_ptr<DataType> element_type;
-        bool contains_null;
-    };
-
-    struct MapType
-    {
-        std::shared_ptr<DataType> key_type;
-        std::shared_ptr<DataType> value_type;
-        bool value_contains_null;
-    };
-
-    struct StructType
-    {
-        std::vector<StructField> fields;
-        std::string json() const;
-        void print_tree(std::ostream &os) const;
-    };
+    std::string type_name() const;
 
     /**
-     * @brief Variant and Wrapper for Spark Schemas
+     * @brief Factory method to create a DataType from a Spark Connect
+     * Protobuf message.
      */
-    using DataTypeVariant = std::variant<
-        NullType, BooleanType, ByteType, ShortType, IntegerType, LongType,
-        FloatType, DoubleType, StringType, BinaryType, DateType,
-        TimestampType, TimestampNtzType, DecimalType, CharType, VarCharType,
-        ArrayType, MapType, StructType>;
+    static DataType from_proto(const spark::connect::DataType& proto);
+};
 
-    class DataType
-    {
-    public:
-        DataTypeVariant kind;
-        DataType(DataTypeVariant k) : kind(std::move(k)) {}
+struct StructField
+{
+    std::string name;
+    DataType data_type;
+    bool nullable = true;
+    std::optional<std::string> metadata;
+};
 
-        /**
-         * @brief Returns the JSON representation of the type, compatible with Spark's StructType.json().
-         */
-        std::string json() const;
+struct Row;
+struct ArrayData;
+struct MapData;
 
-        /**
-         * @brief Returns a simple string name for the type (e.g., "integer", "struct").
-         */
-        std::string type_name() const;
+/**
+ * @brief A variant representing a single value in a Row.
+ * Includes primitives, decimals, and recursive complex types.
+ */
+using ColumnValue = std::variant<std::monostate,             // Null
+                                 bool,                       // Boolean
+                                 int8_t,                     // Byte
+                                 int16_t,                    // Short
+                                 int32_t,                    // Integer / Date
+                                 int64_t,                    // Long / Timestamp
+                                 float,                      // Float
+                                 double,                     // Double
+                                 std::string,                // String
+                                 std::vector<uint8_t>,       // Binary
+                                 std::shared_ptr<Row>,       // Struct (Nested)
+                                 std::shared_ptr<ArrayData>, // Array
+                                 std::shared_ptr<MapData>    // Map
+                                 >;
 
-        /**
-         * @brief Factory method to create a DataType from a Spark Connect Protobuf message.
-         */
-        static DataType from_proto(const spark::connect::DataType &proto);
-    };
+struct ArrayData
+{
+    std::vector<ColumnValue> elements;
+};
 
-    struct StructField
-    {
-        std::string name;
-        DataType data_type;
-        bool nullable = true;
-        std::optional<std::string> metadata;
-    };
+struct MapData
+{
+    std::vector<ColumnValue> keys;
+    std::vector<ColumnValue> values;
+};
 
-    struct Row;
-    struct ArrayData;
-    struct MapData;
+struct Row
+{
+    std::vector<std::string> column_names;
+    std::vector<ColumnValue> values;
 
     /**
-     * @brief A variant representing a single value in a Row.
-     * Includes primitives, decimals, and recursive complex types.
+     * @brief Access value by column index: row[0]
      */
-    using ColumnValue = std::variant<
-        std::monostate,             // Null
-        bool,                       // Boolean
-        int8_t,                     // Byte
-        int16_t,                    // Short
-        int32_t,                    // Integer / Date
-        int64_t,                    // Long / Timestamp
-        float,                      // Float
-        double,                     // Double
-        std::string,                // String
-        std::vector<uint8_t>,       // Binary
-        std::shared_ptr<Row>,       // Struct (Nested)
-        std::shared_ptr<ArrayData>, // Array
-        std::shared_ptr<MapData>    // Map
-        >;
-
-    struct ArrayData
+    const ColumnValue& operator[](size_t index) const
     {
-        std::vector<ColumnValue> elements;
-    };
+        return values.at(index);
+    }
 
-    struct MapData
+    /**
+     * @brief Access value by column name: row["col_name"]
+     */
+    const ColumnValue& operator[](const std::string& name) const
     {
-        std::vector<ColumnValue> keys;
-        std::vector<ColumnValue> values;
-    };
+        return values.at(col_index(name));
+    }
 
-    struct Row
+    /**
+     * @brief Strict access. This fails if the type doesn't match exactly.
+     */
+    template <typename T> T get(const std::string& name) const
     {
-        std::vector<std::string> column_names;
-        std::vector<ColumnValue> values;
+        const auto& val = values.at(col_index(name));
 
-        /**
-         * @brief Access value by column index: row[0]
-         */
-        const ColumnValue &operator[](size_t index) const { return values.at(index); }
-
-        /**
-         * @brief Access value by column name: row["col_name"]
-         */
-        const ColumnValue &operator[](const std::string &name) const { return values.at(col_index(name)); }
-
-        /**
-         * @brief Strict access. This fails if the type doesn't match exactly.
-         */
-        template <typename T>
-        T get(const std::string &name) const
-        {
-            const auto &val = values.at(col_index(name));
-
-            return std::visit([](auto &&arg) -> T
+        return std::visit(
+            [](auto&& arg) -> T
             {
                 using ArgType = std::decay_t<decltype(arg)>;
-                
+
                 // --------------------------------------------------------------------
                 // Handle exact Type Match
                 // --------------------------------------------------------------------
-                if constexpr (std::is_same_v<T, ArgType>) {
+                if constexpr (std::is_same_v<T, ArgType>)
+                {
                     return arg;
                 }
 
                 // --------------------------------------------------------------------
-                // Null Handling 
+                // Null Handling
                 // std::monostate to "null"
                 // --------------------------------------------------------------------
-                else if constexpr (std::is_same_v<T, std::string> && std::is_same_v<ArgType, std::monostate>) {
+                else if constexpr (std::is_same_v<T, std::string> &&
+                                   std::is_same_v<ArgType, std::monostate>)
+                {
                     return "null";
                 }
 
@@ -229,25 +239,31 @@ namespace spark::sql::types
                 // Widening / Numeric Conversion
                 // This supports get<double> on int32_t columns
                 // --------------------------------------------------------------------
-                else if constexpr (std::is_arithmetic_v<T> && std::is_arithmetic_v<ArgType>) {
+                else if constexpr (std::is_arithmetic_v<T> && std::is_arithmetic_v<ArgType>)
+                {
                     return static_cast<T>(arg);
                 }
 
                 // --------------------------------------------------------------------
-                // Handle Nulls (Returning an empty vector for a null list)
+                // Handle Nulls (Returning an empty vector for a
+                // null list)
                 // --------------------------------------------------------------------
-                else if constexpr (std::is_same_v<T, std::vector<std::string>> && std::is_same_v<ArgType, std::monostate>) {
+                else if constexpr (std::is_same_v<T, std::vector<std::string>> &&
+                                   std::is_same_v<ArgType, std::monostate>)
+                {
                     return {};
                 }
 
                 // --------------------------------------------------------------------
                 // Handle vector list
                 // --------------------------------------------------------------------
-                else if constexpr (std::is_same_v<T, std::vector<std::string>> && std::is_same_v<ArgType, std::shared_ptr<ArrayData>>) {
-
+                else if constexpr (std::is_same_v<T, std::vector<std::string>> &&
+                                   std::is_same_v<ArgType, std::shared_ptr<ArrayData>>)
+                {
                     std::vector<std::string> string_list;
 
-                    for (int i = 0; i < arg->elements.size(); i++) {
+                    for (int i = 0; i < arg->elements.size(); i++)
+                    {
                         auto string_value = std::get<std::string>(arg->elements[i]);
 
                         string_list.push_back(string_value);
@@ -259,70 +275,92 @@ namespace spark::sql::types
                 // --------------------------------------------------------------------
                 // Failure State
                 // --------------------------------------------------------------------
-                else {
-                    throw std::runtime_error("Row::get Type Mismatch: requested type does not match variant state: " + std::string(typeid(ArgType).name()));
-                } 
+                else
+                {
+                    throw std::runtime_error("Row::get Type Mismatch: requested "
+                                             "type does not match variant "
+                                             "state: " +
+                                             std::string(typeid(ArgType).name()));
+                }
             },
             val);
-        }
-
-        /**
-         * @brief Widening Integer Access.
-         * This retrieves any integral type (int8..int64) as int64_t.
-         */
-        int64_t get_long(const std::string &name) const
-        {
-            const auto &val = (*this)[name];
-            if (std::holds_alternative<std::monostate>(val))
-            {
-                throw std::runtime_error("Column " + name + " is null");
-            }
-            return std::visit([](auto &&arg) -> int64_t
-                              {
-        using T = std::decay_t<decltype(arg)>;
-        if constexpr (std::is_integral_v<T> && !std::is_same_v<T, bool>) {
-            return static_cast<int64_t>(arg);
-        }
-        throw std::runtime_error("Column is not a numeric integral type"); }, val);
-        }
-
-        /**
-         * @brief Widening Floating Point Access.
-         * This retrieves any numeric type as a double.
-         */
-        double get_double(const std::string &name) const
-        {
-            return std::visit([](auto &&arg) -> double
-                              {
-                using T = std::decay_t<decltype(arg)>;
-                if constexpr (std::is_arithmetic_v<T> && !std::is_same_v<T, bool>) {
-                    return static_cast<double>(arg);
-                }
-                throw std::runtime_error("Column is not a numeric type"); }, (*this)[name]);
-        }
-
-        auto begin() const { return values.begin(); }
-        auto end() const { return values.end(); }
-        size_t size() const { return values.size(); }
-
-        int col_index(const std::string &name) const
-        {
-            auto it = std::find(column_names.begin(), column_names.end(), name);
-            if (it == column_names.end())
-                throw std::runtime_error("Column not found: " + name);
-            return static_cast<int>(std::distance(column_names.begin(), it));
-        }
-
-        friend std::ostream &operator<<(std::ostream &os, const Row &row);
-    };
-
-    std::ostream &operator<<(std::ostream &os, const Row &row);
+    }
 
     /**
-     * @brief Converts an Arrow Array value at a specific row into a Spark `ColumnValue`.
-     * This acts as a bridge between the Arrow transport layer and the respective C++ Row model.
-     *
-     * See: `Row` implementation.
+     * @brief Widening Integer Access.
+     * This retrieves any integral type (int8..int64) as int64_t.
      */
-    ColumnValue arrayValueToVariant(const std::shared_ptr<arrow::Array> &array, int64_t row);
-}
+    int64_t get_long(const std::string& name) const
+    {
+        const auto& val = (*this)[name];
+        if (std::holds_alternative<std::monostate>(val))
+        {
+            throw std::runtime_error("Column " + name + " is null");
+        }
+        return std::visit(
+            [](auto&& arg) -> int64_t
+            {
+                using T = std::decay_t<decltype(arg)>;
+                if constexpr (std::is_integral_v<T> && !std::is_same_v<T, bool>)
+                {
+                    return static_cast<int64_t>(arg);
+                }
+                throw std::runtime_error("Column is not a numeric integral type");
+            },
+            val);
+    }
+
+    /**
+     * @brief Widening Floating Point Access.
+     * This retrieves any numeric type as a double.
+     */
+    double get_double(const std::string& name) const
+    {
+        return std::visit(
+            [](auto&& arg) -> double
+            {
+                using T = std::decay_t<decltype(arg)>;
+                if constexpr (std::is_arithmetic_v<T> && !std::is_same_v<T, bool>)
+                {
+                    return static_cast<double>(arg);
+                }
+                throw std::runtime_error("Column is not a numeric type");
+            },
+            (*this)[name]);
+    }
+
+    auto begin() const
+    {
+        return values.begin();
+    }
+    auto end() const
+    {
+        return values.end();
+    }
+    size_t size() const
+    {
+        return values.size();
+    }
+
+    int col_index(const std::string& name) const
+    {
+        auto it = std::find(column_names.begin(), column_names.end(), name);
+        if (it == column_names.end())
+            throw std::runtime_error("Column not found: " + name);
+        return static_cast<int>(std::distance(column_names.begin(), it));
+    }
+
+    friend std::ostream& operator<<(std::ostream& os, const Row& row);
+};
+
+std::ostream& operator<<(std::ostream& os, const Row& row);
+
+/**
+ * @brief Converts an Arrow Array value at a specific row into a Spark
+ * `ColumnValue`. This acts as a bridge between the Arrow transport layer and
+ * the respective C++ Row model.
+ *
+ * See: `Row` implementation.
+ */
+ColumnValue arrayValueToVariant(const std::shared_ptr<arrow::Array>& array, int64_t row);
+} // namespace spark::sql::types

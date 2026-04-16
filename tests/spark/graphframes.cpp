@@ -1,10 +1,10 @@
-#include <gtest/gtest.h>
 #include <gmock/gmock.h>
+#include <gtest/gtest.h>
 
-#include "session.h"
 #include "dataframe.h"
-#include "graphframe.h"
 #include "functions.h"
+#include "graphframe.h"
+#include "session.h"
 
 using namespace graphframes;
 using namespace spark::sql::functions;
@@ -23,13 +23,12 @@ static int64_t gfCount(DataFrame df)
     return static_cast<int64_t>(df.collect().size());
 }
 
-template <typename T>
-static std::vector<T> gfColumn(DataFrame df, const std::string &col)
+template <typename T> static std::vector<T> gfColumn(DataFrame df, const std::string& col)
 {
     auto rows = df.collect();
     std::vector<T> out;
     out.reserve(rows.size());
-    for (auto &r : rows)
+    for (auto& r : rows)
         out.push_back(r.get<T>(col));
     return out;
 }
@@ -39,7 +38,8 @@ static std::vector<T> gfColumn(DataFrame df, const std::string &col)
  *
  * Graph (Directed):
  *
- * Vertices (INT id):  `1 - Alice(34)`  `2 - Bob(36)`  `3 - Charlie(30)`  `4 - Anne(29)`
+ * Vertices (INT id):  `1 - Alice(34)`  `2 - Bob(36)`  `3 - Charlie(30)`  `4 -
+ * Anne(29)`
  *
  * Edges (INT src/dst): 1 -> 2 friend
  *                      2 -> 3 follow
@@ -56,10 +56,10 @@ static std::vector<T> gfColumn(DataFrame df, const std::string &col)
  */
 class SparkGraphFramesIntegrationTest : public ::testing::Test
 {
-protected:
-    static SparkSession *spark;
-    static DataFrame *vertices;
-    static DataFrame *edges;
+  protected:
+    static SparkSession* spark;
+    static DataFrame* vertices;
+    static DataFrame* edges;
 
     static void SetUpTestSuite()
     {
@@ -94,12 +94,15 @@ protected:
         spark->stop();
     }
 
-    GraphFrame gf() const { return GraphFrame(*vertices, *edges); }
+    GraphFrame gf() const
+    {
+        return GraphFrame(*vertices, *edges);
+    }
 };
 
-SparkSession *SparkGraphFramesIntegrationTest::spark = nullptr;
-DataFrame *SparkGraphFramesIntegrationTest::vertices = nullptr;
-DataFrame *SparkGraphFramesIntegrationTest::edges = nullptr;
+SparkSession* SparkGraphFramesIntegrationTest::spark = nullptr;
+DataFrame* SparkGraphFramesIntegrationTest::vertices = nullptr;
+DataFrame* SparkGraphFramesIntegrationTest::edges = nullptr;
 
 // --------------------------------------------------------------------------
 // PageRank
@@ -393,7 +396,7 @@ TEST_F(SparkGraphFramesIntegrationTest, TriangleCountVerticesInTriangleNonZero)
 {
     auto rows = gf().triangleCount().collect();
     std::map<int32_t, int64_t> counts;
-    for (auto &row : rows)
+    for (auto& row : rows)
         counts[row.get<int32_t>("id")] = row.get<int64_t>("count");
 
     EXPECT_GT(counts[1], 0);
@@ -405,7 +408,7 @@ TEST_F(SparkGraphFramesIntegrationTest, TriangleCountLeafVertexIsZero)
 {
     auto rows = gf().triangleCount().collect();
     std::map<int32_t, int64_t> counts;
-    for (auto &row : rows)
+    for (auto& row : rows)
         counts[row.get<int32_t>("id")] = row.get<int64_t>("count");
 
     // --------------------------------------------------------
@@ -442,9 +445,7 @@ TEST_F(SparkGraphFramesIntegrationTest, LabelPropagationHasLabelColumn)
 // --------------------------------------------------------------------------
 TEST_F(SparkGraphFramesIntegrationTest, FindThenFilter)
 {
-    auto result = gf()
-                      .find("(a)-[e]->(b)")
-                      .filter("e.relationship = 'friend'");
+    auto result = gf().find("(a)-[e]->(b)").filter("e.relationship = 'friend'");
     EXPECT_GT(gfCount(result), 0);
 }
 

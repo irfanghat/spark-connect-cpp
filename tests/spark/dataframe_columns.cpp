@@ -1,13 +1,13 @@
-#include <gtest/gtest.h>
-#include <gmock/gmock.h>
-#include <gmock/gmock-matchers.h>
 #include <algorithm>
+#include <gmock/gmock-matchers.h>
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "session.h"
 #include "dataframe.h"
+#include "session.h"
 
 using ::testing::ElementsAre;
 using ::testing::HasSubstr;
@@ -15,8 +15,8 @@ using ::testing::UnorderedElementsAre;
 
 class ColumnTest : public ::testing::Test
 {
-protected:
-    static SparkSession *spark;
+  protected:
+    static SparkSession* spark;
 
     static void SetUpTestSuite()
     {
@@ -33,7 +33,7 @@ protected:
     }
 };
 
-SparkSession *ColumnTest::spark = nullptr;
+SparkSession* ColumnTest::spark = nullptr;
 
 // ----------------------------------------------------------------
 // The following suite validates Basic Column Retrieval (Single & Multiple),
@@ -116,9 +116,12 @@ TEST_F(ColumnTest, ColumnsAfterTransformation)
 TEST_F(ColumnTest, ErrorHandlingInvalidPlan)
 {
     // gTest will catch the exception. We assert that it MUST throw.
-    EXPECT_THROW({
-        auto df = spark->sql("SELECT * FROM non_existent_table_12345");
-        auto cols = df.columns(); }, std::exception);
+    EXPECT_THROW(
+        {
+            auto df = spark->sql("SELECT * FROM non_existent_table_12345");
+            auto cols = df.columns();
+        },
+        std::exception);
 }
 
 TEST_F(ColumnTest, ColumnDataTypesValidation)
@@ -146,7 +149,8 @@ TEST_F(ColumnTest, ComplexTypeDetection)
     // ---------------------------
     // Test Arrays and Maps
     // ---------------------------
-    auto df = spark->sql("SELECT array(1, 2, 3) AS int_array, map('key', 1) AS string_int_map");
+    auto df = spark->sql("SELECT array(1, 2, 3) AS int_array, map('key', "
+                         "1) AS string_int_map");
 
     auto schema = df.schema();
 
@@ -156,11 +160,13 @@ TEST_F(ColumnTest, ComplexTypeDetection)
     // Check Array
     // ---------------------------
     EXPECT_EQ(schema.fields[0].name, "int_array");
-    EXPECT_TRUE(std::holds_alternative<spark::sql::types::ArrayType>(schema.fields[0].data_type.kind));
+    EXPECT_TRUE(
+        std::holds_alternative<spark::sql::types::ArrayType>(schema.fields[0].data_type.kind));
 
     // ---------------------------
     // Check Map
     // ---------------------------
     EXPECT_EQ(schema.fields[1].name, "string_int_map");
-    EXPECT_TRUE(std::holds_alternative<spark::sql::types::MapType>(schema.fields[1].data_type.kind));
+    EXPECT_TRUE(
+        std::holds_alternative<spark::sql::types::MapType>(schema.fields[1].data_type.kind));
 }

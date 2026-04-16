@@ -1,13 +1,13 @@
-#include <iostream>
 #include <grpcpp/grpcpp.h>
+#include <iostream>
 
 #include "dataframe.h"
+#include "logging.h"
 #include "reader.h"
 #include "session.h"
-#include "logging.h"
 
-#include <spark/connect/relations.pb.h>
 #include <spark/connect/commands.pb.h>
+#include <spark/connect/relations.pb.h>
 
 /**
  * @brief gRPC Metadata plugin to inject custom headers from the Spark Config
@@ -16,35 +16,35 @@
  */
 class HeaderMetadataPlugin : public grpc::MetadataCredentialsPlugin
 {
-public:
-    explicit HeaderMetadataPlugin(const std::map<std::string, std::string> &headers)
-        : headers_(headers) {}
-
-    grpc::Status GetMetadata(grpc::string_ref service_url,
-                             grpc::string_ref method_name,
-                             const grpc::AuthContext &auth_context,
-                             std::multimap<grpc::string, grpc::string> *metadata) override
+  public:
+    explicit HeaderMetadataPlugin(const std::map<std::string, std::string>& headers)
+        : headers_(headers)
     {
-        for (const auto &[key, value] : headers_)
+    }
+
+    grpc::Status GetMetadata(grpc::string_ref service_url, grpc::string_ref method_name,
+                             const grpc::AuthContext& auth_context,
+                             std::multimap<grpc::string, grpc::string>* metadata) override
+    {
+        for (const auto& [key, value] : headers_)
         {
             metadata->insert(std::make_pair(key, value));
         }
         return grpc::Status::OK;
     }
 
-private:
+  private:
     std::map<std::string, std::string> headers_;
 };
 
-SparkSession *SparkSession::instance_ = nullptr;
+SparkSession* SparkSession::instance_ = nullptr;
 std::once_flag SparkSession::once_flag_;
 
 /**
  * @brief Private constructor for SparkSession.
  * @param config Configuration for the session.
  */
-SparkSession::SparkSession(const Config &config)
-    : config_(config)
+SparkSession::SparkSession(const Config& config) : config_(config)
 {
     // --------------------------------------------------------
     // Build the gRPC channel and stub based on the config
@@ -62,7 +62,8 @@ SparkSession::SparkSession(const Config &config)
         if (!config_.headers.empty())
         {
             // ----------------------------------------------------------------------------
-            // If headers, such as Auth tokens exist, we create Composite Credentials
+            // If headers, such as Auth tokens exist, we create
+            // Composite Credentials
             // ----------------------------------------------------------------------------
             auto plugin = std::make_unique<HeaderMetadataPlugin>(config_.headers);
             auto call_creds = grpc::MetadataCredentialsFromPlugin(std::move(plugin));
@@ -92,15 +93,15 @@ SparkSession::SparkSession(const Config &config)
  * @brief Gets or creates a new SparkSession with the specified configurations.
  * @return The singleton SparkSession instance.
  */
-SparkSession &SparkSession::Builder::getOrCreate()
+SparkSession& SparkSession::Builder::getOrCreate()
 {
-    std::call_once(SparkSession::once_flag_, [this]()
-                   { SparkSession::instance_ = new SparkSession(this->config_); });
+    std::call_once(SparkSession::once_flag_,
+                   [this]() { SparkSession::instance_ = new SparkSession(this->config_); });
 
     if (!config_.runtime_configs.empty())
     {
         RuntimeConfig rc = SparkSession::instance_->conf();
-        for (const auto &[key, value] : config_.runtime_configs)
+        for (const auto& [key, value] : config_.runtime_configs)
             rc.set(key, value);
     }
 
@@ -112,7 +113,7 @@ SparkSession &SparkSession::Builder::getOrCreate()
  * @param query The SQL query string.
  * @return A new DataFrame instance.
  */
-DataFrame SparkSession::sql(const std::string &query)
+DataFrame SparkSession::sql(const std::string& query)
 {
     spark::connect::Plan plan;
     plan.mutable_root()->mutable_sql()->set_query(query);
@@ -133,7 +134,7 @@ DataFrame SparkSession::sql(const std::string &query)
 DataFrame SparkSession::range(int64_t start, int64_t end, int64_t step)
 {
     spark::connect::Plan plan;
-    auto *range_rel = plan.mutable_root()->mutable_range();
+    auto* range_rel = plan.mutable_root()->mutable_range();
 
     range_rel->set_start(start);
     range_rel->set_end(end);
@@ -164,16 +165,19 @@ SparkSession SparkSession::newSession()
 {
     SPARK_LOG_INFO("SparkSession", "Creating a new isolated session...");
     Config newConfig = this->config_;
-    newConfig.session_id = "new_session_" + std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(
-                                                               std::chrono::system_clock::now().time_since_epoch())
-                                                               .count());
+    newConfig.session_id =
+        "new_session_" + std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(
+                                            std::chrono::system_clock::now().time_since_epoch())
+                                            .count());
     return SparkSession(newConfig);
 }
 
 /**
  * @brief Runtime configuration interface for Spark.
- * This is the interface through which the user can get and set all Spark and Hadoop configurations that are relevant to Spark SQL.
- * When getting the value of a config, this defaults to the value set in the underlying `SparkContext`, if any.
+ * This is the interface through which the user can get and set all Spark and
+ * Hadoop configurations that are relevant to Spark SQL. When getting the value
+ * of a config, this defaults to the value set in the underlying `SparkContext`,
+ * if any.
  */
 RuntimeConfig SparkSession::conf()
 {
@@ -184,9 +188,10 @@ RuntimeConfig SparkSession::conf()
  * @brief Set the directory under which RDDs are going to be checkpointed.
  * The directory must be an HDFS path if running on a cluster.
  *
- * @param path path to the directory where checkpoint files will be stored (must be HDFS path if running in cluster)
+ * @param path path to the directory where checkpoint files will be stored (must
+ * be HDFS path if running in cluster)
  */
-void SparkSession::setCheckpointDir(const std::string &path)
+void SparkSession::setCheckpointDir(const std::string& path)
 {
     conf().set("spark.checkpoint.dir", path);
 }
@@ -205,7 +210,7 @@ void SparkSession::stop()
     // ------------------------------------------------------
     // Create a new UserContext and set it in the request.
     // ------------------------------------------------------
-    spark::connect::UserContext *user_context = request.mutable_user_context();
+    spark::connect::UserContext* user_context = request.mutable_user_context();
     user_context->set_user_id(config_.user_id);
 
     // ------------------------------------------------------
@@ -231,7 +236,8 @@ void SparkSession::stop()
 }
 
 /**
- * @brief Returns a DataFrameReader that can be used to read data in as a DataFrame.
+ * @brief Returns a DataFrameReader that can be used to read data in as a
+ * DataFrame.
  * @return A new DataFrameReader instance.
  */
 DataFrameReader SparkSession::read()
