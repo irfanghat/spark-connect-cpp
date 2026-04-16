@@ -9,12 +9,12 @@ NC='\033[0m'
 
 PRESET="pr_pipeline"
 
-echo -e "${BLUE}********************************************${NC}"
-echo -e "${BLUE}  Pre-Commit Hook: Format + Build Check${NC}"
-echo -e "${BLUE}********************************************${NC}"
+echo -e "${YELLOW}--------------------------------------------${NC}"
+echo -e "${YELLOW}  Pre-Commit Hook: Format + Build Check${NC}"
+echo -e "${YELLOW}--------------------------------------------${NC}"
 echo ""
 
-echo -e "${BLUE}Configuring project (preset: ${PRESET})...${NC}"
+echo -e "${YELLOW}Configuring project (preset: ${PRESET})...${NC}"
 cmake --preset ${PRESET}
 
 echo ""
@@ -33,6 +33,8 @@ fi
 
 echo ""
 echo -e "${BLUE}Building project...${NC}"
+echo ""
+
 cmake --build --preset ${PRESET}
 
 echo ""
