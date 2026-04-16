@@ -8,12 +8,12 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-PRESET="pr"
+PRESET="pr_pipeline"
 TEST_PRESET="test_pr_spark_coverage"
 
-echo -e "${BLUE}*********************************************${NC}"
-echo -e "${BLUE}  Pre-Push Hook: Run Tests (Presets)${NC}"
-echo -e "${BLUE}*********************************************${NC}"
+echo -e "${YELLOW}-----------------------------------------------${NC}"
+echo -e "${YELLOW}  Pre-Push Hook: Run Tests (Presets)${NC}"
+echo -e "${YELLOW}-----------------------------------------------${NC}"
 echo ""
 
 current_branch=$(git symbolic-ref --short HEAD 2>/dev/null || echo "detached")
@@ -44,9 +44,9 @@ echo ""
 
 if ! ctest --preset ${TEST_PRESET}; then
     echo ""
-    echo -e "${RED}*********************************************${NC}"
+    echo -e "${RED}-----------------------------------------------${NC}"
     echo -e "${RED} TESTS FAILED${NC}"
-    echo -e "${RED}*********************************************${NC}"
+    echo -e "${RED}-----------------------------------------------${NC}"
     echo ""
 
     echo -e "${YELLOW}If failures are integration-related:${NC}"
@@ -60,9 +60,9 @@ if ! ctest --preset ${TEST_PRESET}; then
 fi
 
 echo ""
-echo -e "${GREEN}*********************************************${NC}"
+echo -e "${GREEN}-----------------------------------------------${NC}"
 echo -e "${GREEN} ALL TESTS PASSED${NC}"
-echo -e "${GREEN}*********************************************${NC}"
+echo -e "${GREEN}-----------------------------------------------${NC}"
 echo -e "${GREEN}Proceeding with push...${NC}"
 echo ""
 
