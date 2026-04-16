@@ -1,0 +1,16 @@
+* @irfanghat
+
+/src/ @irfanghat @Leader254 @devsimiyu
+/tests/ @irfanghat
+
+CMakeLists.txt @irfanghat
+CMakePresets.json @devsimiyu
+/cmake/ @irfanghat
+
+/scripts/ @irfanghat
+/hooks/ @irfanghat
+
+/docs/ @irfanghat
+*.md @irfanghat
+
+.github/ @irfanghat
