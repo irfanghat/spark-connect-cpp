@@ -1,17 +1,16 @@
-#include <gtest/gtest.h>
-#include <gmock/gmock.h>
-#include <iostream>
-#include "session.h"
-#include "dataframe.h"
 #include "config.h"
+#include "dataframe.h"
 #include "functions.h"
-#include "types.h"
+#include "session.h"
 #include "spark_fixture.h"
+#include "types.h"
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
+#include <iostream>
 
 using namespace spark::sql::functions;
 using namespace spark::sql::types;
 using ::testing::ElementsAre;
-
 
 TEST_F(SparkIntegrationTest, ColumnExpressions)
 {
@@ -36,8 +35,8 @@ TEST_F(SparkIntegrationTest, ColumnExpressions)
     // We alias it to "age_plus_one" so we can find it in the resulting Row
     // -----------------------------------------------------------------------
 
-    auto filtered_df = df.filter(col("name") == lit("Alice"))
-                           .select({col("name"), _col.alias("age_plus_one")});
+    auto filtered_df =
+        df.filter(col("name") == lit("Alice")).select({col("name"), _col.alias("age_plus_one")});
 
     filtered_df.show();
 

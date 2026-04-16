@@ -1,44 +1,40 @@
-#include <iostream>
-#include <iomanip>
-#include <sstream>
-#include <chrono>
-#include <ctime>
 #include <algorithm>
 #include <cctype>
+#include <chrono>
+#include <ctime>
+#include <iomanip>
+#include <iostream>
+#include <sstream>
 
-#include <arrow/pretty_print.h>
 #include <arrow/api.h>
-#include <arrow/ipc/api.h>
 #include <arrow/io/memory.h>
+#include <arrow/ipc/api.h>
 #include <arrow/ipc/reader.h>
+#include <arrow/pretty_print.h>
 #include <arrow/table.h>
 
+#include <google/protobuf/wrappers.pb.h>
 #include <grpcpp/grpcpp.h>
 #include <spark/connect/base.grpc.pb.h>
 #include <spark/connect/commands.pb.h>
-#include <google/protobuf/wrappers.pb.h>
 
 #include "dataframe.h"
 #include "functions.h"
+#include "group.h"
 #include "types.h"
 #include "writer.h"
-#include "group.h"
 
 using namespace spark::connect;
 
-DataFrame::DataFrame(std::shared_ptr<spark::connect::SparkConnectService::Stub> stub,
-                     Plan plan,
-                     std::string session_id,
-                     std::string user_id)
-    : stub_(stub),
-      plan_(plan),
-      session_id_(session_id),
-      user_id_(user_id)
+DataFrame::DataFrame(std::shared_ptr<spark::connect::SparkConnectService::Stub> stub, Plan plan,
+                     std::string session_id, std::string user_id)
+    : stub_(stub), plan_(plan), session_id_(session_id), user_id_(user_id)
 {
 }
 
 /**
- * @brief Converts a value from an Arrow Array at a specific row index to a string.
+ * @brief Converts a value from an Arrow Array at a specific row index to a
+ * string.
  *
  * This helper function handles the type-specific extraction of values from
  * Apache Arrow arrays. It supports various Arrow types and formats them
@@ -46,7 +42,8 @@ DataFrame::DataFrame(std::shared_ptr<spark::connect::SparkConnectService::Stub> 
  *
  * @param array The shared pointer to the Arrow Array containing the data.
  * @param row The zero-based index of the row to extract.
- * @return A string representation of the value. Returns "null" if the value is null.
+ * @return A string representation of the value. Returns "null" if the value is
+ * null.
  *
  * @note Supported types:
  *       - STRING, BOOL
@@ -101,7 +98,8 @@ static std::string arrayValueToString(std::shared_ptr<arrow::Array> array, int64
         if (date_array->IsNull(row))
             return "null";
         int32_t days = date_array->Value(row);
-        std::chrono::system_clock::time_point tp = std::chrono::system_clock::from_time_t(0) + std::chrono::hours(days * 24);
+        std::chrono::system_clock::time_point tp =
+            std::chrono::system_clock::from_time_t(0) + std::chrono::hours(days * 24);
         std::time_t tt = std::chrono::system_clock::to_time_t(tp);
         std::ostringstream oss;
         oss << std::put_time(std::gmtime(&tt), "%Y-%m-%d");
@@ -156,7 +154,8 @@ static std::string arrayValueToString(std::shared_ptr<arrow::Array> array, int64
     {
         auto list_array = std::static_pointer_cast<arrow::ListArray>(array);
 
-        if (list_array->IsNull(row)) {
+        if (list_array->IsNull(row))
+        {
             return "null";
         }
 
@@ -168,10 +167,12 @@ static std::string arrayValueToString(std::shared_ptr<arrow::Array> array, int64
 
         oss << "[";
 
-        for (int64_t i = start; i < end; i++) {
+        for (int64_t i = start; i < end; i++)
+        {
             oss << arrayValueToString(list_array->values(), i);
 
-            if (i < end - 1) {
+            if (i < end - 1)
+            {
                 oss << ", ";
             }
         }
@@ -197,9 +198,11 @@ void DataFrame::show(int max_rows, int truncate)
     else
         *request.mutable_plan() = plan_;
 
-    std::cout << "============== GRPC LOGICAL PLAN ==============\n";
-    std::cout << plan_.DebugString();
-    std::cout << "============== GRPC LOGICAL PLAN ==============\n";
+    // ------------------------------------------------
+    // Print the GRPC Logical Plan
+    //
+    // std::cout << plan_.DebugString(); << std::endl;
+    // ------------------------------------------------
 
     grpc::ClientContext context;
     auto reader = stub_->ExecutePlan(&context, request);
@@ -213,20 +216,20 @@ void DataFrame::show(int max_rows, int truncate)
 
     while (reader->Read(&response))
     {
-        // Print Spark Response Schema
-
-
-        if (response.has_schema()) {
-            std::cout << "============== GRPC Response Schema ==============" << std::endl;
-            std::cout << response.schema().DebugString();
-            std::cout << "============== GRPC Response Schema ==============" << std::endl;
-        }
+        // --------------------------------------------------------------------------------------------
+        // Print the GRPC Response Schema
+        //
+        // if (response.has_schema())
+        // {
+        //     std::cout << response.schema().DebugString();
+        // }
+        // --------------------------------------------------------------------------------------------
 
         if (!response.has_arrow_batch())
             continue;
 
         auto arrow_buffer = std::make_shared<arrow::Buffer>(
-            reinterpret_cast<const uint8_t *>(response.arrow_batch().data().data()),
+            reinterpret_cast<const uint8_t*>(response.arrow_batch().data().data()),
             response.arrow_batch().data().size());
 
         auto buffer_reader = std::make_shared<arrow::io::BufferReader>(arrow_buffer);
@@ -311,8 +314,8 @@ void DataFrame::show(int max_rows, int truncate)
                 buffer << "|";
                 for (int i = 0; i < num_cols; ++i)
                 {
-                    buffer << " " << std::setw(col_widths[i])
-                           << batch->schema()->field(i)->name() << " |";
+                    buffer << " " << std::setw(col_widths[i]) << batch->schema()->field(i)->name()
+                           << " |";
                 }
                 buffer << "\n";
                 print_sep();
@@ -344,7 +347,8 @@ void DataFrame::show(int max_rows, int truncate)
                     else
                     {
                         // ------------------------------------------------
-                        // Convert types on demand for fixed width mode
+                        // Convert types on demand for
+                        // fixed width mode
                         // ------------------------------------------------
                         val = arrayValueToString(batch->column(c), r);
                         if (truncate > 0 && val.length() > (size_t)truncate)
@@ -395,7 +399,7 @@ std::vector<std::string> DataFrame::columns() const
     // ------------------------------
     // Set the schema analysis type
     // ------------------------------
-    auto *schema_request = request.mutable_schema();
+    auto* schema_request = request.mutable_schema();
     *schema_request->mutable_plan() = plan_;
 
     // ------------------------------
@@ -416,10 +420,10 @@ std::vector<std::string> DataFrame::columns() const
     // ------------------------------------------
     if (response.has_schema())
     {
-        const auto &schema = response.schema().schema();
+        const auto& schema = response.schema().schema();
         if (schema.has_struct_())
         {
-            for (const auto &field : schema.struct_().fields())
+            for (const auto& field : schema.struct_().fields())
             {
                 col_names.push_back(field.name());
             }
@@ -445,7 +449,7 @@ spark::sql::types::StructType DataFrame::schema() const
     // ------------------------------
     // Set schema analysis type
     // ------------------------------
-    auto *schema_request = request.mutable_schema();
+    auto* schema_request = request.mutable_schema();
     *schema_request->mutable_plan() = plan_;
 
     grpc::ClientContext context;
@@ -463,7 +467,8 @@ spark::sql::types::StructType DataFrame::schema() const
         // -------------------------------------
         // Convert proto to C++ DataType
         // -------------------------------------
-        spark::sql::types::DataType dt = spark::sql::types::DataType::from_proto(response.schema().schema());
+        spark::sql::types::DataType dt =
+            spark::sql::types::DataType::from_proto(response.schema().schema());
 
         // ------------------------------------------------------------
         // A DataFrame schema is always a StructType at the root
@@ -474,7 +479,8 @@ spark::sql::types::StructType DataFrame::schema() const
         }
         else
         {
-            throw std::runtime_error("Internal Error: Spark returned a non-struct root schema.");
+            throw std::runtime_error("Internal Error: Spark returned a non-struct root "
+                                     "schema.");
         }
     }
     else
@@ -488,14 +494,14 @@ void DataFrame::printSchema() const
     this->schema().print_tree(std::cout);
 }
 
-DataFrame DataFrame::select(const std::vector<std::string> &cols) const
+DataFrame DataFrame::select(const std::vector<std::string>& cols) const
 {
     Plan plan;
 
     // ---------------------------------------------------------------------
     // Use the pointer to the root to ensure we are copying the content
     // ---------------------------------------------------------------------
-    auto *project = plan.mutable_root()->mutable_project();
+    auto* project = plan.mutable_root()->mutable_project();
 
     // ---------------------------------------------------------------------
     // Copy the entire relation tree from the previous plan
@@ -505,19 +511,19 @@ DataFrame DataFrame::select(const std::vector<std::string> &cols) const
         project->mutable_input()->CopyFrom(this->plan_.root());
     }
 
-    for (const auto &col_name : cols)
+    for (const auto& col_name : cols)
     {
-        auto *expr = project->add_expressions();
+        auto* expr = project->add_expressions();
         expr->mutable_unresolved_attribute()->set_unparsed_identifier(col_name);
     }
 
     return DataFrame(stub_, plan, session_id_, user_id_);
 }
 
-DataFrame DataFrame::select(const std::vector<spark::sql::functions::Column> &cols) const
+DataFrame DataFrame::select(const std::vector<spark::sql::functions::Column>& cols) const
 {
     Plan plan;
-    auto *project = plan.mutable_root()->mutable_project();
+    auto* project = plan.mutable_root()->mutable_project();
 
     // -------------------------------------------------------------------
     // Set the input to the current plan's root
@@ -528,12 +534,12 @@ DataFrame DataFrame::select(const std::vector<spark::sql::functions::Column> &co
         project->mutable_input()->CopyFrom(this->plan_.root());
     }
 
-    for (const auto &column : cols)
+    for (const auto& column : cols)
     {
         // ---------------------------------------------------
         // Add a new expression to the projection list
         // ---------------------------------------------------
-        auto *expr = project->add_expressions();
+        auto* expr = project->add_expressions();
 
         if (column.expr)
         {
@@ -555,7 +561,7 @@ DataFrame DataFrame::select(std::initializer_list<std::string> cols) const
 DataFrame DataFrame::limit(int n) const
 {
     Plan plan;
-    auto *limit_rel = plan.mutable_root()->mutable_limit();
+    auto* limit_rel = plan.mutable_root()->mutable_limit();
     *limit_rel->mutable_input() = this->plan_.root();
     limit_rel->set_limit(n);
     return DataFrame(stub_, plan, session_id_, user_id_);
@@ -568,7 +574,8 @@ std::vector<spark::sql::types::Row> DataFrame::take(int n)
 
     // ------------------------------------------------------------------
     // We use limit(n) to ensure we only pull necessary data over the wire
-    // See note from PySpark API reference: https://spark.apache.org/docs/3.5.6/api/python/reference/pyspark.sql/api/pyspark.sql.DataFrame.head.html#pyspark.sql.DataFrame.head
+    // See note from PySpark API reference:
+    // https://spark.apache.org/docs/3.5.6/api/python/reference/pyspark.sql/api/pyspark.sql.DataFrame.head.html#pyspark.sql.DataFrame.head
     // This method should only be used if the resulting array is expected
     // to be small, as all the data is loaded into the driver’s memory.
     // ------------------------------------------------------------------
@@ -589,7 +596,7 @@ std::vector<spark::sql::types::Row> DataFrame::take(int n)
         // Deserializing the Arrow Batch
         // ---------------------------------------
         auto buffer = std::make_shared<arrow::Buffer>(
-            reinterpret_cast<const uint8_t *>(response.arrow_batch().data().data()),
+            reinterpret_cast<const uint8_t*>(response.arrow_batch().data().data()),
             response.arrow_batch().data().size());
         auto buffer_reader = std::make_shared<arrow::io::BufferReader>(buffer);
         auto batch_reader = arrow::ipc::RecordBatchStreamReader::Open(buffer_reader).ValueOrDie();
@@ -612,7 +619,8 @@ std::vector<spark::sql::types::Row> DataFrame::take(int n)
                 row.column_names = col_names;
                 for (int col = 0; col < batch->num_columns(); ++col)
                 {
-                    row.values.push_back(spark::sql::types::arrayValueToVariant(batch->column(col), i));
+                    row.values.push_back(
+                        spark::sql::types::arrayValueToVariant(batch->column(col), i));
                 }
                 result_rows.push_back(std::move(row));
                 if (result_rows.size() >= static_cast<size_t>(n))
@@ -651,7 +659,7 @@ int64_t DataFrame::count()
     return rows[0].get_long(rows[0].column_names[0]);
 }
 
-DataFrame DataFrame::filter(const std::string &condition) const
+DataFrame DataFrame::filter(const std::string& condition) const
 {
     Plan plan;
 
@@ -659,7 +667,7 @@ DataFrame DataFrame::filter(const std::string &condition) const
     // Access the Filter relation in the new plan root
     // See: spark/connect/relations.proto (v3.5.x)
     // ------------------------------------------------------
-    auto *filter_rel = plan.mutable_root()->mutable_filter();
+    auto* filter_rel = plan.mutable_root()->mutable_filter();
 
     // ----------------------------------------------------------------------
     // Set input to the current relation (i.e. the parent of this filter)
@@ -673,10 +681,11 @@ DataFrame DataFrame::filter(const std::string &condition) const
     // Set the condition using the ExpressionString message type
     //
     // In Spark 3.5, the plan is laid out as follows:
-    // Filter -> Expression (condition) -> ExpressionString -> string (expression)
+    // Filter -> Expression (condition) -> ExpressionString -> string
+    // (expression)
     // ------------------------------------------------------------------
-    auto *condition_expr = filter_rel->mutable_condition();
-    auto *expr_string_msg = condition_expr->mutable_expression_string();
+    auto* condition_expr = filter_rel->mutable_condition();
+    auto* expr_string_msg = condition_expr->mutable_expression_string();
 
     // -----------------------------------------------------------------
     // Set the actual SQL string inside the ExpressionString message
@@ -686,17 +695,17 @@ DataFrame DataFrame::filter(const std::string &condition) const
     return DataFrame(stub_, plan, session_id_, user_id_);
 }
 
-DataFrame DataFrame::filter(const spark::sql::functions::Column &condition) const
+DataFrame DataFrame::filter(const spark::sql::functions::Column& condition) const
 {
     Plan plan;
-    auto *filter_rel = plan.mutable_root()->mutable_filter();
+    auto* filter_rel = plan.mutable_root()->mutable_filter();
 
     if (this->plan_.has_root())
     {
         filter_rel->mutable_input()->CopyFrom(this->plan_.root());
     }
 
-    auto *condition_expr = filter_rel->mutable_condition();
+    auto* condition_expr = filter_rel->mutable_condition();
 
     if (condition.expr)
     {
@@ -710,7 +719,7 @@ DataFrame DataFrame::filter(const spark::sql::functions::Column &condition) cons
     return DataFrame(stub_, plan, session_id_, user_id_);
 }
 
-DataFrame DataFrame::where(const std::string &condition) const
+DataFrame DataFrame::where(const std::string& condition) const
 {
     return filter(condition);
 }
@@ -729,11 +738,11 @@ DataFrame DataFrame::dropDuplicates() const
     return dropDuplicates({});
 }
 
-DataFrame DataFrame::dropDuplicates(const std::vector<std::string> &subset) const
+DataFrame DataFrame::dropDuplicates(const std::vector<std::string>& subset) const
 {
     Plan plan;
 
-    auto *relation = plan.mutable_root()->mutable_deduplicate();
+    auto* relation = plan.mutable_root()->mutable_deduplicate();
 
     if (this->plan_.has_root())
     {
@@ -746,7 +755,7 @@ DataFrame DataFrame::dropDuplicates(const std::vector<std::string> &subset) cons
     }
     else
     {
-        for (const auto &col_name : subset)
+        for (const auto& col_name : subset)
         {
             relation->add_column_names(col_name);
         }
@@ -760,7 +769,7 @@ DataFrame DataFrame::drop_duplicates()
     return dropDuplicates();
 }
 
-DataFrame DataFrame::drop_duplicates(const std::vector<std::string> &subset)
+DataFrame DataFrame::drop_duplicates(const std::vector<std::string>& subset)
 {
     return dropDuplicates(subset);
 }
@@ -785,10 +794,10 @@ std::vector<spark::sql::types::Row> DataFrame::collect()
     {
         if (response.has_arrow_batch())
         {
-            const auto &batch_proto = response.arrow_batch();
+            const auto& batch_proto = response.arrow_batch();
 
             auto buffer = std::make_shared<arrow::Buffer>(
-                reinterpret_cast<const uint8_t *>(batch_proto.data().data()),
+                reinterpret_cast<const uint8_t*>(batch_proto.data().data()),
                 batch_proto.data().size());
             arrow::io::BufferReader buffer_reader(buffer);
 
@@ -838,7 +847,7 @@ DataFrame DataFrame::distinct()
 {
     Plan plan;
 
-    auto *deduplicate = plan.mutable_root()->mutable_deduplicate();
+    auto* deduplicate = plan.mutable_root()->mutable_deduplicate();
 
     deduplicate->mutable_input()->CopyFrom(this->plan_.root());
 
@@ -847,14 +856,14 @@ DataFrame DataFrame::distinct()
     return DataFrame(stub_, plan, session_id_, user_id_);
 }
 
-DataFrame DataFrame::describe(const std::vector<std::string> &cols)
+DataFrame DataFrame::describe(const std::vector<std::string>& cols)
 {
     Plan plan;
 
-    auto *relation = plan.mutable_root()->mutable_describe();
+    auto* relation = plan.mutable_root()->mutable_describe();
     relation->mutable_input()->CopyFrom(this->plan_.root());
 
-    for (const auto &col : cols)
+    for (const auto& col : cols)
     {
         relation->add_cols(col);
     }
@@ -862,15 +871,15 @@ DataFrame DataFrame::describe(const std::vector<std::string> &cols)
     return DataFrame(stub_, plan, session_id_, user_id_);
 }
 
-DataFrame DataFrame::summary(const std::vector<std::string> &statistics)
+DataFrame DataFrame::summary(const std::vector<std::string>& statistics)
 {
     Plan plan;
 
-    auto *summary_rel = plan.mutable_root()->mutable_summary();
+    auto* summary_rel = plan.mutable_root()->mutable_summary();
 
     summary_rel->mutable_input()->CopyFrom(this->plan_.root());
 
-    for (const auto &stat : statistics)
+    for (const auto& stat : statistics)
     {
         summary_rel->add_statistics(stat);
     }
@@ -883,10 +892,10 @@ DataFrame DataFrame::summary()
     return summary({});
 }
 
-DataFrame DataFrame::join(const DataFrame &other) const
+DataFrame DataFrame::join(const DataFrame& other) const
 {
     Plan plan;
-    auto *join = plan.mutable_root()->mutable_join();
+    auto* join = plan.mutable_root()->mutable_join();
 
     if (this->plan_.has_root())
         join->mutable_left()->CopyFrom(this->plan_.root());
@@ -899,8 +908,8 @@ DataFrame DataFrame::join(const DataFrame &other) const
     // Collect common column names
     // -------------------------------
     std::vector<std::string> common_cols;
-    const auto &other_cols = other.columns();
-    for (const auto &col : this->columns())
+    const auto& other_cols = other.columns();
+    for (const auto& col : this->columns())
     {
         if (std::find(other_cols.begin(), other_cols.end(), col) != other_cols.end())
             common_cols.push_back(col);
@@ -909,17 +918,17 @@ DataFrame DataFrame::join(const DataFrame &other) const
     if (common_cols.empty())
         throw std::invalid_argument("No common columns found for default inner join.");
 
-    for (const auto &col : common_cols)
+    for (const auto& col : common_cols)
         join->add_using_columns(col);
 
     return DataFrame(stub_, plan, session_id_, user_id_);
 }
 
-DataFrame DataFrame::join(const DataFrame &other, const std::string &on, const std::string &how)
+DataFrame DataFrame::join(const DataFrame& other, const std::string& on, const std::string& how)
 {
     Plan plan;
 
-    auto *join = plan.mutable_root()->mutable_join();
+    auto* join = plan.mutable_root()->mutable_join();
 
     // -----------------------------------------------
     // Set left input(this DataFrame)
@@ -946,8 +955,7 @@ DataFrame DataFrame::join(const DataFrame &other, const std::string &on, const s
     // Using <algorithm> to transform and <cctype> for tolower
     // ---------------------------------------------------------------
     std::transform(join_type.begin(), join_type.end(), join_type.begin(),
-                   [](unsigned char c)
-                   { return std::tolower(c); });
+                   [](unsigned char c) { return std::tolower(c); });
 
     spark::connect::Join::JoinType type;
 
@@ -955,7 +963,8 @@ DataFrame DataFrame::join(const DataFrame &other, const std::string &on, const s
         type = spark::connect::Join::JOIN_TYPE_INNER;
     else if (join_type == "cross")
         type = spark::connect::Join::JOIN_TYPE_CROSS;
-    else if (join_type == "outer" || join_type == "full" || join_type == "full_outer" || join_type == "fullouter")
+    else if (join_type == "outer" || join_type == "full" || join_type == "full_outer" ||
+             join_type == "fullouter")
         type = spark::connect::Join::JOIN_TYPE_FULL_OUTER;
     else if (join_type == "left" || join_type == "left_outer" || join_type == "leftouter")
         type = spark::connect::Join::JOIN_TYPE_LEFT_OUTER;
@@ -978,11 +987,12 @@ DataFrame DataFrame::join(const DataFrame &other, const std::string &on, const s
     return DataFrame(stub_, plan, session_id_, user_id_);
 }
 
-DataFrame DataFrame::join(const DataFrame &other, const std::vector<std::string> &on, const std::string &how)
+DataFrame DataFrame::join(const DataFrame& other, const std::vector<std::string>& on,
+                          const std::string& how)
 {
     Plan plan;
 
-    auto *join = plan.mutable_root()->mutable_join();
+    auto* join = plan.mutable_root()->mutable_join();
 
     if (this->plan_.has_root())
     {
@@ -999,8 +1009,7 @@ DataFrame DataFrame::join(const DataFrame &other, const std::vector<std::string>
     // --------------------------------------
     std::string join_type = how;
     std::transform(join_type.begin(), join_type.end(), join_type.begin(),
-                   [](unsigned char c)
-                   { return std::tolower(c); });
+                   [](unsigned char c) { return std::tolower(c); });
 
     spark::connect::Join::JoinType type;
 
@@ -1008,7 +1017,8 @@ DataFrame DataFrame::join(const DataFrame &other, const std::vector<std::string>
         type = spark::connect::Join::JOIN_TYPE_INNER;
     else if (join_type == "cross")
         type = spark::connect::Join::JOIN_TYPE_CROSS;
-    else if (join_type == "outer" || join_type == "full" || join_type == "full_outer" || join_type == "fullouter")
+    else if (join_type == "outer" || join_type == "full" || join_type == "full_outer" ||
+             join_type == "fullouter")
         type = spark::connect::Join::JOIN_TYPE_FULL_OUTER;
     else if (join_type == "left" || join_type == "left_outer" || join_type == "leftouter")
         type = spark::connect::Join::JOIN_TYPE_LEFT_OUTER;
@@ -1029,18 +1039,18 @@ DataFrame DataFrame::join(const DataFrame &other, const std::vector<std::string>
     if (on.empty())
         throw std::invalid_argument("Join columns list cannot be empty.");
 
-    for (const auto &col : on)
+    for (const auto& col : on)
         join->add_using_columns(col);
 
     return DataFrame(stub_, plan, session_id_, user_id_);
 }
 
 /**
- * @brief `is_expression` allows the compiler to distinguish the `expression-based` join from the `column-name` join
+ * @brief `is_expression` allows the compiler to distinguish the
+ * `expression-based` join from the `column-name` join
  */
-DataFrame DataFrame::join_on_expression(const DataFrame &other,
-                                        const std::string &condition,
-                                        const std::string &how)
+DataFrame DataFrame::join_on_expression(const DataFrame& other, const std::string& condition,
+                                        const std::string& how)
 {
     if (condition.empty())
     {
@@ -1048,7 +1058,7 @@ DataFrame DataFrame::join_on_expression(const DataFrame &other,
     }
 
     Plan plan;
-    auto *join = plan.mutable_root()->mutable_join();
+    auto* join = plan.mutable_root()->mutable_join();
 
     // -----------------------------------------
     // Set left input (this DataFrame)
@@ -1071,15 +1081,15 @@ DataFrame DataFrame::join_on_expression(const DataFrame &other,
     // -----------------------------------------
     std::string join_type = how;
     std::transform(join_type.begin(), join_type.end(), join_type.begin(),
-                   [](unsigned char c)
-                   { return std::tolower(c); });
+                   [](unsigned char c) { return std::tolower(c); });
 
     spark::connect::Join::JoinType type;
     if (join_type == "inner")
         type = spark::connect::Join::JOIN_TYPE_INNER;
     else if (join_type == "cross")
         type = spark::connect::Join::JOIN_TYPE_CROSS;
-    else if (join_type == "outer" || join_type == "full" || join_type == "full_outer" || join_type == "fullouter")
+    else if (join_type == "outer" || join_type == "full" || join_type == "full_outer" ||
+             join_type == "fullouter")
         type = spark::connect::Join::JOIN_TYPE_FULL_OUTER;
     else if (join_type == "left" || join_type == "left_outer" || join_type == "leftouter")
         type = spark::connect::Join::JOIN_TYPE_LEFT_OUTER;
@@ -1094,9 +1104,9 @@ DataFrame DataFrame::join_on_expression(const DataFrame &other,
 
     join->set_join_type(type);
 
-    auto *join_expr = join->mutable_join_condition();
+    auto* join_expr = join->mutable_join_condition();
 
-    auto *expression_string = join_expr->mutable_expression_string();
+    auto* expression_string = join_expr->mutable_expression_string();
     expression_string->set_expression(condition);
 
     return DataFrame(stub_, plan, session_id_, user_id_);
@@ -1114,11 +1124,11 @@ GroupedData DataFrame::groupBy()
 /**
  * @brief Grouping by column names (Strings).
  */
-GroupedData DataFrame::groupBy(const std::vector<std::string> &cols)
+GroupedData DataFrame::groupBy(const std::vector<std::string>& cols)
 {
     std::vector<spark::sql::functions::Column> col_exprs;
     col_exprs.reserve(cols.size());
-    for (const auto &name : cols)
+    for (const auto& name : cols)
     {
         col_exprs.push_back(spark::sql::functions::col(name));
     }
@@ -1126,9 +1136,10 @@ GroupedData DataFrame::groupBy(const std::vector<std::string> &cols)
 }
 
 /**
- * @brief Grouping by Column expressions. This allows for math/aliases in grouping.
+ * @brief Grouping by Column expressions. This allows for math/aliases in
+ * grouping.
  */
-GroupedData DataFrame::groupBy(const std::vector<spark::sql::functions::Column> &cols)
+GroupedData DataFrame::groupBy(const std::vector<spark::sql::functions::Column>& cols)
 {
     return GroupedData(*this, cols);
 }
@@ -1141,14 +1152,15 @@ GroupedData DataFrame::groupBy(std::initializer_list<std::string> cols)
     return groupBy(std::vector<std::string>(cols));
 }
 
-DataFrame DataFrame::withColumn(const std::string &colName, const spark::sql::functions::Column &col) const
+DataFrame DataFrame::withColumn(const std::string& colName,
+                                const spark::sql::functions::Column& col) const
 {
     spark::connect::Relation rel;
-    auto *with_cols = rel.mutable_with_columns();
+    auto* with_cols = rel.mutable_with_columns();
 
     *with_cols->mutable_input() = this->plan_.root();
 
-    auto *alias = with_cols->add_aliases();
+    auto* alias = with_cols->add_aliases();
     alias->add_name(colName);
     *alias->mutable_expr() = *col.expr;
 

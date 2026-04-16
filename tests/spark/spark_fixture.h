@@ -1,14 +1,13 @@
 #pragma once
 
-#include <gtest/gtest.h>
 #include "session.h"
+#include <gtest/gtest.h>
 
 class SparkIntegrationTest : public ::testing::Test
 {
-    protected:
-    
-        static SparkSession* spark;
+  protected:
+    static SparkSession* spark;
 
-        static void SetUpTestSuite();
-        static void TearDownTestSuite();
+    static void SetUpTestSuite();
+    static void TearDownTestSuite();
 };

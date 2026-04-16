@@ -1,4 +1,4 @@
-## [SPARK-CONNECT][CPP] <Title of your PR>
+## [SPARK-CONNECT][CPP](type) <Title of your PR>
 
 ### Description
 <A brief overview of what this PR introduces and the problem it solves.>

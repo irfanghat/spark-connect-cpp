@@ -1,30 +1,34 @@
-#include <gtest/gtest.h>
-#include <gmock/gmock.h>
 #include <gmock/gmock-matchers.h>
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
 
-#include "session.h"
 #include "config.h"
 #include "dataframe.h"
+#include "session.h"
 
+#include "../util/env_loader.h"
+#include <cstdlib>
+#include <fstream>
 #include <iostream>
 #include <sstream>
-#include <fstream>
-#include <cstdlib>
-#include "../util/env_loader.h"
-
 
 class DatabaricksIntegrationTest : public ::testing::Test
 {
-protected:
-    static SparkSession *spark;
+  protected:
+    static SparkSession* spark;
 
     static void SetUpTestSuite()
     {
         load_env("../.env");
 
-        const char *workspace_url = std::getenv("DATABRICKS_WORKSPACE_URL");
-        const char *token = std::getenv("DATABRICKS_TOKEN");
-        const char *cluster_id = std::getenv("DATABRICKS_CLUSTER_ID");
+        const char* workspace_url = std::getenv("DATABRICKS_WORKSPACE_URL");
+        const char* token = std::getenv("DATABRICKS_TOKEN");
+        const char* cluster_id = std::getenv("DATABRICKS_CLUSTER_ID");
+
+        if (!workspace_url || !token || !cluster_id)
+        {
+            GTEST_SKIP() << "Missing Databricks environment variables";
+        }
 
         spark = &SparkSession::builder()
                      .master(workspace_url)
@@ -34,7 +38,7 @@ protected:
     }
 };
 
-SparkSession *DatabaricksIntegrationTest::spark = nullptr;
+SparkSession* DatabaricksIntegrationTest::spark = nullptr;
 
 TEST_F(DatabaricksIntegrationTest, DatabricksNycTaxiAnalysis)
 {

@@ -1,21 +1,21 @@
-#include <gtest/gtest.h>
-#include <gmock/gmock.h>
 #include <gmock/gmock-matchers.h>
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
 
 #include "runtime_config.h"
 
 #include <sstream>
 
-#include "session.h"
 #include "dataframe.h"
+#include "session.h"
 
 using ::testing::Contains;
 using ::testing::Pair;
 
 class SparkConfigurationIntegrationTest : public ::testing::Test
 {
-protected:
-    static SparkSession *spark;
+  protected:
+    static SparkSession* spark;
 
     static void SetUpTestSuite()
     {
@@ -77,13 +77,15 @@ protected:
     }
 };
 
-SparkSession *SparkConfigurationIntegrationTest::spark = nullptr;
+SparkSession* SparkConfigurationIntegrationTest::spark = nullptr;
 
 // ----------------------------------------------------------------------------------
-// builder.config() - configs set on the builder are flushed to the live session.
+// builder.config() - configs set on the builder are flushed to the live
+// session.
 //
-// The three assertions verify configs applied at session creation time in SetUpTestSuite.
-// Testing them this way avoids key resets between assertions (Calling TearDown() after each fixture).
+// The three assertions verify configs applied at session creation time in
+// SetUpTestSuite. Testing them this way avoids key resets between assertions
+// (Calling TearDown() after each fixture).
 // ----------------------------------------------------------------------------------
 TEST_F(SparkConfigurationIntegrationTest, BuilderConfigAppliedAtCreation)
 {
@@ -99,18 +101,14 @@ TEST_F(SparkConfigurationIntegrationTest, BuilderConfigFlushesOnSubsequentGetOrC
     // getOrCreate() applies runtime_configs regardless of whether the
     // session was just created or already existed.
     // ------------------------------------------------------------------
-    SparkSession::builder()
-        .config("spark.sql.shuffle.partitions", int64_t(99))
-        .getOrCreate();
+    SparkSession::builder().config("spark.sql.shuffle.partitions", int64_t(99)).getOrCreate();
 
     EXPECT_EQ(spark->conf().get("spark.sql.shuffle.partitions"), "99");
 }
 
 TEST_F(SparkConfigurationIntegrationTest, BuilderConfigRawIntOverloading)
 {
-    SparkSession::builder()
-        .config("spark.sql.shuffle.partitions", 99)
-        .getOrCreate();
+    SparkSession::builder().config("spark.sql.shuffle.partitions", 99).getOrCreate();
 
     EXPECT_EQ(spark->conf().get("spark.sql.shuffle.partitions"), "99");
 }
@@ -146,9 +144,9 @@ TEST_F(SparkConfigurationIntegrationTest, BuilderConfigMapOverload)
 //
 // Spark 3.5 validates config values against their declared types server-side.
 // @example
-//   string  ->  spark.sql.session.timeZone   (STRING, modifiable, default "UTC")
-//   int     ->  spark.sql.shuffle.partitions  (INT type)
-//   bool    ->  spark.sql.ansi.enabled        (BOOLEAN type)
+//   string  ->  spark.sql.session.timeZone   (STRING, modifiable, default
+//   "UTC") int     ->  spark.sql.shuffle.partitions  (INT type) bool    ->
+//   spark.sql.ansi.enabled        (BOOLEAN type)
 //
 // @note
 // spark.app.name is NOT modifiable at runtime - set() is silently
@@ -284,9 +282,7 @@ TEST_F(SparkConfigurationIntegrationTest, SetCheckpointDirIsNotModifiable)
 
 TEST_F(SparkConfigurationIntegrationTest, SetCheckpointDirThrows)
 {
-    EXPECT_THROW(
-        spark->setCheckpointDir("/tmp/cpp-test-checkpoints"),
-        std::runtime_error);
+    EXPECT_THROW(spark->setCheckpointDir("/tmp/cpp-test-checkpoints"), std::runtime_error);
 }
 
 // ----------------------------------------------------------------------------------
@@ -294,7 +290,5 @@ TEST_F(SparkConfigurationIntegrationTest, SetCheckpointDirThrows)
 // ----------------------------------------------------------------------------------
 TEST_F(SparkConfigurationIntegrationTest, GetUnknownKeyThrows)
 {
-    EXPECT_THROW(
-        spark->conf().get("spark.cpp.test.nonexistent.key"),
-        std::runtime_error);
+    EXPECT_THROW(spark->conf().get("spark.cpp.test.nonexistent.key"), std::runtime_error);
 }

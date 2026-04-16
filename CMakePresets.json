@@ -2,22 +2,22 @@
   "version": 2,
   "configurePresets": [
     {
-      "name": "vcpkg",
+      "name": "default",
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/build",
       "cacheVariables": {
-        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/.devops/vcpkg_toolchain/vcpkg-package/scripts/buildsystems/vcpkg.cmake",
         "CMAKE_C_COMPILER": "/usr/bin/cc",
         "CMAKE_CXX_COMPILER": "/usr/bin/c++",
         "CMAKE_CXX_FLAGS": "-fprofile-arcs -ftest-coverage -g -O0",
-        "CMAKE_C_FLAGS": "-fprofile-arcs -ftest-coverage -g -O0"
+        "CMAKE_C_FLAGS": "-fprofile-arcs -ftest-coverage -g -O0",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
       },
       "hidden": true
     },
     {
-      "name": "pr",
+      "name": "pr_pipeline",
       "displayName": "PR Pipeline",
-      "inherits": "vcpkg",
+      "inherits": "default",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug"
       }
@@ -25,25 +25,25 @@
   ],
   "buildPresets": [
     {
-      "name": "pr",
-      "displayName": "PR Artifacts",
-      "configurePreset": "pr",
+      "name": "pr_pipeline",
+      "displayName": "PR Pipeline Artifacts",
+      "configurePreset": "pr_pipeline",
       "jobs": 0
     }
   ],
   "testPresets": [
     {
-      "name": "test_pr_coverage",
-      "displayName": "Spark & Databricks PR Test Coverage",
-      "configurePreset": "pr",
+      "name": "test_pr_pipeline_coverage",
+      "displayName": "Spark & Databricks PR Pipeline Test Coverage",
+      "configurePreset": "pr_pipeline",
       "output": {
         "outputOnFailure": true
       }
     },
     {
-      "name": "test_pr_spark_coverage",
-      "displayName": "Spark PR Test Coverage",
-      "inherits": "test_pr_coverage",
+      "name": "test_pr_pipeline_spark_coverage",
+      "displayName": "Spark PR Pipeline Test Coverage",
+      "inherits": "test_pr_pipeline_coverage",
       "filter": {
         "exclude": {
           "name": "Databricks"
@@ -51,9 +51,9 @@
       }
     },
     {
-      "name": "test_pr_databricks_coverage",
-      "displayName": "Databricks PR Test Coverage",
-      "inherits": "test_pr_coverage",
+      "name": "test_pr_pipeline_databricks_coverage",
+      "displayName": "Databricks PR Pipeline Test Coverage",
+      "inherits": "test_pr_pipeline_coverage",
       "filter": {
         "exclude": {
           "name": "Spark"

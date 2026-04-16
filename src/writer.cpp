@@ -1,57 +1,56 @@
 #include "writer.h"
 
 DataFrameWriter::DataFrameWriter(std::shared_ptr<spark::connect::SparkConnectService::Stub> stub,
-                                 const spark::connect::Relation &relation,
-                                 const Config &config)
+                                 const spark::connect::Relation& relation, const Config& config)
     : stub_(stub), config_(config)
 {
     input_relation_.CopyFrom(relation);
 }
 
-DataFrameWriter &DataFrameWriter::mode(const std::string &save_mode)
+DataFrameWriter& DataFrameWriter::mode(const std::string& save_mode)
 {
     mode_ = save_mode;
     return *this;
 }
 
-DataFrameWriter &DataFrameWriter::format(const std::string &source)
+DataFrameWriter& DataFrameWriter::format(const std::string& source)
 {
     format_ = source;
     return *this;
 }
 
-DataFrameWriter &DataFrameWriter::option(const std::string &key, const std::string &value)
+DataFrameWriter& DataFrameWriter::option(const std::string& key, const std::string& value)
 {
     options_[key] = value;
     return *this;
 }
 
-DataFrameWriter &DataFrameWriter::partitionBy(const std::vector<std::string> &cols)
+DataFrameWriter& DataFrameWriter::partitionBy(const std::vector<std::string>& cols)
 {
     partition_cols_ = cols;
     return *this;
 }
 
-void DataFrameWriter::parquet(const std::string &path)
+void DataFrameWriter::parquet(const std::string& path)
 {
     this->format("parquet").save(path);
 }
 
-void DataFrameWriter::csv(const std::string &path)
+void DataFrameWriter::csv(const std::string& path)
 {
     this->format("csv").save(path);
 }
 
-void DataFrameWriter::text(const std::string &path)
+void DataFrameWriter::text(const std::string& path)
 {
     this->format("text").save(path);
 }
 
-void DataFrameWriter::save(const std::string &path)
+void DataFrameWriter::save(const std::string& path)
 {
     spark::connect::Plan plan;
 
-    auto *write_op = plan.mutable_command()->mutable_write_operation();
+    auto* write_op = plan.mutable_command()->mutable_write_operation();
 
     // ---------------------------------------------------------------
     // Set data source relation (i.e., the DataFrame being written)
@@ -65,13 +64,13 @@ void DataFrameWriter::save(const std::string &path)
 
     write_op->set_mode(mapSaveMode(mode_));
 
-    auto *opts_map = write_op->mutable_options();
-    for (const auto &[key, val] : options_)
+    auto* opts_map = write_op->mutable_options();
+    for (const auto& [key, val] : options_)
     {
         (*opts_map)[key] = val;
     }
 
-    for (const auto &col : partition_cols_)
+    for (const auto& col : partition_cols_)
     {
         write_op->add_partitioning_columns(col);
     }
@@ -102,7 +101,7 @@ void DataFrameWriter::save(const std::string &path)
     }
 }
 
-spark::connect::WriteOperation_SaveMode DataFrameWriter::mapSaveMode(const std::string &mode)
+spark::connect::WriteOperation_SaveMode DataFrameWriter::mapSaveMode(const std::string& mode)
 {
     if (mode == "overwrite")
         return spark::connect::WriteOperation_SaveMode_SAVE_MODE_OVERWRITE;

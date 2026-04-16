@@ -43,6 +43,8 @@
 # Editor files
 .vscode
 .idea
+launch.json
+settings.json
 
 # Output directories
 /build/
@@ -63,3 +65,6 @@ CMakeUserPresets.json
 vcpkg_installed/
 vcpkg_export/
 vcpkg_toolchain/
+
+# Clang
+.cache

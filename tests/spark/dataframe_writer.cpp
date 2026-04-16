@@ -1,18 +1,17 @@
-#include <gtest/gtest.h>
-#include <gmock/gmock.h>
 #include <gmock/gmock-matchers.h>
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
 
 #include <iostream>
 #include <map>
 
-#include "session.h"
 #include "config.h"
 #include "dataframe.h"
-#include "writer.h"
+#include "session.h"
 #include "spark_fixture.h"
+#include "writer.h"
 
 using ::testing::ElementsAre;
-
 
 TEST_F(SparkIntegrationTest, ParquetWrite)
 {
@@ -41,14 +40,22 @@ TEST_F(SparkIntegrationTest, ParquetReadAndWrite)
 
     df.write()
         .mode("overwrite")
-        .option("compression", "snappy") // snappy is faster when compared to gzip. See: https://parquet.apache.org/docs/file-format/data-pages/compression/
+        .option("compression",
+                "snappy") // snappy is faster when compared to gzip. See:
+                          // https://parquet.apache.org/docs/file-format/data-pages/compression/
         .parquet("output/iot_intrusion_data");
 
-    auto iot_data_columns = spark->read()
-                                .parquet("output/iot_intrusion_data")
-                                .columns();
+    auto iot_data_columns = spark->read().parquet("output/iot_intrusion_data").columns();
 
-    EXPECT_THAT(iot_data_columns, ElementsAre("flow_duration", "Header_Length", "Protocol Type", "Duration", "Rate", "Srate", "Drate", "fin_flag_number", "syn_flag_number", "rst_flag_number", "psh_flag_number", "ack_flag_number", "ece_flag_number", "cwr_flag_number", "ack_count", "syn_count", "fin_count", "urg_count", "rst_count", "HTTP", "HTTPS", "DNS", "Telnet", "SMTP", "SSH", "IRC", "TCP", "UDP", "DHCP", "ARP", "ICMP", "IPv", "LLC", "Tot sum", "Min", "Max", "AVG", "Std", "Tot size", "IAT", "Number", "Magnitue", "Radius", "Covariance", "Variance", "Weight", "label"));
+    EXPECT_THAT(iot_data_columns,
+                ElementsAre("flow_duration", "Header_Length", "Protocol Type", "Duration", "Rate",
+                            "Srate", "Drate", "fin_flag_number", "syn_flag_number",
+                            "rst_flag_number", "psh_flag_number", "ack_flag_number",
+                            "ece_flag_number", "cwr_flag_number", "ack_count", "syn_count",
+                            "fin_count", "urg_count", "rst_count", "HTTP", "HTTPS", "DNS", "Telnet",
+                            "SMTP", "SSH", "IRC", "TCP", "UDP", "DHCP", "ARP", "ICMP", "IPv", "LLC",
+                            "Tot sum", "Min", "Max", "AVG", "Std", "Tot size", "IAT", "Number",
+                            "Magnitue", "Radius", "Covariance", "Variance", "Weight", "label"));
 }
 
 TEST_F(SparkIntegrationTest, IOTSecurityAnalysisScenario)
@@ -59,11 +66,12 @@ TEST_F(SparkIntegrationTest, IOTSecurityAnalysisScenario)
                   .csv("datasets/iot_intrusion_data.csv");
 
     // -----------------------------------------------------------------------------------
-    // Filter for specific DDoS indicators (e.g., Rate > 0.5 and specific Protocol Type)
-    // and project only the columns needed for a security report.
+    // Filter for specific DDoS indicators (e.g., Rate > 0.5 and specific
+    // Protocol Type) and project only the columns needed for a security
+    // report.
     // -----------------------------------------------------------------------------------
-    auto analysis_df = df.filter("Rate > 0.2")
-                           .select({"label", "Rate", "Protocol Type", "flow_duration", "IAT"});
+    auto analysis_df =
+        df.filter("Rate > 0.2").select({"label", "Rate", "Protocol Type", "flow_duration", "IAT"});
 
     analysis_df.write()
         .mode("overwrite")
@@ -100,10 +108,7 @@ TEST_F(SparkIntegrationTest, CsvWriteWithOptions)
         .option("delimiter", ";")
         .csv(csv_path);
 
-    auto read_df = spark->read()
-                       .option("header", "true")
-                       .option("delimiter", ";")
-                       .csv(csv_path);
+    auto read_df = spark->read().option("header", "true").option("delimiter", ";").csv(csv_path);
 
     EXPECT_EQ(read_df.count(), 50);
     EXPECT_THAT(read_df.columns(), ElementsAre("id"));
@@ -113,9 +118,7 @@ TEST_F(SparkIntegrationTest, WriteToText)
 {
     auto write_df = spark->sql("SELECT 'a' AS alphabets UNION ALL SELECT 'b' AS alphabets");
 
-    write_df.write()
-        .mode("overwrite")
-        .text("output/text_write");
+    write_df.write().mode("overwrite").text("output/text_write");
 
     auto read_df = spark->read().text("output/text_write");
 
@@ -127,9 +130,7 @@ TEST_F(SparkIntegrationTest, EmptyDataFrameWrite)
 {
     auto empty_df = spark->range(0);
 
-    empty_df.write()
-        .mode("overwrite")
-        .parquet("output/empty_data_parquet");
+    empty_df.write().mode("overwrite").parquet("output/empty_data_parquet");
 
     auto read_back = spark->read().parquet("output/empty_data_parquet");
 
@@ -151,7 +152,11 @@ TEST_F(SparkIntegrationTest, MultiColumnPartitioning)
     // ------------------------------------------------------
     // Take a subset and partition by Protocol and Label
     // ------------------------------------------------------
-    df.limit(100).write().mode("overwrite").partitionBy({"Protocol Type", "label"}).parquet("output/multi_partitioned_iot");
+    df.limit(100)
+        .write()
+        .mode("overwrite")
+        .partitionBy({"Protocol Type", "label"})
+        .parquet("output/multi_partitioned_iot");
 
     auto read_df = spark->read().parquet("output/multi_partitioned_iot");
 
@@ -188,12 +193,10 @@ TEST_F(SparkIntegrationTest, SaveModeIgnoreBehavior)
 
 TEST_F(SparkIntegrationTest, JsonReadWrite)
 {
-    auto df = spark->sql("SELECT 1 as id, 'test' as name, NAMED_STRUCT('a', 1, 'b', 2) as nested");
+    auto df = spark->sql("SELECT 1 as id, 'test' as name, "
+                         "NAMED_STRUCT('a', 1, 'b', 2) as nested");
 
-    df.write()
-        .mode("overwrite")
-        .format("json")
-        .save("output/test_json");
+    df.write().mode("overwrite").format("json").save("output/test_json");
 
     auto read_df = spark->read().format("json").load({"output/test_json"});
 
@@ -211,7 +214,11 @@ TEST_F(SparkIntegrationTest, PartitionedWriteToParquet)
     // ----------------------------------------
     // Partition by the 'label' column
     // ----------------------------------------
-    df.limit(100).write().mode("overwrite").partitionBy({"label"}).parquet("output/partitioned_iot");
+    df.limit(100)
+        .write()
+        .mode("overwrite")
+        .partitionBy({"label"})
+        .parquet("output/partitioned_iot");
 
     // ------------------------------------------------------------------------------------------
     // Spark creates directory structures such as:

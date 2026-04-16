@@ -1,14 +1,14 @@
-#include <gtest/gtest.h>
 #include <gmock/gmock.h>
+#include <gtest/gtest.h>
 
 #include <iostream>
 #include <sstream>
 
-#include "session.h"
 #include "config.h"
 #include "dataframe.h"
-#include "graphframe.h"
 #include "functions.h"
+#include "graphframe.h"
+#include "session.h"
 #include "types.h"
 
 using namespace graphframes;
@@ -59,12 +59,13 @@ TEST_F(SparkIntegrationTest, FraudRing_ConnectedComponentsGroupsRingAndMule)
     ASSERT_EQ(components.size(), 5u);
 
     std::map<int32_t, int64_t> comp_by_id;
-    for (auto &row : components)
+    for (auto& row : components)
         comp_by_id[row.get<int32_t>("id")] = row.get<int64_t>("component");
 
     // --------------------------------------------------------------------------------
-    // The fraud ring (101, 102, 103) and the mule (104) are all reachable from
-    // each other via undirected edges, so they must share one component id.
+    // The fraud ring (101, 102, 103) and the mule (104) are all reachable
+    // from each other via undirected edges, so they must share one
+    // component id.
     // --------------------------------------------------------------------------------
     EXPECT_EQ(comp_by_id[101], comp_by_id[102]);
     EXPECT_EQ(comp_by_id[102], comp_by_id[103]);
@@ -99,7 +100,7 @@ TEST_F(SparkIntegrationTest, FraudRing_SCCIsolatesMuleFromRing)
     auto components = GraphFrame(accounts, transfers).stronglyConnectedComponents(10).collect();
 
     std::map<int32_t, int64_t> scc_by_id;
-    for (auto &row : components)
+    for (auto& row : components)
         scc_by_id[row.get<int32_t>("id")] = row.get<int64_t>("component");
 
     // --------------------------------------------------------------------------------
@@ -176,48 +177,56 @@ TEST_F(SparkIntegrationTest, Sanctions_BankWithinOneHopOfFlaggedEntity)
         AS t(src, dst)
     )");
 
-    auto sp = GraphFrame(banks, wires)
-                  .shortestPaths(std::vector<int32_t>{9})
-                  .collect();
+    auto sp = GraphFrame(banks, wires).shortestPaths(std::vector<int32_t>{9}).collect();
 
     // --------------------------------------------------------------------------------
-    // Scan a MapData for a given landmark, returning the hop count if found.
+    // Scan a MapData for a given landmark, returning the hop count if
+    // found.
     //
-    // ShortestPaths passes INT32 landmarks but Pregel promotes the distances
-    // MAP key type to LongType (int64_t) internally, so the ColumnValue stored
-    // in map_ptr->keys holds int64_t at runtime even when ids are INT32.
-    // We use std::visit with arithmetic widening — the same strategy Row::get
-    // uses — so the comparison and extraction are type-agnostic.
+    // ShortestPaths passes INT32 landmarks but Pregel promotes the
+    // distances MAP key type to LongType (int64_t) internally, so the
+    // ColumnValue stored in map_ptr->keys holds int64_t at runtime even
+    // when ids are INT32. We use std::visit with arithmetic widening — the
+    // same strategy Row::get uses — so the comparison and extraction are
+    // type-agnostic.
     // --------------------------------------------------------------------------------
-    auto hop_count = [](const Row &row, int64_t landmark) -> std::optional<int32_t>
+    auto hop_count = [](const Row& row, int64_t landmark) -> std::optional<int32_t>
     {
         auto map_ptr = row.get<std::shared_ptr<MapData>>("distances");
         if (!map_ptr)
             return std::nullopt;
         for (size_t i = 0; i < map_ptr->keys.size(); ++i)
         {
-            int64_t key = std::visit([](auto &&arg) -> int64_t
-                                     {
-                using T = std::decay_t<decltype(arg)>;
-                if constexpr (std::is_arithmetic_v<T> && !std::is_same_v<T, bool>)
-                    return static_cast<int64_t>(arg);
-                throw std::runtime_error("ShortestPaths: unexpected non-numeric map key"); }, map_ptr->keys[i]);
+            int64_t key = std::visit(
+                [](auto&& arg) -> int64_t
+                {
+                    using T = std::decay_t<decltype(arg)>;
+                    if constexpr (std::is_arithmetic_v<T> && !std::is_same_v<T, bool>)
+                        return static_cast<int64_t>(arg);
+                    throw std::runtime_error("ShortestPaths: unexpected non-numeric "
+                                             "map key");
+                },
+                map_ptr->keys[i]);
 
             if (key != landmark)
                 continue;
 
-            return std::visit([](auto &&arg) -> int32_t
-                              {
-                using T = std::decay_t<decltype(arg)>;
-                if constexpr (std::is_arithmetic_v<T> && !std::is_same_v<T, bool>)
-                    return static_cast<int32_t>(arg);
-                throw std::runtime_error("ShortestPaths: unexpected non-numeric map value"); }, map_ptr->values[i]);
+            return std::visit(
+                [](auto&& arg) -> int32_t
+                {
+                    using T = std::decay_t<decltype(arg)>;
+                    if constexpr (std::is_arithmetic_v<T> && !std::is_same_v<T, bool>)
+                        return static_cast<int32_t>(arg);
+                    throw std::runtime_error("ShortestPaths: unexpected non-numeric "
+                                             "map value");
+                },
+                map_ptr->values[i]);
         }
         return std::nullopt;
     };
 
     std::map<int32_t, Row> row_by_id;
-    for (auto &row : sp)
+    for (auto& row : sp)
         row_by_id.emplace(row.get<int32_t>("id"), row);
 
     // --------------------------------------------------------------------------------
@@ -261,15 +270,13 @@ TEST_F(SparkIntegrationTest, Sanctions_IsolatedBankHasNoPathToFlaggedEntity)
         AS t(src, dst)
     )");
 
-    auto sp = GraphFrame(banks, wires)
-                  .shortestPaths(std::vector<int32_t>{9})
-                  .collect();
+    auto sp = GraphFrame(banks, wires).shortestPaths(std::vector<int32_t>{9}).collect();
 
     // --------------------------------------------------------------------------------
     // Banks 1 and 2 have no directed path to bank 9.
     // Their MapData must either be null or contain no entry for landmark 9.
     // --------------------------------------------------------------------------------
-    for (auto &row : sp)
+    for (auto& row : sp)
     {
         int32_t bank_id = row.get<int32_t>("id");
         if (bank_id == 9)
@@ -330,17 +337,13 @@ TEST_F(SparkIntegrationTest, KYC_BFSFindsOwnershipChainWithinDepthLimit)
     // --------------------------------------------------------------------------------
     // HoldCo → SubCo A → OpCo: 2-hop path must exist.
     // --------------------------------------------------------------------------------
-    auto path_to_opco = GraphFrame(entities, ownership)
-                            .bfs("id = 1", "id = 3")
-                            .collect();
+    auto path_to_opco = GraphFrame(entities, ownership).bfs("id = 1", "id = 3").collect();
     EXPECT_GT(path_to_opco.size(), 0u);
 
     // --------------------------------------------------------------------------------
     // HoldCo → SubCo A → SubCo B → ShellCo: 3-hop path must exist.
     // --------------------------------------------------------------------------------
-    auto path_to_shell = GraphFrame(entities, ownership)
-                             .bfs("id = 1", "id = 5")
-                             .collect();
+    auto path_to_shell = GraphFrame(entities, ownership).bfs("id = 1", "id = 5").collect();
     EXPECT_GT(path_to_shell.size(), 0u);
 }
 
@@ -363,9 +366,7 @@ TEST_F(SparkIntegrationTest, KYC_BFSConfirmsUnrelatedEntityHasNoOwnershipPath)
     // --------------------------------------------------------------------------------
     // TrustA (id=6) has no ownership link to HoldCo: BFS must return empty.
     // --------------------------------------------------------------------------------
-    auto path = GraphFrame(entities, ownership)
-                    .bfs("id = 1", "id = 6")
-                    .collect();
+    auto path = GraphFrame(entities, ownership).bfs("id = 1", "id = 6").collect();
     EXPECT_EQ(path.size(), 0u);
 }
 
@@ -387,13 +388,14 @@ TEST_F(SparkIntegrationTest, KYC_DropIsolatedVerticesRemovesOrphanTrust)
 
     // --------------------------------------------------------------------------------
     // TrustA appears in the registry but has no ownership edges.
-    // dropIsolatedVertices must remove it, reducing the vertex count from 3 to 2.
+    // dropIsolatedVertices must remove it, reducing the vertex count from 3
+    // to 2.
     // --------------------------------------------------------------------------------
     auto active = GraphFrame(entities, ownership).dropIsolatedVertices().collect();
     EXPECT_EQ(active.size(), 2u);
 
     std::set<int32_t> active_ids;
-    for (auto &row : active)
+    for (auto& row : active)
         active_ids.insert(row.get<int32_t>("id"));
 
     EXPECT_TRUE(active_ids.count(1));
@@ -428,8 +430,8 @@ TEST_F(SparkIntegrationTest, HFT_PageRankIdentifiesPriceLeaderVenues)
 
     // --------------------------------------------------------------------------------
     // Edge weight encodes observed influence frequency, here we model it
-    // structurally: NYSE and NASDAQ receive many in-edges from satellite venues,
-    // reflecting that satellite venues follow their price moves.
+    // structurally: NYSE and NASDAQ receive many in-edges from satellite
+    // venues, reflecting that satellite venues follow their price moves.
     // --------------------------------------------------------------------------------
     auto influences = spark->sql(R"(
         SELECT CAST(src AS INT) AS src, CAST(dst AS INT) AS dst FROM VALUES
@@ -447,7 +449,7 @@ TEST_F(SparkIntegrationTest, HFT_PageRankIdentifiesPriceLeaderVenues)
     auto pr_rows = GraphFrame(venues, influences).pageRank(0.15, 20).collect();
 
     std::map<int32_t, double> rank_by_id;
-    for (auto &row : pr_rows)
+    for (auto& row : pr_rows)
         rank_by_id[row.get<int32_t>("id")] = row.get<double>("pagerank");
 
     // --------------------------------------------------------------------------------
@@ -500,11 +502,12 @@ TEST_F(SparkIntegrationTest, InsiderTrading_TriangleCountFlagsInformationSharing
     auto tc_rows = GraphFrame(traders, comms).triangleCount().collect();
 
     std::map<int32_t, int64_t> count_by_id;
-    for (auto &row : tc_rows)
+    for (auto& row : tc_rows)
         count_by_id[row.get<int32_t>("id")] = row.get<int64_t>("count");
 
     // --------------------------------------------------------------------------------
-    // Traders 1, 2, 3 are inside the ring - triangle count must be non-zero.
+    // Traders 1, 2, 3 are inside the ring - triangle count must be
+    // non-zero.
     // --------------------------------------------------------------------------------
     EXPECT_GT(count_by_id[1], 0LL);
     EXPECT_GT(count_by_id[2], 0LL);
@@ -554,7 +557,7 @@ TEST_F(SparkIntegrationTest, CreditRisk_SCCIdentifiesMutualExposureCluster)
     auto scc_rows = GraphFrame(counterparties, exposures).stronglyConnectedComponents(10).collect();
 
     std::map<int32_t, int64_t> scc_by_id;
-    for (auto &row : scc_rows)
+    for (auto& row : scc_rows)
         scc_by_id[row.get<int32_t>("id")] = row.get<int64_t>("component");
 
     // --------------------------------------------------------------------------------
@@ -564,7 +567,8 @@ TEST_F(SparkIntegrationTest, CreditRisk_SCCIdentifiesMutualExposureCluster)
     EXPECT_EQ(scc_by_id[2], scc_by_id[3]);
 
     // --------------------------------------------------------------------------------
-    // Hedge Fund X has a one-way exposure: not part of the systemic cluster.
+    // Hedge Fund X has a one-way exposure: not part of the systemic
+    // cluster.
     // --------------------------------------------------------------------------------
     EXPECT_NE(scc_by_id[4], scc_by_id[1]);
 }
@@ -582,7 +586,8 @@ TEST_F(SparkIntegrationTest, CreditRisk_BFSTracesContagionPathFromDefaultingEnti
 
     // --------------------------------------------------------------------------------
     // Contagion flows: default at 1 stresses 2, which stresses 3.
-    // Bank 4 has exposure to 3 but through a CDS hedge (modelled as no edge).
+    // Bank 4 has exposure to 3 but through a CDS hedge (modelled as no
+    // edge).
     // --------------------------------------------------------------------------------
     auto exposures = spark->sql(R"(
         SELECT CAST(src AS INT) AS src, CAST(dst AS INT) AS dst FROM VALUES
@@ -594,17 +599,13 @@ TEST_F(SparkIntegrationTest, CreditRisk_BFSTracesContagionPathFromDefaultingEnti
     // --------------------------------------------------------------------------------
     // Contagion path from the defaulting bank to Bank B must exist.
     // --------------------------------------------------------------------------------
-    auto path = GraphFrame(counterparties, exposures)
-                    .bfs("id = 1", "id = 3")
-                    .collect();
+    auto path = GraphFrame(counterparties, exposures).bfs("id = 1", "id = 3").collect();
     EXPECT_GT(path.size(), 0u);
 
     // --------------------------------------------------------------------------------
     // Insulated Bank (4) is not reachable from the defaulting entity.
     // --------------------------------------------------------------------------------
-    auto no_path = GraphFrame(counterparties, exposures)
-                       .bfs("id = 1", "id = 4")
-                       .collect();
+    auto no_path = GraphFrame(counterparties, exposures).bfs("id = 1", "id = 4").collect();
     EXPECT_EQ(no_path.size(), 0u);
 }
 
@@ -646,9 +647,7 @@ TEST_F(SparkIntegrationTest, AML_MotifFindsTwoHopLayeringChains)
         AS t(src, dst, amount)
     )");
 
-    auto chains = GraphFrame(accounts, transfers)
-                      .find("(a)-[e1]->(b); (b)-[e2]->(c)")
-                      .collect();
+    auto chains = GraphFrame(accounts, transfers).find("(a)-[e1]->(b); (b)-[e2]->(c)").collect();
 
     // --------------------------------------------------------------------------------
     // Two distinct two-hop chains exist.
@@ -656,9 +655,10 @@ TEST_F(SparkIntegrationTest, AML_MotifFindsTwoHopLayeringChains)
     EXPECT_EQ(chains.size(), 2u);
 
     // --------------------------------------------------------------------------------
-    // In every chain, the middle account (b) must be the layering shell (id=2).
+    // In every chain, the middle account (b) must be the layering shell
+    // (id=2).
     // --------------------------------------------------------------------------------
-    for (auto &row : chains)
+    for (auto& row : chains)
     {
         auto b_ptr = row.get<std::shared_ptr<Row>>("b");
         ASSERT_NE(b_ptr, nullptr);
@@ -678,7 +678,8 @@ TEST_F(SparkIntegrationTest, AML_FilterEdgesIsolatesHighValueTransfers)
     )");
 
     // --------------------------------------------------------------------------------
-    // Mix of transfers: only those above 50 000 are SAR-reportable threshold.
+    // Mix of transfers: only those above 50 000 are SAR-reportable
+    // threshold.
     // --------------------------------------------------------------------------------
     auto transfers = spark->sql(R"(
         SELECT CAST(src AS INT) AS src, CAST(dst AS INT) AS dst, CAST(amount AS DOUBLE) AS amount FROM VALUES
@@ -688,9 +689,7 @@ TEST_F(SparkIntegrationTest, AML_FilterEdgesIsolatesHighValueTransfers)
         AS t(src, dst, amount)
     )");
 
-    auto reportable = GraphFrame(accounts, transfers)
-                          .filterEdges("amount > 50000")
-                          .collect();
+    auto reportable = GraphFrame(accounts, transfers).filterEdges("amount > 50000").collect();
 
     EXPECT_EQ(reportable.size(), 2u);
 }
@@ -729,12 +728,11 @@ TEST_F(SparkIntegrationTest, WashTrading_SCCDetectsBidirectionalTradePairs)
         AS t(src, dst, ticker)
     )");
 
-    auto scc_rows = GraphFrame(trading_accounts, same_second_trades)
-                        .stronglyConnectedComponents(5)
-                        .collect();
+    auto scc_rows =
+        GraphFrame(trading_accounts, same_second_trades).stronglyConnectedComponents(5).collect();
 
     std::map<int32_t, int64_t> scc_by_id;
-    for (auto &row : scc_rows)
+    for (auto& row : scc_rows)
         scc_by_id[row.get<int32_t>("id")] = row.get<int64_t>("component");
 
     // --------------------------------------------------------------------------------
@@ -795,9 +793,10 @@ TEST_F(SparkIntegrationTest, Settlement_TripletsEnumerateAllObligations)
 
     // --------------------------------------------------------------------------------
     // Every triplet must carry src, edge, dst struct columns.
-    // col_index throws if the column is absent — EXPECT_NO_THROW confirms presence.
+    // col_index throws if the column is absent — EXPECT_NO_THROW confirms
+    // presence.
     // --------------------------------------------------------------------------------
-    for (auto &row : triplets)
+    for (auto& row : triplets)
     {
         EXPECT_NO_THROW(row.col_index("src"));
         EXPECT_NO_THROW(row.col_index("edge"));
@@ -809,7 +808,7 @@ TEST_F(SparkIntegrationTest, Settlement_TripletsEnumerateAllObligations)
     // The edge struct must expose the amount field.
     // Dereference shared_ptr<Row> to access inner fields.
     // --------------------------------------------------------------------------------
-    for (auto &row : triplets)
+    for (auto& row : triplets)
     {
         auto src_ptr = row.get<std::shared_ptr<Row>>("src");
         auto edge_ptr = row.get<std::shared_ptr<Row>>("edge");
@@ -846,11 +845,11 @@ TEST_F(SparkIntegrationTest, Settlement_FilterEdgesRemovesSmallObligationsBelowN
     )");
 
     // --------------------------------------------------------------------------------
-    // Only obligations at or above the 1 M threshold go to the netting engine.
+    // Only obligations at or above the 1 M threshold go to the netting
+    // engine.
     // --------------------------------------------------------------------------------
-    auto netting_eligible = GraphFrame(participants, obligations)
-                                .filterEdges("amount >= 1000000")
-                                .collect();
+    auto netting_eligible =
+        GraphFrame(participants, obligations).filterEdges("amount >= 1000000").collect();
 
     EXPECT_EQ(netting_eligible.size(), 2u);
 }

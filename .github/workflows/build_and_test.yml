@@ -13,8 +13,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      VCPKG_BINARY_CACHE: ${{ github.workspace }}/.devops/vcpkg_toolchain/vcpkg-package
 
     steps:
       - uses: actions/checkout@v4
@@ -26,14 +24,6 @@ jobs:
 
       - name: Verify CMake version
         run: cmake --version
-
-      - name: Cache vcpkg binaries
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.VCPKG_BINARY_CACHE }}
-          key: ${{ runner.os }}-vcpkg-{{ hashFiles('**/vcpkg.json') }}
-          restore-keys: |
-            ${{ runner.os }}-vcpkg-
 
       - name: Install Java
         uses: actions/setup-java@v4
@@ -66,6 +56,12 @@ jobs:
           # wait for server
           sleep 15
 
+      - name: Install dependencies
+        run: |
+          cd scripts
+          chmod +x install-deps.sh
+          ./install-deps.sh
+
       - name: Install gcovr
         run: |
           sudo apt-get update
@@ -75,15 +71,15 @@ jobs:
         run: gcovr --version
 
       - name: Configure
-        run: cmake --preset pr
+        run: cmake --preset pr_pipeline
 
       - name: Build
-        run: cmake --build --preset pr
+        run: cmake --build --preset pr_pipeline
 
       - name: Test
         run: |
           export SPARK_REMOTE=sc://localhost
-          ctest --preset test_pr_spark_coverage
+          ctest --preset test_pr_pipeline_spark_coverage
 
       - name: Generate Coverage (XML & HTML)
         run: |
