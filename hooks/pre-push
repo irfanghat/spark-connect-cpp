@@ -9,7 +9,7 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 PRESET="pr_pipeline"
-TEST_PRESET="test_pr_spark_coverage"
+TEST_PRESET="test_pr_pipeline_spark_coverage""
 
 echo -e "${YELLOW}-----------------------------------------------${NC}"
 echo -e "${YELLOW}  Pre-Push Hook: Run Tests (Presets)${NC}"
