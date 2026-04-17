@@ -52,7 +52,7 @@ jobs:
           sudo apt-get install -y gcovr
 
       - name: Install dependencies
-        run: chmod +x ./install_deps.sh && ./install_deps.sh
+        run: chmod +x ./scripts/install-deps.sh && ./scripts/install-deps.sh
 
       - name: Configure with Coverage
         run: cmake --preset pr_pipeline
