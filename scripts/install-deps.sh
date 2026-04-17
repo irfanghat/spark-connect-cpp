@@ -87,7 +87,7 @@ echo ""
 echo "Installing Apache Arrow libraries..."
 echo ""
 sudo apt install -y -V \
-    cmake \
+    clang-format \
     valgrind \
     libarrow-dev \
     libarrow-glib-dev \

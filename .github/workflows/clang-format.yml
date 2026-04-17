@@ -1,0 +1,52 @@
+name: Validate C++ Code Formatting
+
+on:
+  pull_request:
+  push:
+
+jobs:
+  clang-format:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Install clang-format
+        run: sudo apt-get update && sudo apt-get install -y clang-format
+
+      - name: Determine changed files
+        id: changed-files
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "PR detected"
+            BASE_SHA=${{ github.event.pull_request.base.sha }}
+            HEAD_SHA=${{ github.event.pull_request.head.sha }}
+          else
+            echo "Push detected"
+            BASE_SHA=${{ github.event.before }}
+            HEAD_SHA=${{ github.sha }}
+          fi
+
+          echo "Base: $BASE_SHA"
+          echo "Head: $HEAD_SHA"
+
+          FILES=$(git diff --name-only $BASE_SHA $HEAD_SHA | grep -E '\.(c|cpp|h|hpp)$' || true)
+
+          echo "Changed files:"
+          echo "$FILES"
+
+          echo "files<<EOF" >> $GITHUB_OUTPUT
+          echo "$FILES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Run clang-format check
+        if: steps.changed-files.outputs.files != ''
+        run: |
+          clang-format --dry-run --Werror ${{ steps.changed-files.outputs.files }}
+
+      - name: Skip if no relevant files
+        if: steps.changed-files.outputs.files == ''
+        run: echo "No C/C++ files changed."
