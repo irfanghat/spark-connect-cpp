@@ -2,9 +2,9 @@
 
 ## Overview
 
-This repository provides a **native C++ client for Apache Spark Connect**, enabling C++ applications to execute Spark SQL workloads against remote Spark clusters without requiring JVM dependencies.
+This repository provides a **C++ client for Apache Spark** via **Spark Connect**, enabling C++ applications to execute Spark SQL workloads against remote Spark clusters without requiring JVM dependencies.
 
-Spark Connect introduces a **decoupled client–server architecture** for Apache Spark, where client applications construct logical query plans that are executed remotely by a Spark server. This project delivers an **idiomatic, high-performance C++ interface** for building and submitting Spark queries, with efficient **Apache Arrow–based columnar data exchange** over gRPC.
+Spark Connect introduced a **decoupled client–server architecture** for Apache Spark, where client applications construct logical query plans that are executed remotely by a Spark server. This project delivers an **idiomatic, high-performance C++ interface** for building and submitting Spark queries, with efficient **Apache Arrow–based columnar data exchange** over gRPC.
 
 The library is intended for environments where:
 
@@ -16,7 +16,7 @@ The library is intended for environments where:
 
 **Status:** *Work in Progress*
 
-![Architecture Diagram](https://github.com/irfanghat/spark-connect-cpp/blob/main/docs/ARICHITECTURE_DIAGRAM.png)
+![Architecture Diagram](https://github.com/irfanghat/spark-connect-cpp/blob/branch-4.1/docs/ARICHITECTURE_DIAGRAM.png)
 
 ---
 
@@ -26,6 +26,7 @@ The library is intended for environments where:
 * Efficient Arrow-based columnar data transfer
 * Clear separation between client logic and remote Spark execution
 * Compatibility with evolving Spark Connect protocols
+* Compatibility with Spark versions **3.x.x** - **4.x.x**
 * Predictable performance characteristics suitable for production systems
 * Minimal runtime dependencies outside standard native infrastructure
 
@@ -33,11 +34,9 @@ The library is intended for environments where:
 
 ## Use Cases
 
-The Spark Connect C++ client is designed for environments that require **native system integration**, **efficient columnar data transfer**, and **low-overhead communication** with remote Spark clusters.
-
 ### Native Data Producers and High-Throughput Pipelines
 
-Enable high-performance C++ services to submit ingestion workloads and push structured datasets to Spark using Apache Arrow serialization without JVM dependencies.
+Enable high-performance C++ services to submit ingestion workloads and push structured datasets to Spark.
 
 ### Integration with Legacy, Industrial, and Scientific Systems
 
@@ -45,7 +44,7 @@ Connect existing C++ infrastructure such as industrial control systems, financia
 
 ### AI/ML and Inference Pipelines
 
-Run high-speed inference using native libraries (e.g., TensorRT, ONNX Runtime, CUDA pipelines) and stream features, embeddings, or predictions into Spark for downstream analytics and training workflows.
+Run high-speed inference using native libraries (e.g., TensorRT, ONNX Runtime, CUDA pipelines) and stream features, embeddings, or predictions into Spark for downstream analytics, feature engineering, and training workflows (Distributed ML).
 
 ### Custom High-Performance Data Connectors
 
@@ -80,6 +79,7 @@ The Spark Connect C++ client is **not a replacement** for Python or Scala Spark 
   * scientific computing pipelines
   * robotics or industrial platforms
   * embedded gateways or native backend services
+
 * You run **AI/ML inference pipelines** in C++ and need to forward structured outputs into Spark
 * You are implementing proprietary data connectors or binary protocols
 * You require precise control over memory layout and data transfer efficiency
@@ -91,28 +91,6 @@ The Spark Connect C++ client is **not a replacement** for Python or Scala Spark 
 * You require the full Spark API surface immediately
 * Rapid prototyping is more important than native performance
 * Your applications already run comfortably in JVM or Python environments
-
----
-
-## API Implementation Status
-
-| Category     | API Feature                          | Status | Implementation      |
-|--------------|--------------------------------------|--------|---------------------|
-| Session      | Databricks / Local Conn              | ●      | Implemented         |
-| Reader       | CSV                                  | ●      | Implemented         |
-| Reader       | JSON                                 | ●      | Implemented         |
-| Reader       | Parquet                              | ●      | Implemented         |
-| Writer       | Parquet (Overwrite/Gzip)             | ●      | Implemented         |
-| Schema       | JSON / Print / Column List           | ●      | Implemented         |
-| Action       | Show / Collect / Head / First        | ●      | Implemented         |
-| Query        | SQL / Range                          | ●      | Implemented         |
-| Logic        | Filter / Where / Distinct            | ●      | Implemented         |
-| Relational   | Joins (Inner, Outer, Expr)           | ●      | Implemented         |
-| Group        | GroupBy & Global Aggs                | ●      | Implemented         |
-| Analytics    | Window Functions                     | ○      | Planned             |
-| Catalog      | Table/Database Management            | ○      | Planned             |
-| Streaming    | Structured Streaming                 | ◌      | Not Implemented     |
-| GraphFrames  | Graph processing & analytics         | ●      | Implemented         |
 
 ---
 
@@ -152,121 +130,9 @@ The Spark Connect server:
 * performs query planning and optimization
 * returns Arrow-encoded results to the client
 
-This separation enables native applications to leverage Spark’s distributed engine without embedding Spark or JVM runtimes locally.
+The separation enables native applications to leverage Spark’s distributed engine without embedding Spark or JVM runtimes locally.
 
----
-
-## Getting Started
-
-### 1. Prerequisites
-
-* **Apache Spark 3.5+** with Spark Connect enabled
-* **C++17 or later**
-* Required libraries:
-
-  * `gRPC`
-  * `Protobuf`
-  * `Apache Arrow`
-  * `uuid`
-
----
-
-### 2. Build & Run Tests
-
-#### Linux (Ubuntu/Debian)
-
-```bash
-# --------------------------------
-# Install all required dependencies
-# --------------------------------
-chmod +x ./install_deps.sh
-./install_deps.sh
-
-mkdir build && cd build
-
-# ----------------------------------
-# Build the Spark Connect Client
-# ----------------------------------
-cmake ..
-make -j$(nproc)
-
-# --------------------------------
-# Make sure Spark is running...
-# --------------------------------
-docker compose up spark --build
-
-# ---------------------------
-# Run Full Test Suite
-# ---------------------------
-ctest --output-on-failure --verbose
-# ctest --verbose --test-arguments=--gtest_color=yes
-
-# -----------------------------
-# Run Single Test Suite
-# -----------------------------
-ctest -R test_dataframe_reader --verbose
-
-# ------------------------------
-# Run Single Test Case
-# ------------------------------
-ctest -R test_dataframe_writer --test-args --gtest_filter=SparkIntegrationTest.ParquetWrite
-
-# --------------------------------
-# Run Test Suite directly
-# --------------------------------
-./test_<suite_name>
-
-# --------------------------------
-# Run Single Test Case directly - show output
-# --------------------------------
-./test_dataframe --gtest_filter=SparkIntegrationTest.DropDuplicates
-```
-
-### 3. Mem Checks (Valgrind)
-
-```sh
-mkdir -p build && cd build
-
-cmake .. \
-  -DCMAKE_BUILD_TYPE=Debug \
-  -DCTEST_MEMORYCHECK_COMMAND=/usr/bin/valgrind \
-  -DCTEST_MEMORYCHECK_TYPE=Valgrind
-
-valgrind --leak-check=full --show-leak-kinds=all ./test_dataframe
-```
-
-### 4. Code Coverage
-This project uses **gcovr** for coverage reporting.
-
-`gcovr` analyzes which parts of the compiled code were executed during the test suite execution.
-
-#### Installation:
-
-```sh
-sudo apt update
-sudo apt install -y gcovr
-```
-
-#### Generate Coverage:
-
-```sh
-cmake -S . -B build -DENABLE_COVERAGE=ON
-cmake --build build -j
-
-gcovr -r src \
-      --object-directory build \
-      --exclude '.*\.pb\.cc' \
-      --exclude '.*\.grpc\.pb\.cc' \
-      --exclude '.*\.h' \
-      --html-details coverage.html \
-      --html-theme green \
-      --print-summary \
-      --fail-under-line 70
-```
-
-This will generate a coverage report in HTML format.
-
-### 5. Installation & Usage
+### Installation & Usage
 
 ```sh
 mkdir -p build && cd build

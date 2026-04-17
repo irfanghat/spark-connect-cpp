@@ -43,6 +43,8 @@
 # Editor files
 .vscode
 .idea
+launch.json
+settings.json
 
 # Output directories
 /build/
@@ -55,3 +57,14 @@ Testing
 # gcovr
 coverage.xml
 coverage.*
+
+# CMake
+CMakeUserPresets.json
+
+# VCPKG
+vcpkg_installed/
+vcpkg_export/
+vcpkg_toolchain/
+
+# Clang
+.cache
