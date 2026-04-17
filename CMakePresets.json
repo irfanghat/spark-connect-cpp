@@ -1,0 +1,64 @@
+{
+    "version": 2,
+    "configurePresets": [
+        {
+            "name": "default",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "/usr/bin/cc",
+                "CMAKE_CXX_COMPILER": "/usr/bin/c++",
+                "CMAKE_CXX_FLAGS": "-fprofile-arcs -ftest-coverage -g -O0",
+                "CMAKE_C_FLAGS": "-fprofile-arcs -ftest-coverage -g -O0",
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+            },
+            "hidden": true
+        },
+        {
+            "name": "pr_pipeline",
+            "displayName": "PR Pipeline",
+            "inherits": "default",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "pr_pipeline",
+            "displayName": "PR Pipeline Artifacts",
+            "configurePreset": "pr_pipeline",
+            "jobs": 0
+        }
+    ],
+    "testPresets": [
+        {
+            "name": "test_pr_pipeline_coverage",
+            "displayName": "Spark & Databricks PR Pipeline Test Coverage",
+            "configurePreset": "pr_pipeline",
+            "output": {
+                "outputOnFailure": true
+            }
+        },
+        {
+            "name": "test_pr_pipeline_spark_coverage",
+            "displayName": "Spark PR Pipeline Test Coverage",
+            "inherits": "test_pr_pipeline_coverage",
+            "filter": {
+                "exclude": {
+                    "name": "Databricks"
+                }
+            }
+        },
+        {
+            "name": "test_pr_pipeline_databricks_coverage",
+            "displayName": "Databricks PR Pipeline Test Coverage",
+            "inherits": "test_pr_pipeline_coverage",
+            "filter": {
+                "exclude": {
+                    "name": "Spark"
+                }
+            }
+        }
+    ]
+}
