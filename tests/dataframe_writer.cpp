@@ -7,6 +7,7 @@
 
 #include "config.h"
 #include "dataframe.h"
+#include "reader.h"
 #include "session.h"
 #include "writer.h"
 

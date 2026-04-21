@@ -1,14 +1,16 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-
 #include <iostream>
 #include <map>
 
 #include "config.h"
 #include "dataframe.h"
+#include "reader.h"
 #include "session.h"
+#include "writer.h"
 
+using ::testing::ElementsAre;
 
 class SparkIntegrationTest : public ::testing::Test
 {
