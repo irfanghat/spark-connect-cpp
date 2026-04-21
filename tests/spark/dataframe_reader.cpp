@@ -6,6 +6,8 @@
 
 #include "config.h"
 #include "dataframe.h"
+#include "writer.h"
+#include "reader.h"
 #include "session.h"
 #include "spark_fixture.h"
 
@@ -13,6 +15,8 @@
 // The following suite tests reading from various file formats i.e.
 // json, csv, parquet, orc, avro and text files.
 // ----------------------------------------------------------------
+
+using ::testing::ElementsAre;
 
 TEST_F(SparkIntegrationTest, ReadingJson)
 {
@@ -275,4 +279,28 @@ TEST_F(SparkIntegrationTest, ErrorHandlingInvalidPath)
 
     auto text_reader = spark->read().text("non_existent_path");
     EXPECT_THROW({ text_reader.count(); }, std::runtime_error);
+}
+
+TEST_F(SparkIntegrationTest, ReadFromDelta)
+{
+    auto df = spark->sql(R"(
+        SELECT * 
+        FROM VALUES
+            (1, 'Alice', 25),
+            (2, 'Bob', 30),
+            (3, 'Charlie', 35)
+        AS people(id, name, age)
+        )");
+
+    df.write()
+        .mode("overwrite")
+        .option("mergeSchema", "true")
+        .format("delta")
+        .save("output/delta_people");
+
+    auto read_df =
+        spark->read().option("inferSchema", "true").format("delta").load({"output/delta_people"});
+
+    EXPECT_EQ(read_df.count(), df.count());
+    EXPECT_THAT(read_df.columns(), ElementsAre("id", "name", "age"));
 }

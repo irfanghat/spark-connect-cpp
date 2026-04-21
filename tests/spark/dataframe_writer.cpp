@@ -230,3 +230,27 @@ TEST_F(SparkIntegrationTest, PartitionedWriteToParquet)
     auto read_partitioned = spark->read().parquet("output/partitioned_iot");
     EXPECT_GT(read_partitioned.count(), 0);
 }
+
+TEST_F(SparkIntegrationTest, WriteToDelta)
+{
+    auto df = spark->sql(R"(
+        SELECT * 
+        FROM VALUES
+            (1, 'Alice', 25),
+            (2, 'Bob', 30),
+            (3, 'Charlie', 35)
+        AS people(id, name, age)
+        )");
+
+    df.write()
+        .mode("overwrite")
+        .option("mergeSchema", "true")
+        .format("delta")
+        .save("output/delta_people");
+
+    auto read_df =
+        spark->read().option("inferSchema", "true").format("delta").load({"output/delta_people"});
+
+    EXPECT_EQ(read_df.count(), df.count());
+    EXPECT_THAT(read_df.columns(), ElementsAre("id", "name", "age"));
+}
