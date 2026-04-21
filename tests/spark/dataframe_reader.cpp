@@ -6,10 +6,10 @@
 
 #include "config.h"
 #include "dataframe.h"
-#include "writer.h"
 #include "reader.h"
 #include "session.h"
 #include "spark_fixture.h"
+#include "writer.h"
 
 // ----------------------------------------------------------------
 // The following suite tests reading from various file formats i.e.
