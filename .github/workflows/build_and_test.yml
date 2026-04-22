@@ -5,6 +5,8 @@ permissions:
 
 on:
   push:
+    branches:
+      - '*-stable'
   pull_request:
   workflow_dispatch:
 
@@ -14,6 +16,14 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Setup CMake 4.x
+        uses: jwlawson/actions-setup-cmake@v2
+        with:
+          cmake-version: '4.2.2'
+
+      - name: Verify CMake version
+        run: cmake --version
 
       - name: Install Java
         uses: actions/setup-java@v4
@@ -46,15 +56,21 @@ jobs:
           # wait for server
           sleep 15
 
+      - name: Install dependencies
+        run: |
+          cd scripts
+          chmod +x install-deps.sh
+          ./install-deps.sh
+
       - name: Install gcovr
         run: |
           sudo apt-get update
           sudo apt-get install -y gcovr
 
-      - name: Install dependencies
-        run: chmod +x ./scripts/install-deps.sh && ./scripts/install-deps.sh
+      - name: Verify Gcovr version
+        run: gcovr --version
 
-      - name: Configure with Coverage
+      - name: Configure
         run: cmake --preset pr_pipeline
 
       - name: Build
