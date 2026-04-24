@@ -1,15 +1,15 @@
-#include <gtest/gtest.h>
-#include <gmock/gmock.h>
 #include <gmock/gmock-matchers.h>
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
 
-#include "session.h"
 #include "config.h"
 #include "dataframe.h"
+#include "session.h"
 
-#include <iostream>
-#include <cstdlib>
 #include <algorithm>
+#include <cstdlib>
 #include <fstream>
+#include <iostream>
 #include <sstream>
 
 static inline std::string trim(const std::string& s)
@@ -59,16 +59,16 @@ void load_env(const std::string& path)
 
 class DatabricksServerlessIntegrationTest : public ::testing::Test
 {
-protected:
-    static SparkSession *spark;
+  protected:
+    static SparkSession* spark;
 
     static void SetUpTestSuite()
     {
         load_env("../.env");
 
-        const char *workspace_url = std::getenv("DATABRICKS_WORKSPACE_URL");
-        const char *token = std::getenv("DATABRICKS_TOKEN");
-        const char *warehouse_id = std::getenv("DATABRICKS_WAREHOUSE_ID");
+        const char* workspace_url = std::getenv("DATABRICKS_WORKSPACE_URL");
+        const char* token = std::getenv("DATABRICKS_TOKEN");
+        const char* warehouse_id = std::getenv("DATABRICKS_WAREHOUSE_ID");
 
         spark = &SparkSession::builder()
                      .master(workspace_url)
@@ -76,9 +76,17 @@ protected:
                      .appName("spark-connect-cpp")
                      .getOrCreate();
     }
+
+    static void TearDownTestSuite()
+    {
+        if (spark)
+        {
+            spark->stop();
+        }
+    }
 };
 
-SparkSession *DatabricksServerlessIntegrationTest::spark = nullptr;
+SparkSession* DatabricksServerlessIntegrationTest::spark = nullptr;
 
 TEST_F(DatabricksServerlessIntegrationTest, DatabricksNycTaxiAnalysis)
 {
