@@ -57,7 +57,7 @@ void load_env(const std::string& path)
     }
 }
 
-class SparkIntegrationTest : public ::testing::Test
+class DatabricksServerlessIntegrationTest : public ::testing::Test
 {
 protected:
     static SparkSession *spark;
@@ -78,9 +78,9 @@ protected:
     }
 };
 
-SparkSession *SparkIntegrationTest::spark = nullptr;
+SparkSession *DatabricksServerlessIntegrationTest::spark = nullptr;
 
-TEST_F(SparkIntegrationTest, DatabricksNycTaxiAnalysis)
+TEST_F(DatabricksServerlessIntegrationTest, DatabricksNycTaxiAnalysis)
 {
     // ------------------------------------------------
     // Querying the public Databricks samples dataset

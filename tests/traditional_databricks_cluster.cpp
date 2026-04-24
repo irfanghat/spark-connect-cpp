@@ -57,7 +57,7 @@ void load_env(const std::string& path)
     }
 }
 
-class SparkIntegrationTest : public ::testing::Test
+class DatabaricksIntegrationTest : public ::testing::Test
 {
 protected:
     static SparkSession *spark;
@@ -78,9 +78,9 @@ protected:
     }
 };
 
-SparkSession *SparkIntegrationTest::spark = nullptr;
+SparkSession *DatabaricksIntegrationTest::spark = nullptr;
 
-TEST_F(SparkIntegrationTest, DatabricksNycTaxiAnalysis)
+TEST_F(DatabaricksIntegrationTest, DatabricksNycTaxiAnalysis)
 {
     // ------------------------------------------------
     // This example validates Unity Catalog access
