@@ -1,17 +1,21 @@
-#include <gtest/gtest.h>
 #include <gmock/gmock.h>
+#include <gtest/gtest.h>
 
 #include <iostream>
 #include <map>
 
-#include "session.h"
 #include "config.h"
 #include "dataframe.h"
+#include "reader.h"
+#include "session.h"
+#include "writer.h"
+
+using ::testing::ElementsAre;
 
 class SparkIntegrationTest : public ::testing::Test
 {
-protected:
-    static SparkSession *spark;
+  protected:
+    static SparkSession* spark;
 
     static void SetUpTestSuite()
     {
@@ -30,7 +34,7 @@ protected:
     }
 };
 
-SparkSession *SparkIntegrationTest::spark = nullptr;
+SparkSession* SparkIntegrationTest::spark = nullptr;
 
 // ----------------------------------------------------------------
 // The following suite tests reading from various file formats i.e.
@@ -42,7 +46,8 @@ TEST_F(SparkIntegrationTest, ReadingJson)
     auto df = spark->read().json("datasets/people.json");
     // ------------------------------------------------------------------------------------
     // Using the fully qualified class name (JSON is usually built-in)
-    // auto df = spark->read().format("org.apache.spark.sql.execution.datasources.json.JsonFileFormat").load({"datasets/people.json"});
+    // auto df =
+    // spark->read().format("org.apache.spark.sql.execution.datasources.json.JsonFileFormat").load({"datasets/people.json"});
     // ------------------------------------------------------------------------------------
     df.show();
 }
@@ -112,12 +117,10 @@ TEST_F(SparkIntegrationTest, ReadParquetWithOptions)
     // ----------------------------------------------------------------------------
     // Some Common Parquet options:
     //
-    // "mergeSchema" - Merges schemas across all Parquet part-files which results in expensive operations
-    // "datetimeRebaseMode" - Handles legacy dates from older Spark versions
+    // "mergeSchema" - Merges schemas across all Parquet part-files which results in expensive
+    // operations "datetimeRebaseMode" - Handles legacy dates from older Spark versions
     // ----------------------------------------------------------------------------
-    auto df = spark->read()
-                  .option("mergeSchema", "true")
-                  .parquet("datasets/flights.parquet");
+    auto df = spark->read().option("mergeSchema", "true").parquet("datasets/flights.parquet");
 
     EXPECT_NO_THROW(df.show(10));
 }
@@ -146,9 +149,12 @@ TEST_F(SparkIntegrationTest, SchemaEvaluation)
     // -------------------------------------------------------
     // Check if the variant holds the correct type
     // -------------------------------------------------------
-    EXPECT_TRUE(std::holds_alternative<spark::sql::types::StringType>(schema.fields[0].data_type.kind));
-    EXPECT_TRUE(std::holds_alternative<spark::sql::types::IntegerType>(schema.fields[1].data_type.kind));
-    EXPECT_TRUE(std::holds_alternative<spark::sql::types::IntegerType>(schema.fields[2].data_type.kind));
+    EXPECT_TRUE(
+        std::holds_alternative<spark::sql::types::StringType>(schema.fields[0].data_type.kind));
+    EXPECT_TRUE(
+        std::holds_alternative<spark::sql::types::IntegerType>(schema.fields[1].data_type.kind));
+    EXPECT_TRUE(
+        std::holds_alternative<spark::sql::types::IntegerType>(schema.fields[2].data_type.kind));
 }
 
 TEST_F(SparkIntegrationTest, HandleMissingFile)
@@ -221,9 +227,7 @@ TEST_F(SparkIntegrationTest, OptionEvaluation)
 TEST_F(SparkIntegrationTest, ReaderOptions_VerifySchema)
 {
     std::map<std::string, std::string> config = {
-        {"header", "true"},
-        {"inferSchema", "true"},
-        {"delimiter", ","}};
+        {"header", "true"}, {"inferSchema", "true"}, {"delimiter", ","}};
 
     auto df = spark->read().options(config).format("csv").load({"datasets/people.csv"});
 
@@ -239,9 +243,7 @@ TEST_F(SparkIntegrationTest, ReaderOptions_VerifySchema)
 
 TEST_F(SparkIntegrationTest, ReaderOptions_InferredTypes)
 {
-    std::map<std::string, std::string> config = {
-        {"header", "true"},
-        {"inferSchema", "true"}};
+    std::map<std::string, std::string> config = {{"header", "true"}, {"inferSchema", "true"}};
 
     auto df = spark->read().options(config).format("csv").load({"datasets/people.csv"});
     auto schema = df.schema();
@@ -250,8 +252,7 @@ TEST_F(SparkIntegrationTest, ReaderOptions_InferredTypes)
     // Find the 'age' field and verify it's an Integer
     // ----------------------------------------------------
     auto it = std::find_if(schema.fields.begin(), schema.fields.end(),
-                           [](const auto &f)
-                           { return f.name == "age"; });
+                           [](const auto& f) { return f.name == "age"; });
 
     ASSERT_NE(it, schema.fields.end()) << "Column 'age' not found";
 
@@ -263,7 +264,8 @@ TEST_F(SparkIntegrationTest, ReaderOptions_InferredTypes)
 
 TEST_F(SparkIntegrationTest, ReaderOptions_CorrectValueParsing)
 {
-    std::map<std::string, std::string> config = {{"header", "true"}, {"delimiter", ","}, {"inferSchema", "true"}};
+    std::map<std::string, std::string> config = {
+        {"header", "true"}, {"delimiter", ","}, {"inferSchema", "true"}};
     auto df = spark->read().options(config).format("csv").load({"datasets/people.csv"});
 
     auto first_row = df.head();
@@ -295,4 +297,28 @@ TEST_F(SparkIntegrationTest, ErrorHandlingInvalidPath)
 
     auto text_reader = spark->read().text("non_existent_path");
     EXPECT_THROW({ text_reader.count(); }, std::runtime_error);
+}
+
+TEST_F(SparkIntegrationTest, ReadFromDelta)
+{
+    auto df = spark->sql(R"(
+        SELECT * 
+        FROM VALUES
+            (1, 'Alice', 25),
+            (2, 'Bob', 30),
+            (3, 'Charlie', 35)
+        AS people(id, name, age)
+        )");
+
+    df.write()
+        .mode("overwrite")
+        .option("mergeSchema", "true")
+        .format("delta")
+        .save("output/delta_people");
+
+    auto read_df =
+        spark->read().option("inferSchema", "true").format("delta").load({"output/delta_people"});
+
+    EXPECT_EQ(read_df.count(), df.count());
+    EXPECT_THAT(read_df.columns(), ElementsAre("id", "name", "age"));
 }

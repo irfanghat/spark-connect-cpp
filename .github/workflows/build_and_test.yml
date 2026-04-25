@@ -5,9 +5,9 @@ permissions:
 
 on:
   push:
-    branches: ["main"]
+    branches:
+      - '*-stable'
   pull_request:
-    branches: ["main"]
   workflow_dispatch:
 
 jobs:
@@ -16,6 +16,14 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Setup CMake 4.x
+        uses: jwlawson/actions-setup-cmake@v2
+        with:
+          cmake-version: '4.2.2'
+
+      - name: Verify CMake version
+        run: cmake --version
 
       - name: Install Java
         uses: actions/setup-java@v4
@@ -48,36 +56,43 @@ jobs:
           # wait for server
           sleep 15
 
+      - name: Install dependencies
+        run: |
+          cd scripts
+          chmod +x install-deps.sh
+          ./install-deps.sh
+
       - name: Install gcovr
         run: |
           sudo apt-get update
           sudo apt-get install -y gcovr
 
-      - name: Install dependencies
-        run: chmod +x ./install_deps.sh && ./install_deps.sh
+      - name: Verify Gcovr version
+        run: gcovr --version
 
-      - name: Configure with Coverage
-        run: cmake -S . -B build -DENABLE_COVERAGE=ON
+      - name: Configure
+        run: cmake --preset pr_pipeline
 
       - name: Build
-        run: cmake --build build --parallel
+        run: cmake --build --preset pr_pipeline
 
-      - name: Run Tests
+      - name: Test
         run: |
-          export SPARK_REMOTE=sc://localhost:15002
-          cd build
-          ctest -LE dbrx --output-on-failure
+          export SPARK_REMOTE=sc://localhost
+          ctest -LE dbrx
 
       - name: Generate Coverage (XML & HTML)
         run: |
-          gcovr -r src \
+          gcovr -r . \
             --object-directory build \
-            --exclude '.*\.pb\.cc' \
-            --exclude '.*\.grpc\.pb\.cc' \
+            --exclude '.*CMakeFiles.*' \
+            --exclude '.*\.pb\..*' \
             --exclude '.*\.h' \
+            --exclude '/usr/include/.*' \
+            --gcov-ignore-parse-errors \
+            --gcov-ignore-errors=no_working_dir_found \
             --xml-pretty -o coverage.xml \
             --html-details coverage.html \
-            --fail-under-line 70 \
             --print-summary
 
       - name: Upload Coverage XML

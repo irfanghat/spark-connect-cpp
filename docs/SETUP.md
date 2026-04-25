@@ -34,7 +34,7 @@ spark-connect-cpp/
 ├── tests/
 ├── build/             # Generated (Not committed)
 ├── docker-compose.yaml
-├── install_deps.sh
+├── install-deps.sh
 ├── .vscode/           # Contains IntelliSense config
 └── hooks/
 ```
@@ -46,8 +46,8 @@ spark-connect-cpp/
 ### System Dependencies (Linux / Ubuntu)
 Run the provided script to install all core libraries:
 ```bash
-chmod +x install_deps.sh
-./install_deps.sh
+chmod +x install-deps.sh
+./install-deps.sh
 ```
 
 ### Manual Installation (Optional)

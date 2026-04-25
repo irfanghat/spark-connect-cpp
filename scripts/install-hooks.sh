@@ -15,9 +15,9 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-echo -e "${BLUE}*****************************************${NC}"
-echo -e "${BLUE}  Git Hooks Installation${NC}"
-echo -e "${BLUE}*****************************************${NC}"
+echo -e "${YELLOW}--------------------------------------${NC}"
+echo -e "${YELLOW}  Git Hooks Installation${NC}"
+echo -e "${YELLOW}--------------------------------------${NC}"
 echo ""
 
 if [ ! -d ".git" ]; then
@@ -76,13 +76,13 @@ if install_hook "pre-push"; then
 fi
 
 echo ""
-echo -e "${GREEN}*****************************************${NC}"
+echo -e "${GREEN}--------------------------------------${NC}"
 echo -e "${GREEN}  Installation Complete...${NC}"
-echo -e "${GREEN}*****************************************${NC}"
+echo -e "${GREEN}--------------------------------------${NC}"
 echo ""
 echo -e "Installed $HOOKS_INSTALLED hook(s):"
 echo ""
-echo -e "${BLUE}pre-commit:${NC}"
+echo -e "${YELLOW}pre-commit:${NC}"
 echo "  - Runs quick build checks before each commit"
 echo "  - Ensures code compiles"
 echo ""
