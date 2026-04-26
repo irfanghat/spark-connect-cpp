@@ -6,7 +6,7 @@
 #include "dataframe.h"
 #include "session.h"
 
-#include "../util/env_loader.h"
+#include "util/env_loader.h"
 #include <cstdlib>
 #include <fstream>
 #include <iostream>

@@ -1,5 +1,5 @@
 #include "spark_fixture.h"
-#include "../util/env_loader.h"
+#include "util/env_loader.h"
 
 SparkSession* SparkIntegrationTest::spark = nullptr;
 

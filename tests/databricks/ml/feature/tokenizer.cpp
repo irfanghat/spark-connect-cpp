@@ -1,6 +1,6 @@
 #include <gmock/gmock-matchers.h>
 
-#include "../../databricks_serverless_fixture.h"
+#include "databricks/databricks_serverless_fixture.h"
 #include "dataframe.h"
 #include "ml/feature/tokenizer.h"
 

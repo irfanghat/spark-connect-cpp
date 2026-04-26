@@ -2,7 +2,7 @@
 
 #include <spark/connect/relations.pb.h>
 
-#include "../../dataframe.h"
+#include "dataframe.h"
 
 using namespace spark::connect;
 
