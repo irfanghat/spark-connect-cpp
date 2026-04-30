@@ -31,11 +31,13 @@ The project uses an **out-of-source CMake build**:
 spark-connect-cpp/
 ├── CMakeLists.txt
 ├── src/
+├── docs/
+├── datasets/
 ├── tests/
 ├── build/             # Generated (Not committed)
 ├── docker-compose.yaml
-├── install-deps.sh
-├── .vscode/           # Contains IntelliSense config
+├── scripts            # Contains the scripts to install the core libraries
+├── .vscode/          # Contains IntelliSense config
 └── hooks/
 ```
 
@@ -44,6 +46,7 @@ spark-connect-cpp/
 ## Installing Dependencies
 
 ### System Dependencies (Linux / Ubuntu)
+First navigate to the scripts folder
 Run the provided script to install all core libraries:
 ```bash
 chmod +x install-deps.sh
