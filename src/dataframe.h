@@ -430,6 +430,23 @@ class DataFrame
     DataFrame withColumn(const std::string& colName,
                          const spark::sql::functions::Column& col) const;
 
+    /**
+     * @brief Returns a new DataFrame with an alias set.
+     *
+     * Aliasing is particularly useful for resolving column name ambiguities
+     * when performing self-joins, allowing you to refer to columns using
+     * the alias prefix.
+     *
+     * @param alias_name The string alias to apply to this DataFrame.
+     * @return A new DataFrame containing the aliased logical plan.
+     *
+     * @example
+     * auto df1 = df.alias("a");
+     * auto df2 = df.alias("b");
+     * auto joined = df1.join(df2, col("a.id") == col("b.id"));
+     */
+    DataFrame alias(const std::string& alias_name) const;
+
   private:
     friend class GroupedData;
     friend class graphframes::GraphFrame;
