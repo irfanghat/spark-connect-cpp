@@ -1169,3 +1169,20 @@ DataFrame DataFrame::withColumn(const std::string& colName,
 
     return DataFrame(stub_, new_plan, session_id_, user_id_);
 }
+/*
+ *@brief aliasing support for dataframes
+ * */
+DataFrame DataFrame::alias(const std::string& alias_name) const
+{
+    Plan plan;
+    auto* subquery_alias = plan.mutable_root()->mutable_subquery_alias();
+
+    if (this->plan_.has_root())
+    {
+        subquery_alias->mutable_input()->CopyFrom(this->plan_.root());
+    }
+
+    subquery_alias->set_alias(alias_name);
+
+    return DataFrame(stub_, plan, session_id_, user_id_);
+}
