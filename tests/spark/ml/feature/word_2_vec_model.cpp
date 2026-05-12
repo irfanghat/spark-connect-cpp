@@ -1,11 +1,11 @@
 #include <algorithm>
 
-#include "databricks/databricks_serverless_fixture.h"
+#include "spark/spark_fixture.h"
 #include "dataframe.h"
 #include "ml/feature/word_2_vec.h"
 #include "ml/feature/word_2_vec_model.h"
 
-TEST_F(DatabricksServerlessIntegrationTest, Word2VecModelGetVectors)
+TEST_F(SparkIntegrationTest, Word2VecModelGetVectors)
 {
     auto df = spark->sql(
         R"(
@@ -35,7 +35,7 @@ TEST_F(DatabricksServerlessIntegrationTest, Word2VecModelGetVectors)
     EXPECT_NE(std::find(columns.begin(), columns.end(), "vector"), columns.end());
 }
 
-TEST_F(DatabricksServerlessIntegrationTest, Word2VecModelGetVectorsShow)
+TEST_F(SparkIntegrationTest, Word2VecModelGetVectorsShow)
 {
     auto df = spark->sql(
         R"(
@@ -62,7 +62,7 @@ TEST_F(DatabricksServerlessIntegrationTest, Word2VecModelGetVectorsShow)
     EXPECT_NO_THROW(vectors_df.show());
 }
 
-TEST_F(DatabricksServerlessIntegrationTest, Word2VecModelTransform)
+TEST_F(SparkIntegrationTest, Word2VecModelTransform)
 {
     auto df = spark->sql(
         R"(

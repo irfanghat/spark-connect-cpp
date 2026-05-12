@@ -1,11 +1,10 @@
-#include "word_2_vec.h"
-#include "word_2_vec_model.h"
-#include "ml/param/param_map_proto.h"
-
 #include <stdexcept>
 
 #include <grpcpp/grpcpp.h>
-#include <uuid/uuid.h>
+
+#include "word_2_vec.h"
+#include "word_2_vec_model.h"
+#include "ml/param/param_map.h"
 
 Word2VecModel Word2Vec::fit(const DataFrame& input_df)
 {
@@ -18,56 +17,37 @@ Word2VecModel Word2Vec::fit(const DataFrame& input_df)
     request.set_session_id(input_df.session_id());
     request.mutable_user_context()->set_user_id(input_df.user_id());
 
-    // ---------------------------
+    // ----------------------------------------------------------------------
     // Build Plan -> Command -> MlCommand -> Fit
-    // ---------------------------
-    auto* fit = request.mutable_plan()
+    // ----------------------------------------------------------------------
+    auto* mutable_fit = request.mutable_plan()
                     ->mutable_command()
                     ->mutable_ml_command()
                     ->mutable_fit();
 
-    // ---------------------------
+    // ----------------------------------------------------------------------
     // Set Ml Operator (estimator)
-    // ---------------------------
-    uuid_t uuid;
-    uuid_generate(uuid);
-    char uid_buf[37];
-    uuid_unparse(uuid, uid_buf);
-
-    auto* estimator = fit->mutable_estimator();
+    // ----------------------------------------------------------------------
+    auto* estimator = mutable_fit->mutable_estimator();
     estimator->set_name(class_name_);
-    estimator->set_uid("Word2Vec_" + std::string(uid_buf));
+    estimator->set_uid(uid_);
     estimator->set_type(operator_type_);
 
-    // ---------------------------
+    // ----------------------------------------------------------------------
     // Set Ml Params
-    // ---------------------------
-    ParamMap param_map;
-    param_map.put("inputCol", input_col_);
-    param_map.put("outputCol", output_col_);
-    param_map.put("vectorSize", vector_size_);
-    param_map.put("minCount", min_count_);
-    param_map.put("numPartitions", num_partitions_);
-    param_map.put("stepSize", step_size_);
-    param_map.put("maxIter", max_iter_);
-    param_map.put("windowSize", window_size_);
-    param_map.put("maxSentenceLength", max_sentence_length_);
+    // ----------------------------------------------------------------------
+    ParamMap param_map = params_.copy();
 
-    if (seed_.has_value())
-    {
-        param_map.put("seed", seed_.value());
-    }
+    mutable_fit->mutable_params()->CopyFrom(to_ml_params(param_map));
 
-    fit->mutable_params()->CopyFrom(to_ml_params(param_map));
-
-    // ---------------------------
+    // ----------------------------------------------------------------------
     // Set input dataset (Relation)
-    // ---------------------------
-    fit->mutable_dataset()->CopyFrom(input_df.plan().root());
+    // ----------------------------------------------------------------------
+    mutable_fit->mutable_dataset()->CopyFrom(input_df.plan().root());
 
-    // ---------------------------
+    // ----------------------------------------------------------------------
     // Execute via gRPC
-    // ---------------------------
+    // ----------------------------------------------------------------------
     grpc::ClientContext context;
     auto stream = input_df.stub()->ExecutePlan(&context, request);
 
@@ -79,6 +59,7 @@ Word2VecModel Word2Vec::fit(const DataFrame& input_df)
         if (response.has_ml_command_result())
         {
             const auto& ml_result = response.ml_command_result();
+            
             if (ml_result.has_operator_info() && ml_result.operator_info().has_obj_ref())
             {
                 model_ref_id = ml_result.operator_info().obj_ref().id();
@@ -87,6 +68,7 @@ Word2VecModel Word2Vec::fit(const DataFrame& input_df)
     }
 
     auto status = stream->Finish();
+
     if (!status.ok())
     {
         throw std::runtime_error("Word2Vec fit failed: " + status.error_message());

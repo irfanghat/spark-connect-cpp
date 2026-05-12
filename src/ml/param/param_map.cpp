@@ -1,74 +1,43 @@
+#include <sstream>
+
 #include "param_map.h"
 
-ParamMap& ParamMap::put(const std::string& key, const std::string& value)
+std::string ParamMap::toString() const
 {
-    params_[key] = value;
-    return *this;
-}
+    std::ostringstream out;
+    
+    out << "{";
 
-ParamMap& ParamMap::put(const std::string& key, int value)
-{
-    params_[key] = value;
-    return *this;
-}
+    bool first = true;
 
-ParamMap& ParamMap::put(const std::string& key, int64_t value)
-{
-    params_[key] = value;
-    return *this;
-}
+    for (const auto& [key, value] : map_)
+    {
+        if (!first)
+            out << ", ";
 
-ParamMap& ParamMap::put(const std::string& key, double value)
-{
-    params_[key] = value;
-    return *this;
-}
+        first = false;
 
-ParamMap& ParamMap::put(const std::string& key, bool value)
-{
-    params_[key] = value;
-    return *this;
-}
+        out << key << "=";
 
-std::optional<ParamValue> ParamMap::get(const std::string& key) const
-{
-    auto it = params_.find(key);
-    if (it == params_.end())
-        return std::nullopt;
-    return it->second;
-}
+        std::visit(
+            [&](auto&& v)
+            {
+                using V = std::decay_t<decltype(v)>;
 
-bool ParamMap::contains(const std::string& key) const
-{
-    return params_.find(key) != params_.end();
-}
+                if constexpr (std::is_same_v<V, std::string>)
+                    out << '"' << v << '"';
 
-std::optional<ParamValue> ParamMap::remove(const std::string& key)
-{
-    auto it = params_.find(key);
-    if (it == params_.end())
-        return std::nullopt;
-    auto value = it->second;
-    params_.erase(it);
-    return value;
-}
+                else if constexpr (std::is_same_v<V, bool>)
+                    out << (v ? "true" : "false");
 
-int ParamMap::size() const
-{
-    return static_cast<int>(params_.size());
-}
+                else
+                    out << v;
+            },
+            value
+        );
+    }
 
-bool ParamMap::is_empty() const
-{
-    return params_.empty();
-}
+    out << "}";
 
-ParamMap ParamMap::copy() const
-{
-    return *this;
-}
-
-const std::map<std::string, ParamValue>& ParamMap::entries() const
-{
-    return params_;
+    return out.str();
 }

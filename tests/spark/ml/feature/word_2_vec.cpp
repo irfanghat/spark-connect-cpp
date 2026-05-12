@@ -1,9 +1,9 @@
-#include "databricks/databricks_serverless_fixture.h"
+#include "spark/spark_fixture.h"
 #include "dataframe.h"
 #include "ml/feature/word_2_vec.h"
 #include "ml/feature/word_2_vec_model.h"
 
-TEST_F(DatabricksServerlessIntegrationTest, Word2VecFit)
+TEST_F(SparkIntegrationTest, Word2VecFit)
 {
     auto df = spark->sql(
         R"(
