@@ -117,6 +117,10 @@ target_link_libraries(${PROJECT_NAME}_test PRIVATE
         PkgConfig::GTEST
 )
 
+target_include_directories(${PROJECT_NAME}_test PRIVATE
+        "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/tests>"
+)
+
 include(GoogleTest)
 
 enable_testing()
