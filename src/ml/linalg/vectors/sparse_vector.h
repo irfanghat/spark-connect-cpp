@@ -54,6 +54,8 @@ class SparseVector
             return *this;
         }
 
+        double norm(int param);
+
     private:
         int size_;
         std::vector<int> indices_;
