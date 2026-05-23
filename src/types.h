@@ -287,12 +287,12 @@ struct Row
                         return col_name == "type";
                     });
 
-                    if (type_field == arg->column_names.end() || std::get<int8_t>(arg->values.at(0)) != 0)
+                    if (type_field == arg->column_names.end() || std::get<int8_t>(arg->values.at(arg->col_index("type"))) != 0)
                         return sparse_vector;
 
-                    auto size = std::get<int32_t>(arg->values.at(1));
-                    auto indice_array_data = std::get<std::shared_ptr<ArrayData>>(arg->values.at(2));
-                    auto values_array_data = std::get<std::shared_ptr<ArrayData>>(arg->values.at(3));
+                    auto size = std::get<int32_t>(arg->values.at(arg->col_index("size")));
+                    auto indice_array_data = std::get<std::shared_ptr<ArrayData>>(arg->values.at(arg->col_index("indices")));
+                    auto values_array_data = std::get<std::shared_ptr<ArrayData>>(arg->values.at(arg->col_index("values")));
 
                     std::vector<int> indices;
                     std::vector<double> values;
