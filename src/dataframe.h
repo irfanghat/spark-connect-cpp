@@ -104,7 +104,7 @@ class DataFrame
 
     /**
      * @brief Returns the schema of this DataFrame as a StructType.
-     * @return A StructType object containing the full schema metadata.
+     * @returns A StructType object containing the full schema metadata.
      */
     StructType schema() const;
 
@@ -118,7 +118,7 @@ class DataFrame
      *
      * This method retrieves the schema of the DataFrame from the Spark
      * server and extracts the names of all columns in their original order.
-     * @return A vector of strings representing the column names.
+     * @returns A vector of strings representing the column names.
      *
      * @throws std::runtime_error If the schema cannot be retrieved from the
      * server.
@@ -193,14 +193,14 @@ class DataFrame
 
     /**
      * @brief Returns the number of rows in this DataFrame.
-     * @return The row count.
+     * @returns The row count.
      */
     int64_t count();
 
     /**
      * @brief Interface to save the content of the non-streaming DataFrame
      * out into external storage.
-     * @return A DataFrameWriter instance.
+     * @returns A DataFrameWriter instance.
      */
     DataFrameWriter write();
 
@@ -208,8 +208,8 @@ class DataFrame
      * @brief Returns a new DataFrame with duplicate rows removed -
      * equivalent to `distinct()` function
      */
-
     DataFrame dropDuplicates() const;
+
     /**
      * @brief Returns a new DataFrame with duplicate rows removed,
      *          considering only the given subset of columns - equivalent to
@@ -243,9 +243,13 @@ class DataFrame
      * }
      *
      * // ------------------------------------------
+     *
      * // Output:
+     *
      * // Row(name='John', age=25, salary=100000)
+     *
      * // Row(name='Alice', age=30, salary=85000)
+     *
      * // ...
      * // ------------------------------------------
      * @returns A list of rows.
@@ -328,7 +332,7 @@ class DataFrame
      * columns, an exception is thrown.
      *
      * @param other The right side of the join.
-     * @return A new DataFrame representing the inner join on common
+     * @returns A new DataFrame representing the inner join on common
      * columns.
      * @throws std::invalid_argument if there are no common columns to join
      * on.
@@ -354,7 +358,7 @@ class DataFrame
      * `"semi"`, `"leftsemi"`, `"left_semi"`,
      * `"anti"`, `"leftanti"`, `"left_anti"`.
      *
-     * @return A new DataFrame representing the joined result.
+     * @returns A new DataFrame representing the joined result.
      */
     DataFrame join(const DataFrame& other, const std::string& on, const std::string& how = "inner");
 
@@ -369,7 +373,7 @@ class DataFrame
      * @param on List of colum names to join on.
      * @param how Type of join. Default is "inner".
      *
-     * @return A new DataFrame representing the joined result.
+     * @returns A new DataFrame representing the joined result.
      */
 
     DataFrame join(const DataFrame& other, const std::vector<std::string>& on,
@@ -383,7 +387,7 @@ class DataFrame
      * @param condition SQL join expression (e.g., "df1.id = df2.id").
      * @param how Type of join. Default is "inner".
      *
-     * @return A new DataFrame representing the joined result.
+     * @returns A new DataFrame representing the joined result.
      */
     DataFrame join_on_expression(const DataFrame& other, const std::string& condition,
                                  const std::string& how);
@@ -405,7 +409,7 @@ class DataFrame
      * @param func A function that takes a DataFrame and returns a
      * DataFrame.
      * @param args Optional additional arguments to pass to func.
-     * @return A transformed `DataFrame`.
+     * @returns A transformed `DataFrame`.
      */
     template <typename F, typename... Args> DataFrame transform(F func, Args&&... args) const
     {
@@ -431,14 +435,14 @@ class DataFrame
                          const spark::sql::functions::Column& col) const;
 
     /**
-     * @brief Returns a new DataFrame with an alias set.
+     * @brief Returns a new `DataFrame` with an alias set.
      *
      * Aliasing is particularly useful for resolving column name ambiguities
      * when performing self-joins, allowing you to refer to columns using
      * the alias prefix.
      *
      * @param alias_name The string alias to apply to this DataFrame.
-     * @return A new DataFrame containing the aliased logical plan.
+     * @returns A new `DataFrame` containing the aliased logical plan.
      *
      * @example
      * auto df1 = df.alias("a");
@@ -446,6 +450,13 @@ class DataFrame
      * auto joined = df1.join(df2, col("a.id") == col("b.id"));
      */
     DataFrame alias(const std::string& alias_name) const;
+
+    /**
+    * @brief Persists the `DataFrame` with the default storage level `(MEMORY_AND_DISK_DESER)`.
+    * @returns `DataFrame` Cached DataFrame.
+    *
+    */
+    DataFrame cache();
 
   private:
     friend class GroupedData;
