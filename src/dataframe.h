@@ -452,10 +452,9 @@ class DataFrame
     DataFrame alias(const std::string& alias_name) const;
 
     /**
-    * @brief Persists the `DataFrame` with the default storage level `(MEMORY_AND_DISK_DESER)`.
-    * @returns `DataFrame` Cached DataFrame.
-    *
-    */
+     * @brief Persists the `DataFrame` with the default storage level `(MEMORY_AND_DISK_DESER)`.
+     * @returns A new `DataFrame` representing the cached operation.
+     */
     DataFrame cache();
 
   private:

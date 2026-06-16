@@ -1169,9 +1169,7 @@ DataFrame DataFrame::withColumn(const std::string& colName,
 
     return DataFrame(stub_, new_plan, session_id_, user_id_);
 }
-/**
- *@brief aliasing support for dataframes
- */
+
 DataFrame DataFrame::alias(const std::string& alias_name) const
 {
     Plan plan;
