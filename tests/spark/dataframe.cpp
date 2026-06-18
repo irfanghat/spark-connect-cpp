@@ -785,3 +785,115 @@ TEST_F(SparkIntegrationTest, DataFrameAlias)
     EXPECT_EQ(std::get<std::string>(rows[1]["name"]), "Alice");
     EXPECT_EQ(std::get<std::string>(rows[2]["name"]), "Bob");
 }
+
+TEST_F(SparkIntegrationTest, DataFrameExplainDefaults)
+{
+    auto df = spark->sql(R"(
+        SELECT * FROM
+        VALUES
+            (14, "Tom"),
+            (23, "Alice"),
+            (16, "Bob")
+        AS (age, name)    
+    )");
+
+    ASSERT_NO_THROW(df.explain());
+}
+
+TEST_F(SparkIntegrationTest, DataFrameExplainSimple)
+{
+    auto df = spark->sql(R"(
+        SELECT * FROM
+        VALUES
+            (14, "Tom"),
+            (23, "Alice"),
+            (16, "Bob")
+        AS (age, name)
+    )");
+
+    ASSERT_NO_THROW(df.explain("simple"));
+}
+
+TEST_F(SparkIntegrationTest, DataFrameExplainExtended)
+{
+    auto df = spark->sql(R"(
+        SELECT * FROM
+        VALUES
+            (14, "Tom"),
+            (23, "Alice"),
+            (16, "Bob")
+        AS (age, name)
+    )");
+
+    ASSERT_NO_THROW(df.explain("extended"));
+}
+
+TEST_F(SparkIntegrationTest, DataFrameExplainExtendedTrue)
+{
+    auto df = spark->sql(R"(
+        SELECT * FROM
+        VALUES
+            (14, "Tom"),
+            (23, "Alice"),
+            (16, "Bob")
+        AS (age, name)
+    )");
+
+    ASSERT_NO_THROW(df.explain(true));
+}
+
+TEST_F(SparkIntegrationTest, DataFrameExplainExtendedFalse)
+{
+    auto df = spark->sql(R"(
+        SELECT * FROM
+        VALUES
+            (14, "Tom"),
+            (23, "Alice"),
+            (16, "Bob")
+        AS (age, name)
+    )");
+
+    ASSERT_NO_THROW(df.explain(false));
+}
+
+TEST_F(SparkIntegrationTest, DataFrameExplainCodegen)
+{
+    auto df = spark->sql(R"(
+        SELECT * FROM
+        VALUES
+            (14, "Tom"),
+            (23, "Alice"),
+            (16, "Bob")
+        AS (age, name)
+    )");
+
+    ASSERT_NO_THROW(df.explain("codegen"));
+}
+
+TEST_F(SparkIntegrationTest, DataFrameExplainCost)
+{
+    auto df = spark->sql(R"(
+        SELECT * FROM
+        VALUES
+            (14, "Tom"),
+            (23, "Alice"),
+            (16, "Bob")
+        AS (age, name)
+    )");
+
+    ASSERT_NO_THROW(df.explain("cost"));
+}
+
+TEST_F(SparkIntegrationTest, DataFrameExplainFormatted)
+{
+    auto df = spark->sql(R"(
+        SELECT * FROM
+        VALUES
+            (14, "Tom"),
+            (23, "Alice"),
+            (16, "Bob")
+        AS (age, name)
+    )");
+
+    ASSERT_NO_THROW(df.explain("formatted"));
+}

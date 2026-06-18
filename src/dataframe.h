@@ -96,8 +96,11 @@ class DataFrame
      *       - Nulls (displayed as "null")
      *
      * @example
+     *
      * SparkSession spark(...);
+     *
      * auto df = spark.sql("SELECT * FROM range(10)");
+     *
      * df.show(5);  // Display first 5 rows
      */
     void show(int max_rows = 10, int runcate = 20);
@@ -452,10 +455,16 @@ class DataFrame
     DataFrame alias(const std::string& alias_name) const;
 
     /**
-     * @brief Persists the `DataFrame` with the default storage level `(MEMORY_AND_DISK_DESER)`.
-     * @returns A new `DataFrame` representing the cached operation.
+     * @brief Prints the logical/physical plan(s) for this DataFrame.
+     *
+     * @param extended If true and `mode` is not set, prints parsed, analyzed,
+     * optimized logical plans in addition to the physical plan. Ignored if
+     * `mode` is set.
+     * @param mode One of: "simple", "extended", "codegen", "cost", "formatted"
+     * Takes precedence over `extended` when provided.
+     *
      */
-    DataFrame cache();
+    void explain(bool extended = false, const std::optional<std::string>& mode = std::nullopt);
 
   private:
     friend class GroupedData;

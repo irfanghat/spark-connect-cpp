@@ -140,7 +140,7 @@ message AnalyzePlanRequest {
       // Generates parsed logical plan, analyzed logical plan, optimized logical plan and physical plan.
       // Parsed Logical plan is a unresolved plan that extracted from the query. Analyzed logical plans
       // transforms which translates unresolvedAttribute and unresolvedRelation into fully typed objects.
-      // The optimized logical plan transforms through a set of optimization rules, resulting in the
+      // The optimized logical plan transforSms through a set of optimization rules, resulting in the
       // physical plan.
       EXPLAIN_MODE_EXTENDED = 2;
 
