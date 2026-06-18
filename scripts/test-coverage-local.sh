@@ -7,7 +7,7 @@
 #
 # Usage:
 #   ./test-coverage-local.sh                          # Full run
-#   ./test-coverage-local.sh --skip-tests             # Reuse existing build + profraw, just regenerate coverage
+#   ./test-coverage-local.sh --skip-tests             # Reuse existing build & profraw, just regenerate coverage
 #   ./test-coverage-local.sh --threshold=70           # Override the line-coverage gate
 #   ./test-coverage-local.sh --binary-pattern="*Test" # Override how test binaries are discovered
 #
@@ -16,7 +16,7 @@
 set -euo pipefail
 
 CONFIGURE_PRESET="pr_pipeline"
-TEST_PRESET="test_pr_pipeline_coverage"
+TEST_PRESET="test_pr_pipeline_spark_coverage"
 BUILD_DIR="build"
 THRESHOLD=60
 BINARY_PATTERN="*_test"
