@@ -111,6 +111,7 @@ sudo apt install build-essential clang g++-14 libstdc++-14-dev -y
 echo ""
 echo "Installing Dev dependencies..."
 sudo apt install -y -V \
+    llvm \
     clang-format \
     gcovr \
     llvm-18-tools
