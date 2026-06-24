@@ -1,5 +1,5 @@
 #include "databricks_serverless_fixture.h"
-#include "../util/env_loader.h"
+#include "util/env_loader.h"
 
 SparkSession* DatabricksServerlessIntegrationTest::spark = nullptr;
 

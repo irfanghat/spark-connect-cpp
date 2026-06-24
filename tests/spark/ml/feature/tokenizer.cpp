@@ -1,12 +1,12 @@
 #include <gmock/gmock-matchers.h>
 
-#include "../../databricks_serverless_fixture.h"
+#include "spark/spark_fixture.h"
 #include "dataframe.h"
 #include "ml/feature/tokenizer.h"
 
 using ::testing::ElementsAre;
 
-TEST_F(DatabricksServerlessIntegrationTest, TokenizerTransform)
+TEST_F(SparkIntegrationTest, TokenizerTransform)
 {
     auto df = spark->sql(
         R"(
