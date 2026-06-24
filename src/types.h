@@ -78,13 +78,32 @@ struct CharType
 {
     int32_t length;
 };
+
 struct VarCharType
 {
     int32_t length;
 };
 
+/**
+ * @brief Forward declaration of DataType so StructField can hold a
+ * shared_ptr<DataType> without DataType being complete yet.
+ */
 class DataType;
-struct StructField;
+
+/**
+ * @brief StructField is fully defined here, before StructType, so that
+ * std::vector<StructField> inside StructType sees a complete type.
+ * Uses shared_ptr<DataType> to break the recursive cycle:
+ *   DataType -> DataTypeVariant -> StructType -> StructField -> DataType
+ * This mirrors the same pattern used in ArrayType and MapType.
+ */
+struct StructField
+{
+    std::string name;
+    std::shared_ptr<DataType> data_type;
+    bool nullable = true;
+    std::optional<std::string> metadata;
+};
 
 /**
  * @brief Complex Types
@@ -140,14 +159,6 @@ class DataType
      * Protobuf message.
      */
     static DataType from_proto(const spark::connect::DataType& proto);
-};
-
-struct StructField
-{
-    std::string name;
-    DataType data_type;
-    bool nullable = true;
-    std::optional<std::string> metadata;
 };
 
 struct Row;
@@ -217,64 +228,49 @@ struct Row
             {
                 using ArgType = std::decay_t<decltype(arg)>;
 
-                // --------------------------------------------------------------------
-                // Handle exact Type Match
-                // --------------------------------------------------------------------
+                // Exact type match
                 if constexpr (std::is_same_v<T, ArgType>)
                 {
                     return arg;
                 }
-
-                // --------------------------------------------------------------------
-                // Null Handling
-                // std::monostate to "null"
-                // --------------------------------------------------------------------
+                // Null -> "null" string (only when T is string)
                 else if constexpr (std::is_same_v<T, std::string> &&
                                    std::is_same_v<ArgType, std::monostate>)
                 {
-                    return "null";
+                    // Both conditions must be true for this branch to be
+                    // instantiated, so returning a string literal is always
+                    // valid here, but we cast to T to keep clang happy
+                    // when it typechecks non-taken branches.
+                    if constexpr (std::is_same_v<T, std::string>)
+                        return T{"null"};
+                    else
+                        throw std::runtime_error("unreachable");
                 }
-
-                // --------------------------------------------------------------------
-                // Widening / Numeric Conversion
-                // This supports get<double> on int32_t columns
-                // --------------------------------------------------------------------
+                // Numeric widening
                 else if constexpr (std::is_arithmetic_v<T> && std::is_arithmetic_v<ArgType>)
                 {
                     return static_cast<T>(arg);
                 }
-
-                // --------------------------------------------------------------------
-                // Handle Nulls (Returning an empty vector for a
-                // null list)
-                // --------------------------------------------------------------------
+                // Null -> empty vector<string>
                 else if constexpr (std::is_same_v<T, std::vector<std::string>> &&
                                    std::is_same_v<ArgType, std::monostate>)
                 {
-                    return {};
+                    return T{};
                 }
-
-                // --------------------------------------------------------------------
-                // Handle vector list
-                // --------------------------------------------------------------------
+                // ArrayData -> vector<string>
                 else if constexpr (std::is_same_v<T, std::vector<std::string>> &&
                                    std::is_same_v<ArgType, std::shared_ptr<ArrayData>>)
                 {
-                    std::vector<std::string> string_list;
-
-                    for (int i = 0; i < arg->elements.size(); i++)
+                    if constexpr (std::is_same_v<T, std::vector<std::string>>)
                     {
-                        auto string_value = std::get<std::string>(arg->elements[i]);
-
-                        string_list.push_back(string_value);
+                        std::vector<std::string> string_list;
+                        for (size_t i = 0; i < arg->elements.size(); i++)
+                            string_list.push_back(std::get<std::string>(arg->elements[i]));
+                        return string_list;
                     }
-
-                    return string_list;
+                    else
+                        throw std::runtime_error("unreachable");
                 }
-
-                // --------------------------------------------------------------------
-                // Failure State
-                // --------------------------------------------------------------------
                 else
                 {
                     throw std::runtime_error("Row::get Type Mismatch: requested "
@@ -363,4 +359,5 @@ std::ostream& operator<<(std::ostream& os, const Row& row);
  * See: `Row` implementation.
  */
 ColumnValue arrayValueToVariant(const std::shared_ptr<arrow::Array>& array, int64_t row);
+
 } // namespace spark::sql::types

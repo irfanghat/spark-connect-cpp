@@ -161,12 +161,12 @@ TEST_F(ColumnTest, ComplexTypeDetection)
     // ---------------------------
     EXPECT_EQ(schema.fields[0].name, "int_array");
     EXPECT_TRUE(
-        std::holds_alternative<spark::sql::types::ArrayType>(schema.fields[0].data_type.kind));
+        std::holds_alternative<spark::sql::types::ArrayType>(schema.fields[0].data_type->kind));
 
     // ---------------------------
     // Check Map
     // ---------------------------
     EXPECT_EQ(schema.fields[1].name, "string_int_map");
     EXPECT_TRUE(
-        std::holds_alternative<spark::sql::types::MapType>(schema.fields[1].data_type.kind));
+        std::holds_alternative<spark::sql::types::MapType>(schema.fields[1].data_type->kind));
 }

@@ -5,7 +5,10 @@
 #include <memory>
 #include <mutex>
 #include <string>
+#include <tuple>
+#include <vector>
 
+#include <arrow/api.h>
 #include <grpcpp/grpcpp.h>
 
 #include <spark/connect/base.grpc.pb.h>
@@ -14,6 +17,7 @@
 #include "dataframe.h"
 #include "reader.h"
 #include "runtime_config.h"
+#include "types.h"
 
 class DataFrameReader;
 
@@ -168,6 +172,10 @@ class SparkSession
     DataFrame range(int64_t start, int64_t end, int64_t step = 1);
     DataFrame range(int64_t end);
     DataFrameReader read();
+
+    template <typename... Args>
+    DataFrame createDataFrame(const std::vector<std::tuple<Args...>>& rows,
+                              const std::vector<std::string>& column_names);
 
     /**
      * @brief Creates a new SparkSession with an isolated session ID.

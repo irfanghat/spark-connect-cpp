@@ -6,10 +6,10 @@
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/build",
       "cacheVariables": {
-        "CMAKE_C_COMPILER": "/usr/bin/cc",
-        "CMAKE_CXX_COMPILER": "/usr/bin/c++",
-        "CMAKE_CXX_FLAGS": "-fprofile-arcs -ftest-coverage -g -O0",
-        "CMAKE_C_FLAGS": "-fprofile-arcs -ftest-coverage -g -O0",
+        "CMAKE_C_COMPILER": "/usr/bin/clang",
+        "CMAKE_CXX_COMPILER": "/usr/bin/clang++",
+        "CMAKE_CXX_FLAGS": "-fprofile-instr-generate -fcoverage-mapping -g -O0",
+        "CMAKE_C_FLAGS": "-fprofile-instr-generate -fcoverage-mapping -g -O0",
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
       },
       "hidden": true

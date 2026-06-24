@@ -752,3 +752,148 @@ TEST_F(SparkIntegrationTest, ChainedDataFrameTransforms)
 
     EXPECT_GT(cols.size(), raw_df.columns().size());
 }
+
+TEST_F(SparkIntegrationTest, DataFrameAlias)
+{
+    auto df = spark->sql(R"(
+        SELECT * FROM VALUES
+            (14, 'Tom'),
+            (23, 'Alice'),
+            (16, 'Bob')
+        AS people(age, name)
+    )");
+
+    auto df_as1 = df.alias("df_as1");
+    auto df_as2 = df.alias("df_as2");
+
+    auto joined_df = df_as1.join_on_expression(df_as2, "df_as1.name = df_as2.name", "inner");
+
+    EXPECT_NO_THROW(joined_df.show());
+
+    EXPECT_NO_THROW(joined_df.select({"df_as1.name", "df_as2.name", "df_as2.age"}).show());
+
+    auto rows = joined_df.collect();
+
+    for (auto item : rows)
+        std::cout << item << std::endl;
+
+    EXPECT_EQ((rows[0].get_long("age")), 14);
+    EXPECT_EQ((rows[1].get_long("age")), 23);
+    EXPECT_EQ((rows[2].get_long("age")), 16);
+
+    EXPECT_EQ(std::get<std::string>(rows[0]["name"]), "Tom");
+    EXPECT_EQ(std::get<std::string>(rows[1]["name"]), "Alice");
+    EXPECT_EQ(std::get<std::string>(rows[2]["name"]), "Bob");
+}
+
+TEST_F(SparkIntegrationTest, DataFrameExplainDefaults)
+{
+    auto df = spark->sql(R"(
+        SELECT * FROM
+        VALUES
+            (14, "Tom"),
+            (23, "Alice"),
+            (16, "Bob")
+        AS (age, name)    
+    )");
+
+    ASSERT_NO_THROW(df.explain());
+}
+
+TEST_F(SparkIntegrationTest, DataFrameExplainSimple)
+{
+    auto df = spark->sql(R"(
+        SELECT * FROM
+        VALUES
+            (14, "Tom"),
+            (23, "Alice"),
+            (16, "Bob")
+        AS (age, name)
+    )");
+
+    ASSERT_NO_THROW(df.explain("simple"));
+}
+
+TEST_F(SparkIntegrationTest, DataFrameExplainExtended)
+{
+    auto df = spark->sql(R"(
+        SELECT * FROM
+        VALUES
+            (14, "Tom"),
+            (23, "Alice"),
+            (16, "Bob")
+        AS (age, name)
+    )");
+
+    ASSERT_NO_THROW(df.explain("extended"));
+}
+
+TEST_F(SparkIntegrationTest, DataFrameExplainExtendedTrue)
+{
+    auto df = spark->sql(R"(
+        SELECT * FROM
+        VALUES
+            (14, "Tom"),
+            (23, "Alice"),
+            (16, "Bob")
+        AS (age, name)
+    )");
+
+    ASSERT_NO_THROW(df.explain(true));
+}
+
+TEST_F(SparkIntegrationTest, DataFrameExplainExtendedFalse)
+{
+    auto df = spark->sql(R"(
+        SELECT * FROM
+        VALUES
+            (14, "Tom"),
+            (23, "Alice"),
+            (16, "Bob")
+        AS (age, name)
+    )");
+
+    ASSERT_NO_THROW(df.explain(false));
+}
+
+TEST_F(SparkIntegrationTest, DataFrameExplainCodegen)
+{
+    auto df = spark->sql(R"(
+        SELECT * FROM
+        VALUES
+            (14, "Tom"),
+            (23, "Alice"),
+            (16, "Bob")
+        AS (age, name)
+    )");
+
+    ASSERT_NO_THROW(df.explain("codegen"));
+}
+
+TEST_F(SparkIntegrationTest, DataFrameExplainCost)
+{
+    auto df = spark->sql(R"(
+        SELECT * FROM
+        VALUES
+            (14, "Tom"),
+            (23, "Alice"),
+            (16, "Bob")
+        AS (age, name)
+    )");
+
+    ASSERT_NO_THROW(df.explain("cost"));
+}
+
+TEST_F(SparkIntegrationTest, DataFrameExplainFormatted)
+{
+    auto df = spark->sql(R"(
+        SELECT * FROM
+        VALUES
+            (14, "Tom"),
+            (23, "Alice"),
+            (16, "Bob")
+        AS (age, name)
+    )");
+
+    ASSERT_NO_THROW(df.explain("formatted"));
+}

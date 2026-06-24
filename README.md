@@ -9,7 +9,6 @@ Spark Connect introduced a **decoupled client–server architecture** for Apache
 The library is intended for environments where:
 
 * Native C++ integration is required
-* JVM runtimes are impractical or undesirable
 * High-throughput data movement is necessary
 * Tight control over memory and system resources is important
 * Existing performance-critical C++ systems need to integrate with Spark
