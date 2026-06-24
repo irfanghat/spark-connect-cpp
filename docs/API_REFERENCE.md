@@ -358,6 +358,229 @@ df.printSchema();
 
 ```
 
+### Explain
+
+* `DataFrame.explain` is useful for debugging logical and or physical plans that Spark acts on.
+
+```cpp
+// -----------------------------------------
+// Simple prints only the physical plan.
+// -----------------------------------------
+auto df = spark->sql(R"(
+    SELECT * FROM
+    VALUES
+        (14, "Tom"),
+        (23, "Alice"),
+        (16, "Bob")
+    AS (age, name)
+)");
+
+df.explain("simple");
+
+// ------------------------------------------
+//
+// == Parsed Logical Plan ==
+// 'Project [*]
+// +- SubqueryAlias AS
+//    +- LocalRelation [age#120, name#121]
+//
+// == Analyzed Logical Plan ==
+// age: int, name: string
+// Project [age#120, name#121]
+// +- SubqueryAlias AS
+//    +- LocalRelation [age#120, name#121]
+//
+// == Optimized Logical Plan ==
+// LocalRelation [age#120, name#121]
+//
+// == Physical Plan ==
+// LocalTableScan [age#120, name#121]
+//
+// ------------------------------------------
+
+
+// --------------------------------------------------
+// Extended prints both logical and physical plans.
+// --------------------------------------------------
+auto df = spark->sql(R"(
+    SELECT * FROM
+    VALUES
+        (14, "Tom"),
+        (23, "Alice"),
+        (16, "Bob")
+    AS (age, name)
+)");
+
+df.explain("extended");
+
+// ------------------------------------------
+//
+// == Parsed Logical Plan ==
+// 'Project [*]
+// +- SubqueryAlias AS
+//    +- LocalRelation [age#123, name#124]
+//
+// == Analyzed Logical Plan ==
+// age: int, name: string
+// Project [age#123, name#124]
+// +- SubqueryAlias AS
+//    +- LocalRelation [age#123, name#124]
+//
+// == Optimized Logical Plan ==
+// LocalRelation [age#123, name#124]
+//
+// == Physical Plan ==
+// LocalTableScan [age#123, name#124]
+//
+// ------------------------------------------
+
+
+// ------------------------------------------------
+// Extended set to true, similar to mode extended.
+// ------------------------------------------------
+auto df = spark->sql(R"(
+    SELECT * FROM
+    VALUES
+        (14, "Tom"),
+        (23, "Alice"),
+        (16, "Bob")
+    AS (age, name)
+)");
+
+df.explain(true);
+
+
+// -----------------------------------------
+// Extended set to false prints only the physical plan.
+// -----------------------------------------
+auto df = spark->sql(R"(
+    SELECT * FROM
+    VALUES
+        (14, "Tom"),
+        (23, "Alice"),
+        (16, "Bob")
+    AS (age, name)
+)");
+
+df.explain(false);
+
+// -----------------------------------------
+//
+// == Physical Plan ==
+// LocalTableScan [age#126, name#127]
+//
+// -----------------------------------------
+
+
+// -----------------------------------------------------------------------
+// Codegen prints a physical plan and generated codes if available.
+// -----------------------------------------------------------------------
+auto df = spark->sql(R"(
+    SELECT * FROM
+    VALUES
+        (14, "Tom"),
+        (23, "Alice"),
+        (16, "Bob")
+    AS (age, name)
+)");
+
+df.explain("codegen");
+
+// --------------------------------------------------------------
+//
+// == Parsed Logical Plan ==
+// 'Project [*]
+// +- SubqueryAlias AS
+//    +- LocalRelation [age#129, name#130]
+//
+// == Analyzed Logical Plan ==
+// age: int, name: string
+// Project [age#129, name#130]
+// +- SubqueryAlias AS
+//    +- LocalRelation [age#129, name#130]
+//
+// == Optimized Logical Plan ==
+// LocalRelation [age#129, name#130]
+//
+// == Physical Plan ==
+// LocalTableScan [age#129, name#130]
+//
+// --------------------------------------------------------------
+
+
+// ----------------------------------------------------------------
+// Cost prints a logical plan and statistics if available.
+// ----------------------------------------------------------------
+auto df = spark->sql(R"(
+    SELECT * FROM
+    VALUES
+        (14, "Tom"),
+        (23, "Alice"),
+        (16, "Bob")
+    AS (age, name)
+)");
+
+df.explain("cost");
+
+// -------------------------------------------------------------------------
+//
+// == Parsed Logical Plan ==
+// 'Project [*]
+// +- SubqueryAlias AS
+//    +- LocalRelation [age#132, name#133]
+//
+// == Analyzed Logical Plan ==
+// age: int, name: string
+// Project [age#132, name#133]
+// +- SubqueryAlias AS
+//    +- LocalRelation [age#132, name#133]
+//
+// == Optimized Logical Plan ==
+// LocalRelation [age#132, name#133]
+//
+// == Physical Plan ==
+// LocalTableScan [age#132, name#133]
+//
+// -------------------------------------------------------------------------
+
+
+// --------------------------------------------------------------------------
+// Formatted splits explain output into two sections, 
+// a physical plan outline and node details.
+// --------------------------------------------------------------------------
+auto df = spark->sql(R"(
+    SELECT * FROM
+    VALUES
+        (14, "Tom"),
+        (23, "Alice"),
+        (16, "Bob")
+    AS (age, name)
+)");
+
+df.explain("formatted");
+
+// --------------------------------------------------------------
+//
+// == Parsed Logical Plan ==
+// 'Project [*]
+// +- SubqueryAlias AS
+//    +- LocalRelation [age#135, name#136]
+//
+// == Analyzed Logical Plan ==
+// age: int, name: string
+// Project [age#135, name#136]
+// +- SubqueryAlias AS
+//    +- LocalRelation [age#135, name#136]
+//
+// == Optimized Logical Plan ==
+// LocalRelation [age#135, name#136]
+//
+// == Physical Plan ==
+// LocalTableScan [age#135, name#136]
+//
+// --------------------------------------------------------------
+```
+
 ### Head
 
 ```cpp

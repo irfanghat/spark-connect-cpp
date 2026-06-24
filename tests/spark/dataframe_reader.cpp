@@ -129,11 +129,11 @@ TEST_F(SparkIntegrationTest, SchemaEvaluation)
     // Check if the variant holds the correct type
     // -------------------------------------------------------
     EXPECT_TRUE(
-        std::holds_alternative<spark::sql::types::StringType>(schema.fields[0].data_type.kind));
+        std::holds_alternative<spark::sql::types::StringType>(schema.fields[0].data_type->kind));
     EXPECT_TRUE(
-        std::holds_alternative<spark::sql::types::IntegerType>(schema.fields[1].data_type.kind));
+        std::holds_alternative<spark::sql::types::IntegerType>(schema.fields[1].data_type->kind));
     EXPECT_TRUE(
-        std::holds_alternative<spark::sql::types::IntegerType>(schema.fields[2].data_type.kind));
+        std::holds_alternative<spark::sql::types::IntegerType>(schema.fields[2].data_type->kind));
 }
 
 TEST_F(SparkIntegrationTest, HandleMissingFile)
@@ -241,7 +241,7 @@ TEST_F(SparkIntegrationTest, ReaderOptions_InferredTypes)
     // -------------------------------------------------
     // Check if the variant holds IntegerType
     // -------------------------------------------------
-    EXPECT_TRUE(std::holds_alternative<spark::sql::types::IntegerType>(it->data_type.kind));
+    EXPECT_TRUE(std::holds_alternative<spark::sql::types::IntegerType>(it->data_type->kind));
 }
 
 TEST_F(SparkIntegrationTest, ReaderOptions_CorrectValueParsing)

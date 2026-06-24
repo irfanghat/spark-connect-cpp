@@ -1,28 +1,17 @@
-#######################################################################################################
-# CMAKE CONFIGURATION
-# Specify CMake version and C++ standard
-#######################################################################################################
-
 cmake_minimum_required(VERSION 3.15)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 
-#######################################################################################################
-# PROJECT DECLARATION
-# Define project name and version
-#######################################################################################################
-
 set(PROJECT_NAME "spark_connect_cpp")
 
 project(${PROJECT_NAME})
 
 
-#######################################################################################################
-# FIND DEPENDENCIES
-# Loaded with PkgConfig
-#######################################################################################################
+######################################################################
+# PkgConfig
+######################################################################
 message(STATUS "Using PKG_CONFIG_PATH: $ENV{PKG_CONFIG_PATH}")
 
 find_package(PkgConfig REQUIRED)
@@ -38,11 +27,10 @@ find_package(Protobuf REQUIRED)
 find_program(GRPC_CPP_PLUGIN NAMES grpc_cpp_plugin)
 
 
-#######################################################################################################
+######################################################################
 # SPARK CONNECT PROTO LIB
 # Generate proto buffer data and gRPC service source files (*.pb.h, *.grpc.pb.h, *.pb.cc, *.grpc.pb.cc)
-#######################################################################################################
-
+######################################################################
 set(SPARK_CONNECT_PROTO_LIB "spark_connect")
 set(SPARK_CONNECT_PROTO_BUILD "${CMAKE_CURRENT_BINARY_DIR}/gen")
 
@@ -79,10 +67,9 @@ target_include_directories(${SPARK_CONNECT_PROTO_LIB} PUBLIC
 )
 
 
-#######################################################################################################
+######################################################################
 # PROJECT LIBRARY
-#######################################################################################################
-
+######################################################################
 message("Project library and link libraries ${PROJECT_NAME}")
 
 file(GLOB_RECURSE PROJECT_SOURCES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/src/*.cpp")
@@ -101,11 +88,10 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 )
 
 
-#######################################################################################################
+######################################################################
 # TEST ARTIFACT
 # Integration tests using GTest
-#######################################################################################################
-
+######################################################################
 message("Project tests with GTest")
 
 file(GLOB_RECURSE TEST_SRC_FILES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/tests/*.cpp")
@@ -127,10 +113,9 @@ enable_testing()
 
 gtest_discover_tests(${PROJECT_NAME}_test)
 
-#######################################################################################################
+######################################################################
 # PROJECT INSTALLATION
-#######################################################################################################
-
+######################################################################
 include(GNUInstallDirs)
 
 install(TARGETS ${PROJECT_NAME}
@@ -145,10 +130,9 @@ configure_file(${PROJECT_NAME}.pc.in ${PROJECT_NAME}.pc @ONLY)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
 
 
-#######################################################################################################
+######################################################################
 # PROJECT DISTRIBUTION
-#######################################################################################################
-
+######################################################################
 set(CPACK_PACKAGE_NAME "spark-connect-cpp")
 set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Spark Connect C++ Static Library")

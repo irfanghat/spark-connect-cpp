@@ -1194,3 +1194,73 @@ DataFrame DataFrame::withColumn(const std::string& colName,
 
     return DataFrame(stub_, new_plan, session_id_, user_id_);
 }
+
+DataFrame DataFrame::alias(const std::string& alias_name) const
+{
+    Plan plan;
+    auto* subquery_alias = plan.mutable_root()->mutable_subquery_alias();
+
+    if (this->plan_.has_root())
+    {
+        subquery_alias->mutable_input()->CopyFrom(this->plan_.root());
+    }
+
+    subquery_alias->set_alias(alias_name);
+
+    return DataFrame(stub_, plan, session_id_, user_id_);
+}
+
+void DataFrame::explain(bool extended, const std::optional<std::string>& mode)
+{
+    AnalyzePlanRequest request;
+    request.set_session_id(session_id_);
+    request.mutable_user_context()->set_user_id(user_id_);
+
+    auto* explain_request = request.mutable_explain();
+    *explain_request->mutable_plan() = plan_;
+
+    /// @brief Unrecognized modes fall back to the `extended`-derived default
+    /// See:
+    /// https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.DataFrame.explain.html
+    AnalyzePlanRequest::Explain::ExplainMode explain_mode =
+        extended ? AnalyzePlanRequest::Explain::EXPLAIN_MODE_EXTENDED
+                 : AnalyzePlanRequest::Explain::EXPLAIN_MODE_SIMPLE;
+
+    if (mode.has_value())
+    {
+        std::string m = mode.value();
+        std::transform(m.begin(), m.end(), m.begin(),
+                       [](unsigned char c) { return std::tolower(c); });
+
+        if (m == "simple")
+            explain_mode = AnalyzePlanRequest::Explain::EXPLAIN_MODE_SIMPLE;
+        else if (m == "extended")
+            explain_mode = AnalyzePlanRequest::Explain::EXPLAIN_MODE_EXTENDED;
+        else if (m == "codegen")
+            explain_mode = AnalyzePlanRequest::Explain::EXPLAIN_MODE_CODEGEN;
+        else if (m == "cost")
+            explain_mode = AnalyzePlanRequest::Explain::EXPLAIN_MODE_COST;
+        else if (m == "formatted")
+            explain_mode = AnalyzePlanRequest::Explain::EXPLAIN_MODE_FORMATTED;
+    }
+
+    explain_request->set_explain_mode(explain_mode);
+
+    grpc::ClientContext context;
+    AnalyzePlanResponse response;
+
+    grpc::Status status = stub_->AnalyzePlan(&context, request, &response);
+    if (!status.ok())
+    {
+        throw std::runtime_error("Failed to analyze plan for explain: " + status.error_message());
+    }
+
+    if (response.has_explain())
+    {
+        std::cout << response.explain().explain_string() << std::endl;
+    }
+    else
+    {
+        throw std::runtime_error("No explain string found in AnalyzePlanResponse.");
+    }
+}

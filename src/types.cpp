@@ -86,8 +86,9 @@ static DataType from_proto_internal(const spark::connect::DataType& proto)
         StructType st;
         for (const auto& field : proto.struct_().fields())
         {
-            st.fields.push_back(
-                {field.name(), from_proto_internal(field.data_type()), field.nullable()});
+            st.fields.push_back({field.name(),
+                                 std::make_shared<DataType>(from_proto_internal(field.data_type())),
+                                 field.nullable()});
         }
         return DataType(st);
     }
@@ -194,7 +195,7 @@ struct JsonVisitor
         for (size_t i = 0; i < t.fields.size(); ++i)
         {
             const auto& f = t.fields[i];
-            out += "{\"name\":\"" + f.name + "\",\"type\":" + f.data_type.json() +
+            out += "{\"name\":\"" + f.name + "\",\"type\":" + f.data_type->json() +
                    ",\"nullable\":" + (f.nullable ? "true" : "false") + ",\"metadata\":{}}";
             if (i < t.fields.size() - 1)
                 out += ",";
@@ -315,7 +316,7 @@ struct TreeVisitor
         {
             print_indent(level + 1);
             os << f.name << ": ";
-            std::visit(TreeVisitor{os, level + 1}, f.data_type.kind);
+            std::visit(TreeVisitor{os, level + 1}, f.data_type->kind);
             os << " (nullable = " << (f.nullable ? "true" : "false") << ")" << std::endl;
         }
     }
@@ -335,7 +336,7 @@ void StructType::print_tree(std::ostream& os) const
     for (const auto& f : fields)
     {
         os << " |-- " << f.name << ": ";
-        std::visit(TreeVisitor{os, 1}, f.data_type.kind);
+        std::visit(TreeVisitor{os, 1}, f.data_type->kind);
         os << " (nullable = " << (f.nullable ? "true" : "false") << ")" << std::endl;
     }
 }

@@ -11,7 +11,7 @@ NC='\033[0m'
 PRESET="pr_pipeline"
 
 echo -e "${YELLOW}--------------------------------------------${NC}"
-echo -e "${YELLOW}  Pre-Commit Hook: Format + Build Check${NC}"
+echo -e "${YELLOW}  Pre-Commit Hook: Format & Build Check${NC}"
 echo -e "${YELLOW}--------------------------------------------${NC}"
 echo ""
 

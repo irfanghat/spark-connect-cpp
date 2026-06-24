@@ -87,7 +87,6 @@ echo ""
 echo "Installing Apache Arrow libraries..."
 echo ""
 sudo apt install -y -V \
-    clang-format \
     valgrind \
     libarrow-dev \
     libarrow-glib-dev \
@@ -106,8 +105,19 @@ sudo apt install -y -V \
     libgmock-dev
 
 echo ""
+echo "Installing Build dependencies..."
+sudo apt install build-essential clang g++-14 libstdc++-14-dev -y
+
 echo ""
-echo "Cleaning up downloaded package..."
+echo "Installing Dev dependencies..."
+sudo apt install -y -V \
+    llvm \
+    clang-format \
+    gcovr \
+    llvm-18-tools
+
+echo ""
+echo "Cleaning up downloaded packages..."
 echo ""
 rm -f "./${ARROW_PKG}"
 
