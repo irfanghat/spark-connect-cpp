@@ -67,6 +67,11 @@ static std::string arrayValueToString(std::shared_ptr<arrow::Array> array, int64
         auto bool_array = std::static_pointer_cast<arrow::BooleanArray>(array);
         return bool_array->IsNull(row) ? "null" : (bool_array->Value(row) ? "true" : "false");
     }
+    case arrow::Type::INT8:
+    {
+        auto int_array = std::static_pointer_cast<arrow::Int8Array>(array);
+        return int_array->IsNull(row) ? "null" : std::to_string(int_array->Value(row));
+    }
     case arrow::Type::INT32:
     {
         auto int_array = std::static_pointer_cast<arrow::Int32Array>(array);
@@ -155,13 +160,11 @@ static std::string arrayValueToString(std::shared_ptr<arrow::Array> array, int64
         auto list_array = std::static_pointer_cast<arrow::ListArray>(array);
 
         if (list_array->IsNull(row))
-        {
             return "null";
-        }
 
         int64_t start = list_array->value_offset(row);
         int64_t end = list_array->value_offset(row + 1);
-        auto values = list_array->values();
+        std::shared_ptr<arrow::Array> values = list_array->values();
 
         std::ostringstream oss;
 
@@ -169,12 +172,34 @@ static std::string arrayValueToString(std::shared_ptr<arrow::Array> array, int64
 
         for (int64_t i = start; i < end; i++)
         {
-            oss << arrayValueToString(list_array->values(), i);
+            oss << arrayValueToString(values, i - start);
 
             if (i < end - 1)
-            {
                 oss << ", ";
-            }
+        }
+
+        oss << "]";
+
+        return oss.str();
+    }
+
+    case arrow::Type::STRUCT:
+    {
+        auto struct_array = std::static_pointer_cast<arrow::StructArray>(array);
+
+        if (struct_array->IsNull(row))
+            return "null";
+
+        std::ostringstream oss;
+
+        oss << "[";
+
+        for (int i = 0; i < struct_array->num_fields(); i++)
+        {
+            oss << arrayValueToString(struct_array->field(i), row);
+
+            if (i < struct_array->num_fields() - 1)
+                oss << ", ";
         }
 
         oss << "]";

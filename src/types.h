@@ -12,6 +12,9 @@
 
 #include <arrow/array.h>
 
+#include "ml/linalg/vectors/sparse_vector.h"
+#include "ml/linalg/vectors/dense_vector.h"
+
 namespace spark::connect
 {
 class DataType;
@@ -267,6 +270,46 @@ struct Row
                         for (size_t i = 0; i < arg->elements.size(); i++)
                             string_list.push_back(std::get<std::string>(arg->elements[i]));
                         return string_list;
+                    }
+                    else
+                        throw std::runtime_error("unreachable");
+                }
+                // Row -> SparseVector
+                else if constexpr (std::is_same_v<T, SparseVector> &&
+                                   std::is_same_v<ArgType, std::shared_ptr<Row>>)
+                {
+                    if constexpr (std::is_same_v<T, SparseVector>)
+                    {
+                        SparseVector sparse_vector;
+
+                        auto type_field = std::find_if(arg->column_names.begin(), arg->column_names.end(), [](const std::string& col_name) {
+                            return col_name == "type";
+                        });
+
+                        if (type_field == arg->column_names.end() || std::get<int8_t>(arg->values.at(arg->col_index("type"))) != 0)
+                            return sparse_vector;
+
+                        auto size = std::get<int32_t>(arg->values.at(arg->col_index("size")));
+                        auto indice_array_data = std::get<std::shared_ptr<ArrayData>>(arg->values.at(arg->col_index("indices")));
+                        auto values_array_data = std::get<std::shared_ptr<ArrayData>>(arg->values.at(arg->col_index("values")));
+
+                        std::vector<int> indices;
+                        std::vector<double> values;
+
+                        indices.reserve(indice_array_data->elements.size());
+                        values.reserve(values_array_data->elements.size());
+
+                        for (int i = 0; i < indice_array_data->elements.size(); i++)
+                        {
+                            indices.push_back(std::get<int32_t>(indice_array_data->elements[i]));
+                        }
+
+                        for (int i = 0; i < values_array_data->elements.size(); i++)
+                        {
+                            values.push_back(std::get<double>(values_array_data->elements[i]));
+                        }
+
+                        return SparseVector{size, indices, values};
                     }
                     else
                         throw std::runtime_error("unreachable");
