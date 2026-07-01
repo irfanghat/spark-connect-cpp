@@ -8,8 +8,8 @@
       "cacheVariables": {
         "CMAKE_C_COMPILER": "/usr/bin/clang",
         "CMAKE_CXX_COMPILER": "/usr/bin/clang++",
-        "CMAKE_CXX_FLAGS": "-fprofile-instr-generate -fcoverage-mapping -g -O0",
-        "CMAKE_C_FLAGS": "-fprofile-instr-generate -fcoverage-mapping -g -O0",
+        "CMAKE_CXX_FLAGS": "-fprofile-instr-generate -fcoverage-mapping -g -O0 -Wno-deprecated-declarations",
+        "CMAKE_C_FLAGS": "-fprofile-instr-generate -fcoverage-mapping -g -O0 -Wno-deprecated-declarations",
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
       },
       "hidden": true
