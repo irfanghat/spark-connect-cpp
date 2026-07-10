@@ -1,0 +1,64 @@
+#include "stop_words_remover.h"
+
+#include "ml/param/param_map.h"
+
+#include <uuid/uuid.h>
+
+Relation StopWordsRemover::transform(const Relation& input_relation)
+{
+    if (input_relation.rel_type_case() == spark::connect::Relation::REL_TYPE_NOT_SET)
+    {
+        throw std::invalid_argument("Input relation has no rel_type set");
+    }
+
+    Relation output_relation;
+
+    output_relation.mutable_common()->set_plan_id(input_relation.common().plan_id());
+
+    // ----------------------------------------------------------------------
+    // Set Ml Operator
+    // ----------------------------------------------------------------------
+    auto* ml_relation = output_relation.mutable_ml_relation();
+    auto* ml_transform = ml_relation->mutable_transform();
+    auto* ml_operator = ml_transform->mutable_transformer();
+
+    uuid_t uuid;
+    uuid_generate(uuid);
+
+    char ml_operator_uid[37];
+    uuid_unparse(uuid, ml_operator_uid);
+
+    ml_operator->set_uid("StopWordsRemover_" + std::string(ml_operator_uid));
+    ml_operator->set_name(class_name_);
+    ml_operator->set_type(operator_type_);
+
+    // ----------------------------------------------------------------------
+    // Set Ml Params
+    // ----------------------------------------------------------------------
+    ml_transform->mutable_params()->CopyFrom(to_ml_params(params_));
+
+    // ----------------------------------------------------------------------
+    // Set input Relation
+    // ----------------------------------------------------------------------
+    auto* transform_input = ml_transform->mutable_input();
+
+    transform_input->CopyFrom(input_relation);
+    transform_input->mutable_common()->set_plan_id(input_relation.common().plan_id() + 1);
+
+    return output_relation;
+}
+
+DataFrame StopWordsRemover::transform(const DataFrame& input_df)
+{
+    if (!input_df.plan().has_root())
+    {
+        throw std::invalid_argument("Input DataFrame has no root relation");
+    }
+
+    auto transform_relation = transform(input_df.plan().root());
+
+    Plan plan;
+    plan.mutable_root()->Swap(&transform_relation);
+
+    return DataFrame(input_df.stub(), std::move(plan), input_df.session_id(), input_df.user_id());
+}

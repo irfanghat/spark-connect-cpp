@@ -30,6 +30,25 @@ std::string ParamMap::toString() const
                 else if constexpr (std::is_same_v<V, bool>)
                     out << (v ? "true" : "false");
 
+                else if constexpr (std::is_same_v<V, std::vector<std::string>>)
+                {
+                    out << '[';
+
+                    bool first_element = true;
+
+                    for (const auto& element : v)
+                    {
+                        if (!first_element)
+                            out << ", ";
+
+                        first_element = false;
+
+                        out << '"' << element << '"';
+                    }
+
+                    out << ']';
+                }
+
                 else
                     out << v;
             },

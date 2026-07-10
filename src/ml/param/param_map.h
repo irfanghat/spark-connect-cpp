@@ -7,12 +7,14 @@
 #include <string>
 #include <type_traits>
 #include <variant>
+#include <vector>
 
 #include <spark/connect/ml_common.pb.h>
 
 #include "param.h"
 
-using ParamValue = std::variant<std::string, int, std::int64_t, double, bool>;
+using ParamValue =
+    std::variant<std::string, int, std::int64_t, double, bool, std::vector<std::string>>;
 
 class ParamMap
 {
@@ -193,6 +195,15 @@ inline spark::connect::MlParams to_ml_params(const ParamMap& param_map)
 
                 else if constexpr (std::is_same_v<V, bool>)
                     (*proto_map)[name].set_boolean(v);
+
+                else if constexpr (std::is_same_v<V, std::vector<std::string>>)
+                {
+                    auto* array = (*proto_map)[name].mutable_array();
+                    array->mutable_element_type()->mutable_string();
+
+                    for (const auto& element : v)
+                        array->add_elements()->set_string(element);
+                }
             },
             value);
     }
