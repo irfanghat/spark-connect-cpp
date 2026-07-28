@@ -119,3 +119,8 @@ DataFrame DataFrameReader::orc(const std::vector<std::string>& paths)
 {
     return this->format("orc").load({paths});
 }
+
+DataFrame DataFrameReader::table(const std::string& tableName)
+{
+    spark::connect::Plan plan;
+}

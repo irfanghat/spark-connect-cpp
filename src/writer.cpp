@@ -101,6 +101,11 @@ void DataFrameWriter::save(const std::string& path)
     }
 }
 
+void DataFrameWriter::saveAsTable(const std::string& table_name)
+{
+    spark::connect::Plan plan;
+}
+
 spark::connect::WriteOperation_SaveMode DataFrameWriter::mapSaveMode(const std::string& mode)
 {
     if (mode == "overwrite")
