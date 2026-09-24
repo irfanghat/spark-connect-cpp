@@ -134,6 +134,13 @@ class DataFrameReader
      */
     DataFrame orc(const std::vector<std::string>& paths);
 
+    /**
+    * @brief Retrieves a table by name.
+    * @param tableName Name of the table to retrieve.
+    * @return DataFrame containing the contents of the specified table.
+    */
+    DataFrame table(const std::string& tableName);
+
   private:
     std::shared_ptr<spark::connect::SparkConnectService::Stub> stub_;
     Config config_;
