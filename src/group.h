@@ -1,21 +1,22 @@
 #pragma once
 
-#include <memory>
-#include <string>
-#include <vector>
-
 #include "dataframe.h"
 #include "functions.h"
 #include "types.h"
 
+#include <memory>
+#include <string>
+#include <vector>
+
 class GroupedData
 {
   public:
-    GroupedData(DataFrame& df, std::vector<spark::sql::functions::Column> grouping_cols);
+    GroupedData(DataFrame& df,
+                std::vector<spark::sql::functions::Column> grouping_cols);
 
     DataFrame count();
-    DataFrame sum(const std::vector<std::string>& cols);
-    DataFrame avg(const std::vector<std::string>& cols);
+    DataFrame sum(std::vector<std::string> const& cols);
+    DataFrame avg(std::vector<std::string> const& cols);
     // ...
 
   private:

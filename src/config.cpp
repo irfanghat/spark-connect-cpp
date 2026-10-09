@@ -1,4 +1,5 @@
 #include "config.h"
+
 #include <algorithm>
 #include <uuid/uuid.h>
 
@@ -7,7 +8,8 @@ Config::Config()
     session_id = generate_uuid();
 }
 
-Config& Config::setHost(const std::string& h)
+Config&
+Config::setHost(std::string const& h)
 {
     std::string cleaned_host = h;
 
@@ -33,37 +35,44 @@ Config& Config::setHost(const std::string& h)
     return *this;
 }
 
-Config& Config::setPort(int p)
+Config&
+Config::setPort(int p)
 {
     port = p;
     return *this;
 }
 
-Config& Config::setUserId(const std::string& u)
+Config&
+Config::setUserId(std::string const& u)
 {
     user_id = u;
     return *this;
 }
 
-Config& Config::setUseSSL(bool ssl)
+Config&
+Config::setUseSSL(bool ssl)
 {
     use_ssl = ssl;
     return *this;
 }
 
-Config& Config::setHeader(const std::string& key, const std::string& value)
+Config&
+Config::setHeader(std::string const& key, std::string const& value)
 {
     headers[key] = value;
     return *this;
 }
 
-Config& Config::setRuntimeConfig(const std::string& key, const std::string& value)
+Config&
+Config::setRuntimeConfig(std::string const& key, std::string const& value)
 {
     runtime_configs[key] = value;
     return *this;
 }
 
-Config& Config::setDatabricksAuth(const std::string& token, const std::string& cluster_id)
+Config&
+Config::setDatabricksAuth(std::string const& token,
+                          std::string const& cluster_id)
 {
     this->setUseSSL(true);
     this->setPort(443);
@@ -72,7 +81,9 @@ Config& Config::setDatabricksAuth(const std::string& token, const std::string& c
     return *this;
 }
 
-Config& Config::setServerlessAuth(const std::string& token, const std::string& warehouse_id)
+Config&
+Config::setServerlessAuth(std::string const& token,
+                          std::string const& warehouse_id)
 {
     this->setUseSSL(true);
     this->setPort(443);
@@ -89,7 +100,8 @@ Config& Config::setServerlessAuth(const std::string& token, const std::string& w
     return *this;
 }
 
-std::string Config::generate_uuid()
+std::string
+Config::generate_uuid()
 {
     uuid_t uuid;
     uuid_generate(uuid);

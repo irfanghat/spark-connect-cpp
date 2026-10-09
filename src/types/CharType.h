@@ -9,4 +9,3 @@ struct CharType
     int32_t length;
 };
 } // namespace spark::sql::types
-

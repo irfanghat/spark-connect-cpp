@@ -4,22 +4,23 @@
 
 class DenseVector
 {
-    public:
-        DenseVector(const std::vector<double>& values)
-        :
-            values_(values)
-        {}
+  public:
+    DenseVector(std::vector<double> const& values) : values_(values)
+    {
+    }
 
-        int size() const
-        {
-            return values_.size();
-        }
+    int
+    size() const
+    {
+        return values_.size();
+    }
 
-        const std::vector<double>& values() const
-        {
-            return values_;
-        }
+    std::vector<double> const&
+    values() const
+    {
+        return values_;
+    }
 
-    private:
-        std::vector<double> values_;
+  private:
+    std::vector<double> values_;
 };

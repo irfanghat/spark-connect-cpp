@@ -1,4 +1,5 @@
 #include "functions.h"
+
 #include "types.h"
 
 #include <spark/connect/expressions.pb.h>
@@ -8,7 +9,8 @@ namespace spark::sql::functions
 
 using namespace spark::sql::types;
 
-Column::Column(std::string name) : expr(std::make_shared<spark::connect::Expression>())
+Column::Column(std::string name)
+    : expr(std::make_shared<spark::connect::Expression>())
 {
     expr->mutable_unresolved_attribute()->set_unparsed_identifier(name);
 }
@@ -21,7 +23,8 @@ Column::Column(spark::connect::Expression e)
 /**
  * @brief Helper to build Spark's UnresolvedFunction calls
  */
-static Column build_binary_op(const std::string& op, const Column& l, const Column& r)
+static Column
+build_binary_op(std::string const& op, Column const& l, Column const& r)
 {
     spark::connect::Expression e;
     auto* func = e.mutable_unresolved_function();
@@ -31,36 +34,44 @@ static Column build_binary_op(const std::string& op, const Column& l, const Colu
     return Column(std::move(e));
 }
 
-Column Column::operator+(const Column& other) const
+Column
+Column::operator+(Column const& other) const
 {
     return build_binary_op("+", *this, other);
 }
-Column Column::operator-(const Column& other) const
+Column
+Column::operator-(Column const& other) const
 {
     return build_binary_op("-", *this, other);
 }
-Column Column::operator*(const Column& other) const
+Column
+Column::operator*(Column const& other) const
 {
     return build_binary_op("*", *this, other);
 }
-Column Column::operator/(const Column& other) const
+Column
+Column::operator/(Column const& other) const
 {
     return build_binary_op("/", *this, other);
 }
-Column Column::operator==(const Column& other) const
+Column
+Column::operator==(Column const& other) const
 {
     return build_binary_op("==", *this, other);
 }
-Column Column::operator>(const Column& other) const
+Column
+Column::operator>(Column const& other) const
 {
     return build_binary_op(">", *this, other);
 }
-Column Column::operator<(const Column& other) const
+Column
+Column::operator<(Column const& other) const
 {
     return build_binary_op("<", *this, other);
 }
 
-Column Column::alias(const std::string& name) const
+Column
+Column::alias(std::string const& name) const
 {
     spark::connect::Expression e;
     auto* a = e.mutable_alias();
@@ -69,7 +80,8 @@ Column Column::alias(const std::string& name) const
     return Column(std::move(e));
 }
 
-Column Column::otherwise(const Column& value) const
+Column
+Column::otherwise(Column const& value) const
 {
     spark::connect::Expression e;
     auto* func = e.mutable_unresolved_function();
@@ -81,7 +93,7 @@ Column Column::otherwise(const Column& value) const
     // -------------------------------------------------------------------
     if (this->expr->has_unresolved_function())
     {
-        for (const auto& arg : this->expr->unresolved_function().arguments())
+        for (auto const& arg : this->expr->unresolved_function().arguments())
         {
             *func->add_arguments() = arg;
         }
@@ -91,7 +103,8 @@ Column Column::otherwise(const Column& value) const
     return Column(std::move(e));
 }
 
-Column Column::cast(const std::string& type) const
+Column
+Column::cast(std::string const& type) const
 {
     spark::connect::Expression e;
     auto* cast = e.mutable_cast();
@@ -100,7 +113,8 @@ Column Column::cast(const std::string& type) const
     return Column(std::move(e));
 }
 
-Column lower(const Column& e)
+Column
+lower(Column const& e)
 {
     spark::connect::Expression expr;
     auto* func = expr.mutable_unresolved_function();
@@ -109,40 +123,46 @@ Column lower(const Column& e)
     return Column(std::move(expr));
 }
 
-Column col(const std::string& name)
+Column
+col(std::string const& name)
 {
     return Column(name);
 }
 
-Column lit(int32_t value)
+Column
+lit(int32_t value)
 {
     spark::connect::Expression e;
     e.mutable_literal()->set_integer(value);
     return Column(std::move(e));
 }
 
-Column lit(int64_t value)
+Column
+lit(int64_t value)
 {
     spark::connect::Expression e;
     e.mutable_literal()->set_integer(value);
     return Column(std::move(e));
 }
 
-Column lit(double value)
+Column
+lit(double value)
 {
     spark::connect::Expression e;
     e.mutable_literal()->set_double_(value);
     return Column(std::move(e));
 }
 
-Column lit(const std::string& value)
+Column
+lit(std::string const& value)
 {
     spark::connect::Expression e;
     e.mutable_literal()->set_string(value);
     return Column(std::move(e));
 }
 
-Column concat_ws(const std::string& sep, const std::vector<Column>& cols)
+Column
+concat_ws(std::string const& sep, std::vector<Column> const& cols)
 {
     spark::connect::Expression e;
     auto* func = e.mutable_unresolved_function();
@@ -152,14 +172,15 @@ Column concat_ws(const std::string& sep, const std::vector<Column>& cols)
     // Assign the Protobuf Expression gotten via .expr
     // -------------------------------------------------
     *func->add_arguments() = *lit(sep).expr;
-    for (const auto& c : cols)
+    for (auto const& c : cols)
     {
         *func->add_arguments() = *c.expr;
     }
     return Column(std::move(e));
 }
 
-Column when(const Column& condition, const Column& value)
+Column
+when(Column const& condition, Column const& value)
 {
     spark::connect::Expression e;
     auto* func = e.mutable_unresolved_function();

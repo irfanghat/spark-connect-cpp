@@ -1,5 +1,7 @@
 #include "reader.h"
+
 #include "dataframe.h"
+
 #include <spark/connect/relations.pb.h>
 
 /**
@@ -7,43 +9,50 @@
  * @param stub A shared pointer to the gRPC stub.
  * @param config The session configuration.
  */
-DataFrameReader::DataFrameReader(std::shared_ptr<spark::connect::SparkConnectService::Stub> stub,
-                                 const Config& config)
+DataFrameReader::DataFrameReader(
+    std::shared_ptr<spark::connect::SparkConnectService::Stub> stub,
+    Config const& config)
     : stub_(stub), config_(config)
 {
 }
 
-DataFrameReader& DataFrameReader::format(const std::string& source)
+DataFrameReader&
+DataFrameReader::format(std::string const& source)
 {
     format_ = source;
     return *this;
 }
 
-DataFrameReader& DataFrameReader::option(const std::string& key, const std::string& value)
+DataFrameReader&
+DataFrameReader::option(std::string const& key, std::string const& value)
 {
     options_[key] = value;
     return *this;
 }
 
-DataFrameReader& DataFrameReader::options(const std::map<std::string, std::string>& options)
+DataFrameReader&
+DataFrameReader::options(std::map<std::string, std::string> const& options)
 {
     options_.insert(options.begin(), options.end());
     return *this;
 }
 
-DataFrameReader& DataFrameReader::schema(const std::string& schema_ddl)
+DataFrameReader&
+DataFrameReader::schema(std::string const& schema_ddl)
 {
     schema_ddl_ = schema_ddl;
     return *this;
 }
 
-DataFrameReader& DataFrameReader::schema(const spark::sql::types::StructType& schema_struct)
+DataFrameReader&
+DataFrameReader::schema(spark::sql::types::StructType const& schema_struct)
 {
     schema_ddl_ = schema_struct.json();
     return *this;
 }
 
-DataFrame DataFrameReader::load(const std::vector<std::string>& paths)
+DataFrame
+DataFrameReader::load(std::vector<std::string> const& paths)
 {
     spark::connect::Plan plan;
 
@@ -62,13 +71,13 @@ DataFrame DataFrameReader::load(const std::vector<std::string>& paths)
         dataSource->set_schema(schema_ddl_);
     }
 
-    for (const auto& path : paths)
+    for (auto const& path : paths)
     {
         dataSource->add_paths(path);
     }
 
     auto* options_map = dataSource->mutable_options();
-    for (const auto& opt : options_)
+    for (auto const& opt : options_)
     {
         (*options_map)[opt.first] = opt.second;
     }
@@ -80,42 +89,50 @@ DataFrame DataFrameReader::load(const std::vector<std::string>& paths)
     return DataFrame(stub_, plan, config_.session_id, config_.user_id);
 }
 
-DataFrame DataFrameReader::csv(const std::string& path)
+DataFrame
+DataFrameReader::csv(std::string const& path)
 {
     return this->format("csv").load({path});
 }
 
-DataFrame DataFrameReader::json(const std::string& path)
+DataFrame
+DataFrameReader::json(std::string const& path)
 {
     return this->format("json").load({path});
 }
 
-DataFrame DataFrameReader::text(const std::string& path)
+DataFrame
+DataFrameReader::text(std::string const& path)
 {
     return this->format("text").load({path});
 }
 
-DataFrame DataFrameReader::text(const std::vector<std::string>& paths)
+DataFrame
+DataFrameReader::text(std::vector<std::string> const& paths)
 {
     return this->format("text").load(paths);
 }
 
-DataFrame DataFrameReader::parquet(const std::string& path)
+DataFrame
+DataFrameReader::parquet(std::string const& path)
 {
     return this->format("parquet").load({path});
 }
 
-DataFrame DataFrameReader::parquet(const std::vector<std::string>& paths)
+DataFrame
+DataFrameReader::parquet(std::vector<std::string> const& paths)
 {
     return this->format("parquet").load({paths});
 }
 
-DataFrame DataFrameReader::orc(const std::string& path)
+DataFrame
+DataFrameReader::orc(std::string const& path)
 {
     return this->format("orc").load({path});
 }
 
-DataFrame DataFrameReader::orc(const std::vector<std::string>& paths)
+DataFrame
+DataFrameReader::orc(std::vector<std::string> const& paths)
 {
     return this->format("orc").load({paths});
 }

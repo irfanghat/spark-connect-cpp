@@ -6,4 +6,3 @@ struct IntegerType
 {
 };
 } // namespace spark::sql::types
-

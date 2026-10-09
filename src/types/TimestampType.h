@@ -6,4 +6,3 @@ struct TimestampType
 {
 };
 } // namespace spark::sql::types
-

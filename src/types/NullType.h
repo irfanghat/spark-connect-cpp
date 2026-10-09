@@ -6,4 +6,3 @@ struct NullType
 {
 };
 } // namespace spark::sql::types
-

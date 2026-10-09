@@ -1,6 +1,7 @@
 #include "group.h"
 
-GroupedData::GroupedData(DataFrame& df, std::vector<spark::sql::functions::Column> grouping_cols)
+GroupedData::GroupedData(
+    DataFrame& df, std::vector<spark::sql::functions::Column> grouping_cols)
     : df_(df), grouping_cols_(grouping_cols)
 {
 }
@@ -9,17 +10,20 @@ GroupedData::GroupedData(DataFrame& df, std::vector<spark::sql::functions::Colum
  * @brief An internal helper that wraps a `column name` in an
  * `UnresolvedFunction`
  */
-static spark::connect::Expression build_agg_expression(const std::string& func_name,
-                                                       const std::string& col_name)
+static spark::connect::Expression
+build_agg_expression(std::string const& func_name, std::string const& col_name)
 {
     spark::connect::Expression e;
     auto* func = e.mutable_unresolved_function();
     func->set_function_name(func_name);
-    func->add_arguments()->mutable_unresolved_attribute()->set_unparsed_identifier(col_name);
+    func->add_arguments()
+        ->mutable_unresolved_attribute()
+        ->set_unparsed_identifier(col_name);
     return e;
 }
 
-DataFrame GroupedData::count()
+DataFrame
+GroupedData::count()
 {
     spark::connect::Plan plan;
     auto* agg = plan.mutable_root()->mutable_aggregate();
@@ -34,7 +38,7 @@ DataFrame GroupedData::count()
     agg->set_group_type(spark::connect::Aggregate_GroupType_GROUP_TYPE_GROUPBY);
     agg->mutable_input()->CopyFrom(df_.plan_.root());
 
-    for (const auto& col : grouping_cols_)
+    for (auto const& col : grouping_cols_)
     {
         agg->add_grouping_expressions()->CopyFrom(*col.expr);
     }
@@ -53,41 +57,45 @@ DataFrame GroupedData::count()
     return DataFrame(df_.stub_, plan, df_.session_id_, df_.user_id_);
 }
 
-DataFrame GroupedData::sum(const std::vector<std::string>& cols)
+DataFrame
+GroupedData::sum(std::vector<std::string> const& cols)
 {
     spark::connect::Plan plan;
     auto* agg = plan.mutable_root()->mutable_aggregate();
     agg->set_group_type(spark::connect::Aggregate_GroupType_GROUP_TYPE_GROUPBY);
     agg->mutable_input()->CopyFrom(df_.plan_.root());
 
-    for (const auto& col : grouping_cols_)
+    for (auto const& col : grouping_cols_)
     {
         agg->add_grouping_expressions()->CopyFrom(*col.expr);
     }
 
-    for (const auto& col_name : cols)
+    for (auto const& col_name : cols)
     {
-        agg->add_aggregate_expressions()->CopyFrom(build_agg_expression("sum", col_name));
+        agg->add_aggregate_expressions()->CopyFrom(
+            build_agg_expression("sum", col_name));
     }
 
     return DataFrame(df_.stub_, plan, df_.session_id_, df_.user_id_);
 }
 
-DataFrame GroupedData::avg(const std::vector<std::string>& cols)
+DataFrame
+GroupedData::avg(std::vector<std::string> const& cols)
 {
     spark::connect::Plan plan;
     auto* agg = plan.mutable_root()->mutable_aggregate();
     agg->set_group_type(spark::connect::Aggregate_GroupType_GROUP_TYPE_GROUPBY);
     agg->mutable_input()->CopyFrom(df_.plan_.root());
 
-    for (const auto& col : grouping_cols_)
+    for (auto const& col : grouping_cols_)
     {
         agg->add_grouping_expressions()->CopyFrom(*col.expr);
     }
 
-    for (const auto& col_name : cols)
+    for (auto const& col_name : cols)
     {
-        agg->add_aggregate_expressions()->CopyFrom(build_agg_expression("avg", col_name));
+        agg->add_aggregate_expressions()->CopyFrom(
+            build_agg_expression("avg", col_name));
     }
 
     return DataFrame(df_.stub_, plan, df_.session_id_, df_.user_id_);

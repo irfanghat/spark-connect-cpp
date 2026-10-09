@@ -6,4 +6,3 @@ struct ShortType
 {
 };
 } // namespace spark::sql::types
-

@@ -1,4 +1,5 @@
 #include "types/StructType.h"
+
 #include "types/DataType.h"
 
 #include <iostream>
@@ -10,73 +11,90 @@ struct TreeVisitor
     std::ostream& os;
     int level;
 
-    void operator()(const NullType&) const
+    void
+    operator()(NullType const&) const
     {
         os << "void";
     }
-    void operator()(const BooleanType&) const
+    void
+    operator()(BooleanType const&) const
     {
         os << "boolean";
     }
-    void operator()(const ByteType&) const
+    void
+    operator()(ByteType const&) const
     {
         os << "byte";
     }
-    void operator()(const ShortType&) const
+    void
+    operator()(ShortType const&) const
     {
         os << "short";
     }
-    void operator()(const IntegerType&) const
+    void
+    operator()(IntegerType const&) const
     {
         os << "integer";
     }
-    void operator()(const LongType&) const
+    void
+    operator()(LongType const&) const
     {
         os << "long";
     }
-    void operator()(const FloatType&) const
+    void
+    operator()(FloatType const&) const
     {
         os << "float";
     }
-    void operator()(const DoubleType&) const
+    void
+    operator()(DoubleType const&) const
     {
         os << "double";
     }
-    void operator()(const StringType&) const
+    void
+    operator()(StringType const&) const
     {
         os << "string";
     }
-    void operator()(const BinaryType&) const
+    void
+    operator()(BinaryType const&) const
     {
         os << "binary";
     }
-    void operator()(const DateType&) const
+    void
+    operator()(DateType const&) const
     {
         os << "date";
     }
-    void operator()(const TimestampType&) const
+    void
+    operator()(TimestampType const&) const
     {
         os << "timestamp";
     }
-    void operator()(const TimestampNtzType&) const
+    void
+    operator()(TimestampNtzType const&) const
     {
         os << "timestamp_ntz";
     }
 
-    void operator()(const DecimalType& t) const
+    void
+    operator()(DecimalType const& t) const
     {
         os << "decimal(" << t.precision << "," << t.scale << ")";
     }
-    void operator()(const CharType& t) const
+    void
+    operator()(CharType const& t) const
     {
         os << "char(" << t.length << ")";
     }
-    void operator()(const VarCharType& t) const
+    void
+    operator()(VarCharType const& t) const
     {
         os << "varchar(" << t.length << ")";
     }
 
-    void operator()(const ArrayType& t) const
+    void
+    operator()(ArrayType const& t) const
     {
         os << "array" << std::endl;
         print_indent(level + 1);
@@ -84,7 +102,8 @@ struct TreeVisitor
         std::visit(TreeVisitor{os, level + 1}, t.element_type->kind);
     }
 
-    void operator()(const MapType& t) const
+    void
+    operator()(MapType const& t) const
     {
         os << "map" << std::endl;
         print_indent(level + 1);
@@ -96,20 +115,23 @@ struct TreeVisitor
         std::visit(TreeVisitor{os, level + 1}, t.value_type->kind);
     }
 
-    void operator()(const StructType& t) const
+    void
+    operator()(StructType const& t) const
     {
         os << "struct" << std::endl;
-        for (const auto& f : t.fields)
+        for (auto const& f : t.fields)
         {
             print_indent(level + 1);
             os << f.name << ": ";
             std::visit(TreeVisitor{os, level + 1}, f.data_type->kind);
-            os << " (nullable = " << (f.nullable ? "true" : "false") << ")" << std::endl;
+            os << " (nullable = " << (f.nullable ? "true" : "false") << ")"
+               << std::endl;
         }
     }
 
   private:
-    void print_indent(int l) const
+    void
+    print_indent(int l) const
     {
         for (int i = 0; i < l - 1; ++i)
             os << " |  ";
@@ -117,14 +139,16 @@ struct TreeVisitor
     }
 };
 
-std::string StructType::json() const
+std::string
+StructType::json() const
 {
     std::string out = "{\"type\":\"struct\",\"fields\":[";
     for (size_t i = 0; i < fields.size(); ++i)
     {
-        const auto& f = fields[i];
+        auto const& f = fields[i];
         out += "{\"name\":\"" + f.name + "\",\"type\":" + f.data_type->json() +
-               ",\"nullable\":" + (f.nullable ? "true" : "false") + ",\"metadata\":{}}";
+               ",\"nullable\":" + (f.nullable ? "true" : "false") +
+               ",\"metadata\":{}}";
         if (i < fields.size() - 1)
             out += ",";
     }
@@ -132,16 +156,17 @@ std::string StructType::json() const
     return out;
 }
 
-void StructType::print_tree(std::ostream& os) const
+void
+StructType::print_tree(std::ostream& os) const
 {
     os << "root" << std::endl;
-    for (const auto& f : fields)
+    for (auto const& f : fields)
     {
         os << " |-- " << f.name << ": ";
         std::visit(TreeVisitor{os, 1}, f.data_type->kind);
-        os << " (nullable = " << (f.nullable ? "true" : "false") << ")" << std::endl;
+        os << " (nullable = " << (f.nullable ? "true" : "false") << ")"
+           << std::endl;
     }
 }
 
 } // namespace spark::sql::types
-

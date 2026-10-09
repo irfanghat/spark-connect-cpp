@@ -6,4 +6,3 @@ struct DoubleType
 {
 };
 } // namespace spark::sql::types
-

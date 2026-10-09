@@ -1,23 +1,21 @@
 #pragma once
 
-#include <chrono>
-#include <map>
-#include <memory>
-#include <mutex>
-#include <string>
-#include <tuple>
-#include <vector>
-
-#include <arrow/api.h>
-#include <grpcpp/grpcpp.h>
-
-#include <spark/connect/base.grpc.pb.h>
-
 #include "config.h"
 #include "dataframe.h"
 #include "reader.h"
 #include "runtime_config.h"
 #include "types.h"
+
+#include <arrow/api.h>
+#include <chrono>
+#include <grpcpp/grpcpp.h>
+#include <map>
+#include <memory>
+#include <mutex>
+#include <spark/connect/base.grpc.pb.h>
+#include <string>
+#include <tuple>
+#include <vector>
 
 class DataFrameReader;
 
@@ -49,7 +47,8 @@ class SparkSession
          * "adb-xxx.azuredatabricks.net").
          * @return A reference to the Builder for chaining calls.
          */
-        Builder& master(const std::string& master)
+        Builder&
+        master(std::string const& master)
         {
             config_.setHost(master);
             return *this;
@@ -60,7 +59,8 @@ class SparkSession
          * @param appName The name of the application.
          * @return A reference to the Builder for chaining calls.
          */
-        Builder& appName(const std::string& appName)
+        Builder&
+        appName(std::string const& appName)
         {
             config_.setUserId(appName);
             return *this;
@@ -71,7 +71,8 @@ class SparkSession
          * @param use_ssl True to enable SSL (This is required for
          * Databricks interactions).
          */
-        Builder& use_ssl(bool use_ssl = true)
+        Builder&
+        use_ssl(bool use_ssl = true)
         {
             config_.setUseSSL(use_ssl);
             return *this;
@@ -82,7 +83,8 @@ class SparkSession
          * @param token Personal Access Token (PAT).
          * @param cluster_id The Databricks cluster ID.
          */
-        Builder& databricks(const std::string& token, const std::string& cluster_id)
+        Builder&
+        databricks(std::string const& token, std::string const& cluster_id)
         {
             config_.setDatabricksAuth(token, cluster_id);
             return *this;
@@ -94,7 +96,8 @@ class SparkSession
          * @param token Personal Access Token (PAT).
          * @param warehouse_id The SQL Warehouse ID.
          */
-        Builder& serverless(const std::string& token, const std::string& warehouse_id)
+        Builder&
+        serverless(std::string const& token, std::string const& warehouse_id)
         {
             config_.setServerlessAuth(token, warehouse_id);
             return *this;
@@ -114,45 +117,52 @@ class SparkSession
          *     .config("spark.executor.memory", "4g")
          *     .getOrCreate();
          */
-        Builder& config(const std::string& key, const std::string& value)
+        Builder&
+        config(std::string const& key, std::string const& value)
         {
             config_.setRuntimeConfig(key, value);
             return *this;
         }
 
-        Builder& config(const std::string& key, const char* value)
+        Builder&
+        config(std::string const& key, char const* value)
         {
             config_.setRuntimeConfig(key, std::string(value));
             return *this;
         }
 
-        Builder& config(const std::string& key, bool value)
+        Builder&
+        config(std::string const& key, bool value)
         {
             config_.setRuntimeConfig(key, value ? "true" : "false");
             return *this;
         }
 
-        Builder& config(const std::string& key, int64_t value)
+        Builder&
+        config(std::string const& key, int64_t value)
         {
             config_.setRuntimeConfig(key, std::to_string(value));
             return *this;
         }
 
-        Builder& config(const std::string& key, int value)
+        Builder&
+        config(std::string const& key, int value)
         {
             config_.setRuntimeConfig(key, std::to_string(value));
             return *this;
         }
 
-        Builder& config(const std::string& key, double value)
+        Builder&
+        config(std::string const& key, double value)
         {
             config_.setRuntimeConfig(key, std::to_string(value));
             return *this;
         }
 
-        Builder& config(const std::map<std::string, std::string>& configs)
+        Builder&
+        config(std::map<std::string, std::string> const& configs)
         {
-            for (const auto& [key, value] : configs)
+            for (auto const& [key, value] : configs)
                 config_.setRuntimeConfig(key, value);
             return *this;
         }
@@ -163,19 +173,20 @@ class SparkSession
         Config config_;
     };
 
-    static Builder builder()
+    static Builder
+    builder()
     {
         return Builder();
     }
 
-    DataFrame sql(const std::string& query);
+    DataFrame sql(std::string const& query);
     DataFrame range(int64_t start, int64_t end, int64_t step = 1);
     DataFrame range(int64_t end);
     DataFrameReader read();
 
     template <typename... Args>
-    DataFrame createDataFrame(const std::vector<std::tuple<Args...>>& rows,
-                              const std::vector<std::string>& column_names);
+    DataFrame createDataFrame(std::vector<std::tuple<Args...>> const& rows,
+                              std::vector<std::string> const& column_names);
 
     /**
      * @brief Creates a new SparkSession with an isolated session ID.
@@ -213,28 +224,31 @@ class SparkSession
      * `/tmp/checkpoints`, `hdfs:///checkpoints`, or an `ABFS/S3` URI for
      * cloud deployments).
      */
-    void setCheckpointDir(const std::string& path);
+    void setCheckpointDir(std::string const& path);
 
     /**
      * @brief Access the internal connection configuration (host, port,
      * auth, etc.)
      */
-    Config& connection()
+    Config&
+    connection()
     {
         return config_;
     }
 
-    std::string session_id() const
+    std::string
+    session_id() const
     {
         return config_.session_id;
     }
-    std::string user_id() const
+    std::string
+    user_id() const
     {
         return config_.user_id;
     }
 
   private:
-    explicit SparkSession(const Config& config);
+    explicit SparkSession(Config const& config);
 
     /**
      * @brief Singleton instance and mutex for thread-safe access

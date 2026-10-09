@@ -25,4 +25,3 @@ struct StructType
     void print_tree(std::ostream& os) const;
 };
 } // namespace spark::sql::types
-

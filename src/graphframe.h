@@ -1,16 +1,15 @@
 #pragma once
 
-#include <cstdint>
-#include <memory>
-#include <optional>
-#include <string>
-#include <vector>
-
-#include <google/protobuf/any.pb.h>
-#include <spark/connect/base.grpc.pb.h>
-
 #include "dataframe.h"
 #include "functions.h"
+
+#include <cstdint>
+#include <google/protobuf/any.pb.h>
+#include <memory>
+#include <optional>
+#include <spark/connect/base.grpc.pb.h>
+#include <string>
+#include <vector>
 
 namespace org::graphframes::connect::proto
 {
@@ -42,13 +41,13 @@ class GraphFrame
      * @param vertices  DataFrame with at least a column `id`.
      * @param edges     DataFrame with at least columns `src` and `dst`.
      */
-    GraphFrame(const DataFrame& vertices, const DataFrame& edges);
+    GraphFrame(DataFrame const& vertices, DataFrame const& edges);
 
     /** @brief Returns the `vertex` DataFrame. */
-    const DataFrame& vertices() const;
+    DataFrame const& vertices() const;
 
     /** @brief Returns the `edge` DataFrame. */
-    const DataFrame& edges() const;
+    DataFrame const& edges() const;
 
     /**
      * @brief Finds structural patterns in a graph using a motif DSL.
@@ -65,7 +64,7 @@ class GraphFrame
      * @return A new DataFrame with one column per named vertex/edge in the
      * pattern.
      */
-    DataFrame find(const std::string& pattern) const;
+    DataFrame find(std::string const& pattern) const;
 
     /**
      * @brief The triplets (source vertex)-[edge]->(destination vertex) for
@@ -80,10 +79,10 @@ class GraphFrame
      * `condition`.
      * @param condition  SQL expression or Column applied to edge columns.
      */
-    DataFrame filterEdges(const std::string& condition) const;
+    DataFrame filterEdges(std::string const& condition) const;
 
     /** @overload Column-expression variant. */
-    DataFrame filterEdges(const spark::sql::functions::Column& condition) const;
+    DataFrame filterEdges(spark::sql::functions::Column const& condition) const;
 
     /**
      * @brief Filters the vertices based on expression, remove edges
@@ -92,10 +91,11 @@ class GraphFrame
      * @param condition  String or Column describing the condition
      * expression for filtering.
      */
-    DataFrame filterVertices(const std::string& condition) const;
+    DataFrame filterVertices(std::string const& condition) const;
 
     /** @overload Column-expression variant. */
-    DataFrame filterVertices(const spark::sql::functions::Column& condition) const;
+    DataFrame
+    filterVertices(spark::sql::functions::Column const& condition) const;
 
     /**
      * @brief Returns a new GraphFrame with isolated vertices removed.
@@ -132,10 +132,12 @@ class GraphFrame
      * @return DataFrame of vertices with "pagerank" column and edges with
      * `weight`.
      */
-    DataFrame pageRank(double reset_probability = 0.15, std::optional<int> max_iter = std::nullopt,
-                       std::optional<double> tol = std::nullopt,
-                       std::optional<std::string> source_id_str = std::nullopt,
-                       std::optional<int64_t> source_id_long = std::nullopt) const;
+    DataFrame
+    pageRank(double reset_probability = 0.15,
+             std::optional<int> max_iter = std::nullopt,
+             std::optional<double> tol = std::nullopt,
+             std::optional<std::string> source_id_str = std::nullopt,
+             std::optional<int64_t> source_id_long = std::nullopt) const;
 
     /**
      * @brief Run the personalized PageRank algorithm on the graph, from the
@@ -148,14 +150,16 @@ class GraphFrame
      * @param max_iter         Number of iterations.
      * @return Vertex DataFrame with one pagerank column per source.
      */
-    DataFrame parallelPersonalizedPageRank(const std::vector<std::string>& source_ids_str,
-                                           double reset_probability = 0.15,
-                                           int max_iter = 10) const;
+    DataFrame
+    parallelPersonalizedPageRank(std::vector<std::string> const& source_ids_str,
+                                 double reset_probability = 0.15,
+                                 int max_iter = 10) const;
 
     /** @overload Integer source IDs. */
-    DataFrame parallelPersonalizedPageRank(const std::vector<int64_t>& source_ids_long,
-                                           double reset_probability = 0.15,
-                                           int max_iter = 10) const;
+    DataFrame
+    parallelPersonalizedPageRank(std::vector<int64_t> const& source_ids_long,
+                                 double reset_probability = 0.15,
+                                 int max_iter = 10) const;
 
     /**
      * @brief Computes connected components.
@@ -166,7 +170,7 @@ class GraphFrame
      * (default 1 000 000).
      * @return Vertex DataFrame with a "component" column (long).
      */
-    DataFrame connectedComponents(const std::string& algorithm = "graphframes",
+    DataFrame connectedComponents(std::string const& algorithm = "graphframes",
                                   int checkpoint_interval = 2,
                                   int broadcast_threshold = 1'000'000) const;
 
@@ -192,16 +196,16 @@ class GraphFrame
      * @param landmarks  String vertex IDs to use as destinations.
      * @return Vertex DataFrame with a "distances" map column.
      */
-    DataFrame shortestPaths(const std::vector<int32_t>& landmarks,
-                            const std::string& algorithm = "graphframes") const;
+    DataFrame shortestPaths(std::vector<int32_t> const& landmarks,
+                            std::string const& algorithm = "graphframes") const;
 
     /** @overload Long vertex IDs as landmarks. */
-    DataFrame shortestPaths(const std::vector<int64_t>& landmarks,
-                            const std::string& algorithm = "graphframes") const;
+    DataFrame shortestPaths(std::vector<int64_t> const& landmarks,
+                            std::string const& algorithm = "graphframes") const;
 
     /** @overload Strings as landmarks. */
-    DataFrame shortestPaths(const std::vector<std::string>& landmarks,
-                            const std::string& algorithm = "graphframes") const;
+    DataFrame shortestPaths(std::vector<std::string> const& landmarks,
+                            std::string const& algorithm = "graphframes") const;
 
     /**
      * @brief Counts the triangles passing through each vertex.
@@ -225,14 +229,16 @@ class GraphFrame
      * @return DataFrame containing columns for each vertex and edge along
      * the shortest path.
      */
-    DataFrame bfs(const std::string& from_expr, const std::string& to_expr,
-                  const std::string& edge_filter = "", int max_path_length = 10) const;
+    DataFrame bfs(std::string const& from_expr, std::string const& to_expr,
+                  std::string const& edge_filter = "",
+                  int max_path_length = 10) const;
 
     /** @overload Column-expression variant for from/to/edge_filter. */
-    DataFrame bfs(const spark::sql::functions::Column& from_expr,
-                  const spark::sql::functions::Column& to_expr,
-                  std::optional<spark::sql::functions::Column> edge_filter = std::nullopt,
-                  int max_path_length = 10) const;
+    DataFrame
+    bfs(spark::sql::functions::Column const& from_expr,
+        spark::sql::functions::Column const& to_expr,
+        std::optional<spark::sql::functions::Column> edge_filter = std::nullopt,
+        int max_path_length = 10) const;
 
     /**
      * @brief Finds all cycles in the graph.
@@ -274,8 +280,9 @@ class GraphFrame
      * @param weight_col  Optional name of an edge column to use as weight.
      * @return DataFrame with vertex "id" and "cluster" columns.
      */
-    DataFrame powerIterationClustering(int k, int max_iter = 20,
-                                       std::optional<std::string> weight_col = std::nullopt) const;
+    DataFrame powerIterationClustering(
+        int k, int max_iter = 20,
+        std::optional<std::string> weight_col = std::nullopt) const;
 
     /**
      * @brief Runs SVD++ collaborative filtering.
@@ -289,8 +296,9 @@ class GraphFrame
      * @param gamma7    Learning rate for biases.
      * @return DataFrame with user/item columns and predicted ratings.
      */
-    DataFrame svdPlusPlus(int rank = 10, int max_iter = 2, double min_value = 0.0,
-                          double max_value = 5.0, double gamma1 = 0.007, double gamma2 = 0.007,
+    DataFrame svdPlusPlus(int rank = 10, int max_iter = 2,
+                          double min_value = 0.0, double max_value = 5.0,
+                          double gamma1 = 0.007, double gamma2 = 0.007,
                           double gamma6 = 0.005, double gamma7 = 0.015) const;
 
   private:
@@ -302,22 +310,25 @@ class GraphFrame
      *        a `google.protobuf.Any`, and returns a DataFrame whose plan
      *        root is `Relation.extension = <packed Any>`.
      */
-    DataFrame execute(org::graphframes::connect::proto::GraphFramesAPI& api) const;
+    DataFrame
+    execute(org::graphframes::connect::proto::GraphFramesAPI& api) const;
 
     /**
      * @brief Populates a ColumnOrExpression from a plain SQL string (`expr
      * variant`).
      */
-    static void setExprStr(org::graphframes::connect::proto::ColumnOrExpression* coe,
-                           const std::string& expr);
+    static void
+    setExprStr(org::graphframes::connect::proto::ColumnOrExpression* coe,
+               std::string const& expr);
 
     /**
      * @brief Populates a ColumnOrExpression from a Column object
      *        by serialising the Column's inner Expression proto to bytes
      * (`col variant`).
      */
-    static void setExprCol(org::graphframes::connect::proto::ColumnOrExpression* coe,
-                           const spark::sql::functions::Column& col);
+    static void
+    setExprCol(org::graphframes::connect::proto::ColumnOrExpression* coe,
+               spark::sql::functions::Column const& col);
 };
 
 } // namespace graphframes

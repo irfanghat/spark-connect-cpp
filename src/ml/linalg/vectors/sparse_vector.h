@@ -1,63 +1,67 @@
 #pragma once
 
-#include <vector>
 #include <algorithm>
+#include <vector>
 
 class SparseVector
 {
-    public:
-        SparseVector(int size, const std::vector<int>& indices, const std::vector<double>& values)
-        :
-            size_(size), 
-            indices_(indices),
-            values_(values)
-        {}
+  public:
+    SparseVector(int size, std::vector<int> const& indices,
+                 std::vector<double> const& values)
+        : size_(size), indices_(indices), values_(values)
+    {
+    }
 
-        SparseVector()
-        : 
-            SparseVector(0, {}, {}) 
-        {}
+    SparseVector() : SparseVector(0, {}, {})
+    {
+    }
 
-        int size() const
-        { 
-            return size_; 
-        }
+    int
+    size() const
+    {
+        return size_;
+    }
 
-        const std::vector<int>& indices() const 
-        { 
-            return indices_; 
-        }
+    std::vector<int> const&
+    indices() const
+    {
+        return indices_;
+    }
 
-        int numNonzeros() const 
-        { 
-            return values_.size(); 
-        }
-        
-        int numActives() const 
-        { 
-            return indices_.size();
-        }
+    int
+    numNonzeros() const
+    {
+        return values_.size();
+    }
 
-        int argmax() const
-        {
-            if (values_.empty())
-                return -1;
+    int
+    numActives() const
+    {
+        return indices_.size();
+    }
 
-            auto max_element = std::max_element(values_.begin(), values_.end());
-            int max_index = std::distance(values_.begin(), max_element);
+    int
+    argmax() const
+    {
+        if (values_.empty())
+            return -1;
 
-            return indices_[max_index];
-        }
+        auto max_element = std::max_element(values_.begin(), values_.end());
+        int max_index = std::distance(values_.begin(), max_element);
 
-        SparseVector copy() const
-        {
-            return *this;
-        }
+        return indices_[max_index];
+    }
 
-        double norm(int param);
+    SparseVector
+    copy() const
+    {
+        return *this;
+    }
 
-    private:
-        int size_;
-        std::vector<int> indices_;
-        std::vector<double> values_;
+    double norm(int param);
+
+  private:
+    int size_;
+    std::vector<int> indices_;
+    std::vector<double> values_;
 };

@@ -1,15 +1,14 @@
 #pragma once
 
-#include <map>
-#include <memory>
-#include <string>
-#include <vector>
-
 #include "config.h"
 #include "types.h"
 
+#include <map>
+#include <memory>
 #include <spark/connect/base.grpc.pb.h>
 #include <spark/connect/relations.pb.h>
+#include <string>
+#include <vector>
 
 class DataFrame;
 
@@ -28,8 +27,9 @@ class DataFrameReader
      * @param stub A shared pointer to the gRPC stub.
      * @param config The session configuration.
      */
-    DataFrameReader(std::shared_ptr<spark::connect::SparkConnectService::Stub> stub,
-                    const Config& config);
+    DataFrameReader(
+        std::shared_ptr<spark::connect::SparkConnectService::Stub> stub,
+        Config const& config);
 
     /**
      * @brief Specifies the input data source format.
@@ -37,7 +37,7 @@ class DataFrameReader
      * "json").
      * @return A reference to the DataFrameReader for chaining.
      */
-    DataFrameReader& format(const std::string& source);
+    DataFrameReader& format(std::string const& source);
 
     /**
      * @brief Adds an input option for the underlying data source.
@@ -45,63 +45,63 @@ class DataFrameReader
      * @param value The option value.
      * @return A reference to the DataFrameReader for chaining.
      */
-    DataFrameReader& option(const std::string& key, const std::string& value);
+    DataFrameReader& option(std::string const& key, std::string const& value);
 
     /**
      * @brief Adds multiple input options at once.
      * @param options A map of key-value pairs for the options.
      * @return A reference to the DataFrameReader for chaining.
      */
-    DataFrameReader& options(const std::map<std::string, std::string>& options);
+    DataFrameReader& options(std::map<std::string, std::string> const& options);
 
     /**
      * @brief Loads a DataFrame from the specified file or directory path.
      * @param paths A list of paths to the data files.
      * @return A new DataFrame instance.
      */
-    DataFrame load(const std::vector<std::string>& paths);
+    DataFrame load(std::vector<std::string> const& paths);
 
     /**
      * @brief Loads a CSV file into a DataFrame.
      * @param path The path to the CSV file.
      * @return A new DataFrame instance.
      */
-    DataFrame csv(const std::string& path);
+    DataFrame csv(std::string const& path);
 
     /**
      * @brief Loads a JSON file into a DataFrame.
      * @param path The path to the JSON file.
      * @return A new DataFrame instance.
      */
-    DataFrame json(const std::string& path);
+    DataFrame json(std::string const& path);
 
     /**
      * @brief Loads text files and returns a DataFrame.
      * @param path The path to the text file.
      * @return A new DataFrame instance.
      */
-    DataFrame text(const std::string& path);
+    DataFrame text(std::string const& path);
 
     /**
      * @brief Loads text files from multiple paths.
      * @param paths A vector of paths to the text files.
      * @return A new DataFrame instance.
      */
-    DataFrame text(const std::vector<std::string>& paths);
+    DataFrame text(std::vector<std::string> const& paths);
 
     /**
      * @brief Loads Parquet files, returning the result as a DataFrame.
      * @param path The path to read the Parquet file from.
      * @return A DataFrame containing the data from the Parquet files.
      */
-    DataFrame parquet(const std::string& path);
+    DataFrame parquet(std::string const& path);
 
     /**
      * @brief Loads Parquet files from multiple paths.
      * @param paths One or more file paths to read the Parquet files from.
      * @return A DataFrame containing the data from the Parquet files.
      */
-    DataFrame parquet(const std::vector<std::string>& paths);
+    DataFrame parquet(std::vector<std::string> const& paths);
 
     /**
      * @brief Sets the schema using a DDL string.
@@ -114,25 +114,25 @@ class DataFrameReader
      *
      * @example .schema("id INT, name STRING, active BOOLEAN")
      */
-    DataFrameReader& schema(const std::string& schema_ddl);
+    DataFrameReader& schema(std::string const& schema_ddl);
 
     /**
      * @brief Specifies the input schema using a StructType object.
      * This is useful when you want to pass a schema from another DataFrame.
      */
-    DataFrameReader& schema(const spark::sql::types::StructType& schema_struct);
+    DataFrameReader& schema(spark::sql::types::StructType const& schema_struct);
     /**
      * @brief Loads ORC files, returning the result as a DataFrame.
      * @param path The path to read the ORC file from(str).
      * @return A DataFrame containing the data from the ORC file.
      */
-    DataFrame orc(const std::string& path);
+    DataFrame orc(std::string const& path);
     /**
      * @brief Loads ORC files from multiple paths.
      * @param paths One or more file paths to read the ORC files from.
      * @return A DataFrame containing the data from the ORC files.
      */
-    DataFrame orc(const std::vector<std::string>& paths);
+    DataFrame orc(std::vector<std::string> const& paths);
 
   private:
     std::shared_ptr<spark::connect::SparkConnectService::Stub> stub_;
