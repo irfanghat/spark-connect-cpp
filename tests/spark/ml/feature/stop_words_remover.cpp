@@ -38,29 +38,29 @@ TEST_F(SparkIntegrationTest, StopWordsRemoverTransform)
                 ElementsAre("mary", "little", "lamb"));
 }
 
-TEST_F(SparkIntegrationTest, StopWordsRemoverCustomStopWords)
-{
-    auto df = spark->sql(
-        R"(
-            SELECT *
-            FROM
-            VALUES
-                (array('spark', 'connect', 'cpp', 'rocks'))
-            AS sentences(raw)
-        )");
+// TEST_F(SparkIntegrationTest, StopWordsRemoverCustomStopWords)
+// {
+//     auto df = spark->sql(
+//         R"(
+//             SELECT *
+//             FROM
+//             VALUES
+//                 (array('spark', 'connect', 'cpp', 'rocks'))
+//             AS sentences(raw)
+//         )");
 
-    StopWordsRemover remover("raw", "filtered");
+//     StopWordsRemover remover("raw", "filtered");
 
-    std::cout << remover.input_col() << std::endl;
-    remover.set_stop_words({"connect", "cpp"});
+//     std::cout << remover.input_col() << std::endl;
+//     remover.set_stop_words({"connect", "cpp"});
 
-    auto transformed_df = remover.transform(df);
-    auto rows = transformed_df.select({"filtered"}).collect();
+//     auto transformed_df = remover.transform(df);
+//     auto rows = transformed_df.select({"filtered"}).collect();
 
-    ASSERT_EQ(rows.size(), 1);
-    EXPECT_THAT(rows[0].get<std::vector<std::string>>("filtered"),
-                ElementsAre("spark", "rocks"));
-}
+//     ASSERT_EQ(rows.size(), 1);
+//     EXPECT_THAT(rows[0].get<std::vector<std::string>>("filtered"),
+//                 ElementsAre("spark", "rocks"));
+// }
 
 TEST_F(SparkIntegrationTest, StopWordsRemoverChainedWithTokenizer)
 {

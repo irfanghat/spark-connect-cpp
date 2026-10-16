@@ -3,6 +3,7 @@
 #include "param.h"
 
 #include <cstdint>
+#include <iostream>
 #include <map>
 #include <optional>
 #include <spark/connect/ml_common.pb.h>
@@ -225,6 +226,8 @@ to_ml_params(ParamMap const& param_map)
             },
             value);
     }
+
+    std::cerr << "Serialized ML params:\n" << ml_params.DebugString() << '\n';
 
     return ml_params;
 }
