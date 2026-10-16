@@ -6,4 +6,3 @@ struct ByteType
 {
 };
 } // namespace spark::sql::types
-

@@ -6,4 +6,3 @@ struct BooleanType
 {
 };
 } // namespace spark::sql::types
-

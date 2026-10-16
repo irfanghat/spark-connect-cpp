@@ -6,4 +6,3 @@ struct StringType
 {
 };
 } // namespace spark::sql::types
-

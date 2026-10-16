@@ -31,7 +31,7 @@ The project uses an **out-of-source CMake build**:
 spark-connect-cpp/
 ├── CMakeLists.txt
 ├── CMakePresets.json
-├── CMakeUserPresets.template.json
+├── CMakeUserPresets.template.json      # Use this to create a CMakeUserPresets.json configuration for local development
 ├── src/
 ├── tests/
 ├── build/            
@@ -39,7 +39,7 @@ spark-connect-cpp/
 ├── docker-compose.yaml
 ├── spark_connect_cpp.pc.in
 ├── scripts/install-deps.sh
-├── .vscode/           # IntelliSense config
+├── .vscode/           # Should be created manually
 └── hooks/
 ```
 
@@ -50,8 +50,14 @@ spark-connect-cpp/
 ### System Dependencies (Linux / Ubuntu)
 Run the provided script to install all core libraries:
 ```bash
-chmod +x install_deps.sh
-./install_deps.sh
+chmod u+x scripts/install-deps.sh
+./install-deps.sh
+```
+
+### Contributing
+Ensure hooks are enabled for quality checks that ensure consistency across contributions:
+```bash
+chmod u+x scripts/install-deps
 ```
 
 ## Building the Project (CMake)
@@ -85,9 +91,9 @@ Ensure an instance of Spark is running locally, e.g. via docker:
 docker compose up spark --build -d
 ctest --preset test_local_spark_coverage --verbose --output-on-failure
 
-# -----------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Available test presets:
-# -----------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 #
 #   "test_local_coverage"                  - Spark & Databricks Local Test Coverage
 #   "test_local_spark_coverage"            - Spark Local Test Coverage
@@ -95,17 +101,17 @@ ctest --preset test_local_spark_coverage --verbose --output-on-failure
 #   "test_pr_pipeline_coverage"            - Spark & Databricks PR Pipeline Test Coverage
 #   "test_pr_pipeline_spark_coverage"      - Spark PR Pipeline Test Coverage
 #   "test_pr_pipeline_databricks_coverage" - Databricks PR Pipeline Test Coverage
-# -----------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
-# -----------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Run individual tests
-# -----------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 #  ctest --preset test_local_spark_coverage -R DateTimeAndDecimal
 #
 # Alternatively, you can run the binary directly:
 # cd build
 # ./spark_connect_cpp_test --gtest_filter=SparkIntegrationTest.DateTimeAndDecimal
-# -----------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 ```
 
 

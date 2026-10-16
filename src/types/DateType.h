@@ -6,4 +6,3 @@ struct DateType
 {
 };
 } // namespace spark::sql::types
-

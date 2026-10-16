@@ -1,14 +1,13 @@
 #pragma once
 
-#include <memory>
-#include <string>
-#include <vector>
-
-#include <spark/connect/base.grpc.pb.h>
-#include <spark/connect/relations.pb.h>
-
 #include "functions.h"
 #include "types.h"
+
+#include <memory>
+#include <spark/connect/base.grpc.pb.h>
+#include <spark/connect/relations.pb.h>
+#include <string>
+#include <vector>
 
 using namespace spark::sql::types;
 
@@ -43,12 +42,14 @@ class DataFrame
      * @param user_id The ID of the user associated with the session.
      */
     DataFrame(std::shared_ptr<spark::connect::SparkConnectService::Stub> stub,
-              spark::connect::Plan plan, std::string session_id, std::string user_id);
+              spark::connect::Plan plan, std::string session_id,
+              std::string user_id);
 
     /**
      * @brief Gets the service stub. Returns by value to share ownership.
      */
-    std::shared_ptr<spark::connect::SparkConnectService::Stub> stub() const
+    std::shared_ptr<spark::connect::SparkConnectService::Stub>
+    stub() const
     {
         return stub_;
     }
@@ -57,7 +58,8 @@ class DataFrame
      * @brief Gets the current plan. Returns by const reference to avoid
      * copies.
      */
-    const spark::connect::Plan& plan() const
+    spark::connect::Plan const&
+    plan() const
     {
         return plan_;
     }
@@ -65,7 +67,8 @@ class DataFrame
     /**
      * @brief Gets the active Session ID.
      */
-    const std::string& session_id() const
+    std::string const&
+    session_id() const
     {
         return session_id_;
     }
@@ -73,7 +76,8 @@ class DataFrame
     /**
      * @brief Gets the User ID associated with the client.
      */
-    const std::string& user_id() const
+    std::string const&
+    user_id() const
     {
         return user_id_;
     }
@@ -137,7 +141,7 @@ class DataFrame
      * @param cols A vector of column names.
      * @example auto df_subset = df.select({"b", "a"});
      */
-    DataFrame select(const std::vector<std::string>& cols) const;
+    DataFrame select(std::vector<std::string> const& cols) const;
 
     /**
      * @brief Projects a set of `Column` expressions and returns a new
@@ -148,7 +152,8 @@ class DataFrame
      *                     .select({col("name"),
      * _col.alias("age_plus_one")});
      */
-    DataFrame select(const std::vector<spark::sql::functions::Column>& cols) const;
+    DataFrame
+    select(std::vector<spark::sql::functions::Column> const& cols) const;
 
     DataFrame select(std::initializer_list<std::string> cols) const;
 
@@ -156,18 +161,18 @@ class DataFrame
      * @brief Filters rows using the given SQL condition string.
      * @param condition SQL expression (e.g., "age > 3")
      */
-    DataFrame filter(const std::string& condition) const;
+    DataFrame filter(std::string const& condition) const;
 
     /**
      * @brief Filters rows using a Column expression.
      * @param condition Column expression (e.g., col("age") > lit(21))
      */
-    DataFrame filter(const spark::sql::functions::Column& condition) const;
+    DataFrame filter(spark::sql::functions::Column const& condition) const;
 
     /**
      * @brief Alias for filter().
      */
-    DataFrame where(const std::string& condition) const;
+    DataFrame where(std::string const& condition) const;
 
     /**
      * @brief Returns the first n rows.
@@ -218,7 +223,7 @@ class DataFrame
      *          considering only the given subset of columns - equivalent to
      * `distinct()` function
      */
-    DataFrame dropDuplicates(const std::vector<std::string>& subset) const;
+    DataFrame dropDuplicates(std::vector<std::string> const& subset) const;
 
     /**
      * @brief Alias for `dropDuplicates()`.
@@ -228,7 +233,7 @@ class DataFrame
     /**
      * @brief Alias for `dropDuplicates(subset)`.
      */
-    DataFrame drop_duplicates(const std::vector<std::string>& subset);
+    DataFrame drop_duplicates(std::vector<std::string> const& subset);
 
     /**
      * @brief Returns all the records as a list of `Row`
@@ -287,7 +292,7 @@ class DataFrame
      * @returns A new DataFrame that describes (provides statistics) given
      * DataFrame.
      */
-    DataFrame describe(const std::vector<std::string>& cols);
+    DataFrame describe(std::vector<std::string> const& cols);
 
     /**
      * @brief Computes specified statistics for numeric and string columns.
@@ -318,7 +323,7 @@ class DataFrame
      * @returns A new `DataFrame` that provides statistics for the given
      * `DataFrame`.
      */
-    DataFrame summary(const std::vector<std::string>& statistics);
+    DataFrame summary(std::vector<std::string> const& statistics);
 
     /**
      * @brief Overload for empty summary() which computes the default
@@ -340,7 +345,7 @@ class DataFrame
      * @throws std::invalid_argument if there are no common columns to join
      * on.
      */
-    DataFrame join(const DataFrame& other) const;
+    DataFrame join(DataFrame const& other) const;
 
     /**
      * @brief Joins this DataFrame with another DataFrame using a join
@@ -363,7 +368,8 @@ class DataFrame
      *
      * @returns A new DataFrame representing the joined result.
      */
-    DataFrame join(const DataFrame& other, const std::string& on, const std::string& how = "inner");
+    DataFrame join(DataFrame const& other, std::string const& on,
+                   std::string const& how = "inner");
 
     /**
      * @brief Joins this DataFrame with another DataFrame using multiple
@@ -379,8 +385,8 @@ class DataFrame
      * @returns A new DataFrame representing the joined result.
      */
 
-    DataFrame join(const DataFrame& other, const std::vector<std::string>& on,
-                   const std::string& how = "inner");
+    DataFrame join(DataFrame const& other, std::vector<std::string> const& on,
+                   std::string const& how = "inner");
 
     /**
      * @brief Joins this DataFrame with another DataFrame using a SQL
@@ -392,14 +398,15 @@ class DataFrame
      *
      * @returns A new DataFrame representing the joined result.
      */
-    DataFrame join_on_expression(const DataFrame& other, const std::string& condition,
-                                 const std::string& how);
+    DataFrame join_on_expression(DataFrame const& other,
+                                 std::string const& condition,
+                                 std::string const& how);
 
     /**
      * @brief Groups the DataFrame using the specified columns.
      */
-    GroupedData groupBy(const std::vector<std::string>& cols);
-    GroupedData groupBy(const std::vector<spark::sql::functions::Column>& cols);
+    GroupedData groupBy(std::vector<std::string> const& cols);
+    GroupedData groupBy(std::vector<spark::sql::functions::Column> const& cols);
     GroupedData groupBy(std::initializer_list<std::string> cols);
     GroupedData groupBy();
 
@@ -414,7 +421,9 @@ class DataFrame
      * @param args Optional additional arguments to pass to func.
      * @returns A transformed `DataFrame`.
      */
-    template <typename F, typename... Args> DataFrame transform(F func, Args&&... args) const
+    template <typename F, typename... Args>
+    DataFrame
+    transform(F func, Args&&... args) const
     {
         // --------------------------------------------------------------------
         // Invoke the function with this DataFrame and any additional
@@ -434,8 +443,8 @@ class DataFrame
      * @param colName The name of the new column.
      * @param col The column expression for the new column.
      */
-    DataFrame withColumn(const std::string& colName,
-                         const spark::sql::functions::Column& col) const;
+    DataFrame withColumn(std::string const& colName,
+                         spark::sql::functions::Column const& col) const;
 
     /**
      * @brief Returns a new `DataFrame` with an alias set.
@@ -452,7 +461,7 @@ class DataFrame
      * auto df2 = df.alias("b");
      * auto joined = df1.join(df2, col("a.id") == col("b.id"));
      */
-    DataFrame alias(const std::string& alias_name) const;
+    DataFrame alias(std::string const& alias_name) const;
 
     /**
      * @brief Prints the logical/physical plan(s) for this DataFrame.
@@ -464,7 +473,8 @@ class DataFrame
      * Takes precedence over `extended` when provided.
      *
      */
-    void explain(bool extended = false, const std::optional<std::string>& mode = std::nullopt);
+    void explain(bool extended = false,
+                 std::optional<std::string> const& mode = std::nullopt);
 
   private:
     friend class GroupedData;

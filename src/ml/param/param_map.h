@@ -1,184 +1,196 @@
 #pragma once
 
+#include "param.h"
+
 #include <cstdint>
+#include <iostream>
 #include <map>
 #include <optional>
+#include <spark/connect/ml_common.pb.h>
 #include <stdexcept>
 #include <string>
 #include <type_traits>
 #include <variant>
 #include <vector>
 
-#include <spark/connect/ml_common.pb.h>
-
-#include "param.h"
-
-using ParamValue =
-    std::variant<std::string, int, std::int64_t, double, bool, std::vector<std::string>>;
+using ParamValue = std::variant<std::string, int, std::int64_t, double, bool,
+                                std::vector<std::string>>;
 
 class ParamMap
 {
-    public:
-        ParamMap() = default;
+  public:
+    ParamMap() = default;
 
-        static ParamMap empty()
-        {
-            return ParamMap{};
-        }
+    static ParamMap
+    empty()
+    {
+        return ParamMap{};
+    }
 
-        // ----------------------------------------------------------------------
-        // Param<T>-keyed API
-        // ----------------------------------------------------------------------
+    // Param<T>-keyed API
+    template <typename T>
+    ParamMap&
+    put(Param<T> const& param, T const& value)
+    {
+        if (!param.is_valid(value))
+            throw std::invalid_argument("Invalid value for param " +
+                                        param.key());
 
-        template <typename T>
-        ParamMap& put(const Param<T>& param, const T& value)
-        {
-            if (!param.is_valid(value))
-                throw std::invalid_argument("Invalid value for param " + param.key());
+        map_[param.key()] = ParamValue{value};
 
-            map_[param.key()] = ParamValue{value};
+        return *this;
+    }
 
-            return *this;
-        }
+    template <typename T>
+    std::optional<T>
+    get(Param<T> const& param) const
+    {
+        auto it = map_.find(param.key());
 
-        template <typename T>
-        std::optional<T> get(const Param<T>& param) const
-        {
-            auto it = map_.find(param.key());
-
-            if (it == map_.end())
-                return std::nullopt;
-
-            if (const auto* v = std::get_if<T>(&it->second))
-                return *v;
-
+        if (it == map_.end())
             return std::nullopt;
-        }
 
-        template <typename T>
-        T getOrElse(const Param<T>& param, std::type_identity_t<T> default_value) const
-        {
-            return get(param).value_or(std::move(default_value));
-        }
+        if (auto const* v = std::get_if<T>(&it->second))
+            return *v;
 
-        template <typename T>
-        bool contains(const Param<T>& param) const
-        {
-            return map_.find(param.key()) != map_.end();
-        }
+        return std::nullopt;
+    }
 
-        template <typename T>
-        std::optional<T> remove(const Param<T>& param)
-        {
-            auto it = map_.find(param.key());
+    template <typename T>
+    T
+    getOrElse(Param<T> const& param,
+              std::type_identity_t<T> default_value) const
+    {
+        return get(param).value_or(std::move(default_value));
+    }
 
-            if (it == map_.end())
-                return std::nullopt;
+    template <typename T>
+    bool
+    contains(Param<T> const& param) const
+    {
+        return map_.find(param.key()) != map_.end();
+    }
 
-            const auto* v = std::get_if<T>(&it->second);
-            std::optional<T> result = v ? std::optional<T>{*v} : std::nullopt;
+    template <typename T>
+    std::optional<T>
+    remove(Param<T> const& param)
+    {
+        auto it = map_.find(param.key());
 
-            map_.erase(it);
+        if (it == map_.end())
+            return std::nullopt;
 
-            return result;
-        }
+        auto const* v = std::get_if<T>(&it->second);
+        std::optional<T> result = v ? std::optional<T>{*v} : std::nullopt;
 
-        // ----------------------------------------------------------------------
-        // String-keyed API
-        // ----------------------------------------------------------------------
+        map_.erase(it);
 
-        template <typename T>
-        ParamMap& put(const std::string& key, const T& value)
-        {
-            map_[key] = ParamValue{value};
+        return result;
+    }
 
-            return *this;
-        }
+    // String-keyed API
+    template <typename T>
+    ParamMap&
+    put(std::string const& key, T const& value)
+    {
+        map_[key] = ParamValue{value};
 
-        ParamMap& put(const std::string& key, const char* value)
-        {
-            map_[key] = ParamValue{std::string{value}};
+        return *this;
+    }
 
-            return *this;
-        }
+    ParamMap&
+    put(std::string const& key, char const* value)
+    {
+        map_[key] = ParamValue{std::string{value}};
 
-        std::optional<ParamValue> get(const std::string& key) const
-        {
-            auto it = map_.find(key);
+        return *this;
+    }
 
-            if (it == map_.end())
-                return std::nullopt;
-                
-            return it->second;
-        }
+    std::optional<ParamValue>
+    get(std::string const& key) const
+    {
+        auto it = map_.find(key);
 
-        bool contains(const std::string& key) const
-        {
-            return map_.find(key) != map_.end();
-        }
+        if (it == map_.end())
+            return std::nullopt;
 
-        bool clear(const std::string& key)
-        {
-            return map_.erase(key) > 0;
-        }
+        return it->second;
+    }
 
-        // ----------------------------------------------------------------------
-        // Bulk operations
-        // ----------------------------------------------------------------------
+    bool
+    contains(std::string const& key) const
+    {
+        return map_.find(key) != map_.end();
+    }
 
-        void clear()
-        {
-            map_.clear();
-        }
+    bool
+    clear(std::string const& key)
+    {
+        return map_.erase(key) > 0;
+    }
 
-        bool is_empty() const
-        {
-            return map_.empty();
-        }
+    void
+    clear()
+    {
+        map_.clear();
+    }
 
-        int size() const
-        {
-            return static_cast<int>(map_.size());
-        }
+    bool
+    is_empty() const
+    {
+        return map_.empty();
+    }
 
-        void put_all(const ParamMap& other)
-        {
-            for (const auto& [k, v] : other.map_)
-                map_[k] = v;
-        }
+    int
+    size() const
+    {
+        return static_cast<int>(map_.size());
+    }
 
-        ParamMap copy() const
-        {
-            return *this;
-        }
+    void
+    put_all(ParamMap const& other)
+    {
+        for (auto const& [k, v] : other.map_)
+            map_[k] = v;
+    }
 
-        std::string toString() const;
+    ParamMap
+    copy() const
+    {
+        return *this;
+    }
 
-        const std::map<std::string, ParamValue>& entries() const
-        {
-            return map_;
-        }
+    std::string toString() const;
 
-    private:
-        std::map<std::string, ParamValue> map_;
+    std::map<std::string, ParamValue> const&
+    entries() const
+    {
+        return map_;
+    }
+
+  private:
+    std::map<std::string, ParamValue> map_;
 };
 
-inline spark::connect::MlParams to_ml_params(const ParamMap& param_map)
+inline spark::connect::MlParams
+to_ml_params(ParamMap const& param_map)
 {
     spark::connect::MlParams ml_params;
     auto* proto_map = ml_params.mutable_params();
 
-    for (const auto& [key, value] : param_map.entries())
+    for (auto const& [key, value] : param_map.entries())
     {
-        // ParamMap stores keys as `parent__name` (see Param::key()); the wire
-        // format expects the bare param name, since the parent uid is implicit
-        // in the estimator the params attach to.
-        const auto sep = key.rfind("__");
-        const std::string& name = (sep != std::string::npos) ? key.substr(sep + 2) : key;
+        // -------------------------------------------------------------------------
+        // ParamMap stores keys as `parent__name` (see Param::key())
+        // The wire format expects the bare param name, since the parent uid
+        // is implicit in the estimator the params attach to.
+        // -------------------------------------------------------------------------
+        auto const sep = key.rfind("__");
+        std::string const& name =
+            (sep != std::string::npos) ? key.substr(sep + 2) : key;
 
         std::visit(
-            [&](auto&& v)
-            {
+            [&](auto&& v) {
                 using V = std::decay_t<decltype(v)>;
 
                 if constexpr (std::is_same_v<V, std::string>)
@@ -198,15 +210,24 @@ inline spark::connect::MlParams to_ml_params(const ParamMap& param_map)
 
                 else if constexpr (std::is_same_v<V, std::vector<std::string>>)
                 {
-                    auto* array = (*proto_map)[name].mutable_array();
-                    array->mutable_element_type()->mutable_string();
+                    auto* literal = &(*proto_map)[name];
+                    auto* array = literal->mutable_array();
 
-                    for (const auto& element : v)
+                    // ------------------------------------------------
+                    // Set the root literal's type to ARRAY<STRING>.
+                    // ------------------------------------------------
+                    auto* array_type =
+                        literal->mutable_data_type()->mutable_array();
+                    array_type->mutable_element_type()->mutable_string();
+
+                    for (auto const& element : v)
                         array->add_elements()->set_string(element);
                 }
             },
             value);
     }
+
+    std::cerr << "Serialized ML params:\n" << ml_params.DebugString() << '\n';
 
     return ml_params;
 }

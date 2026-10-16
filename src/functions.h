@@ -1,6 +1,7 @@
 #pragma once
 
 #include "types.h"
+
 #include <memory>
 #include <string>
 #include <vector>
@@ -27,23 +28,23 @@ struct Column
     // ------------------
     // DSL Operators
     // ------------------
-    Column operator+(const Column& other) const;
-    Column operator-(const Column& other) const;
-    Column operator*(const Column& other) const;
-    Column operator/(const Column& other) const;
-    Column operator==(const Column& other) const;
-    Column operator>(const Column& other) const;
-    Column operator<(const Column& other) const;
+    Column operator+(Column const& other) const;
+    Column operator-(Column const& other) const;
+    Column operator*(Column const& other) const;
+    Column operator/(Column const& other) const;
+    Column operator==(Column const& other) const;
+    Column operator>(Column const& other) const;
+    Column operator<(Column const& other) const;
 
-    Column alias(const std::string& name) const;
-    Column otherwise(const Column& value) const;
-    Column cast(const std::string& type) const;
+    Column alias(std::string const& name) const;
+    Column otherwise(Column const& value) const;
+    Column cast(std::string const& type) const;
 };
 
 /**
  * @brief Returns a `Column` based on the given column name.
  */
-Column col(const std::string& name);
+Column col(std::string const& name);
 
 /**
  * @brief Creates a `Column` of literal value.
@@ -51,23 +52,23 @@ Column col(const std::string& name);
 Column lit(int32_t value);
 Column lit(int64_t value);
 Column lit(double value);
-Column lit(const std::string& value);
+Column lit(std::string const& value);
 
 /**
  * @brief Converts a string expression to lower case.
  */
-Column lower(const Column& e);
+Column lower(Column const& e);
 
 /**
  * @brief Concatenates multiple input string columns together into a single
  * string column, using the given separator.
  */
-Column concat_ws(const std::string& sep, const std::vector<Column>& cols);
+Column concat_ws(std::string const& sep, std::vector<Column> const& cols);
 
 /**
  * @brief Evaluates a list of conditions and returns one of multiple possible
  * result expressions.
  */
-Column when(const Column& condition, const Column& value);
+Column when(Column const& condition, Column const& value);
 
 } // namespace spark::sql::functions

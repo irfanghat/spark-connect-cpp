@@ -6,4 +6,3 @@ struct BinaryType
 {
 };
 } // namespace spark::sql::types
-

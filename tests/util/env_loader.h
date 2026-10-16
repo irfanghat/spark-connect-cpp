@@ -6,4 +6,4 @@
 #include <sstream>
 #include <string>
 
-void load_env(const std::string& path);
+void load_env(std::string const& path);

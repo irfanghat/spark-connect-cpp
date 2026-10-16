@@ -1,16 +1,16 @@
 #include "types/Row.h"
 
+#include <arrow/array.h>
 #include <iomanip>
 #include <iostream>
-
-#include <arrow/array.h>
 
 namespace spark::sql::types
 {
 /**
  * @brief A bridge for Arrow to C++ variant conversion
  */
-ColumnValue arrayValueToVariant(const std::shared_ptr<arrow::Array>& array, int64_t row)
+ColumnValue
+arrayValueToVariant(std::shared_ptr<arrow::Array> const& array, int64_t row)
 {
     if (array->IsNull(row))
         return std::monostate{};
@@ -20,9 +20,11 @@ ColumnValue arrayValueToVariant(const std::shared_ptr<arrow::Array>& array, int6
     case arrow::Type::BOOL:
         return std::static_pointer_cast<arrow::BooleanArray>(array)->Value(row);
     case arrow::Type::INT8:
-        return static_cast<int8_t>(std::static_pointer_cast<arrow::Int8Array>(array)->Value(row));
+        return static_cast<int8_t>(
+            std::static_pointer_cast<arrow::Int8Array>(array)->Value(row));
     case arrow::Type::INT16:
-        return static_cast<int16_t>(std::static_pointer_cast<arrow::Int16Array>(array)->Value(row));
+        return static_cast<int16_t>(
+            std::static_pointer_cast<arrow::Int16Array>(array)->Value(row));
     case arrow::Type::INT32:
     case arrow::Type::DATE32:
         return std::static_pointer_cast<arrow::Int32Array>(array)->Value(row);
@@ -35,7 +37,8 @@ ColumnValue arrayValueToVariant(const std::shared_ptr<arrow::Array>& array, int6
     case arrow::Type::DOUBLE:
         return std::static_pointer_cast<arrow::DoubleArray>(array)->Value(row);
     case arrow::Type::STRING:
-        return std::static_pointer_cast<arrow::StringArray>(array)->GetString(row);
+        return std::static_pointer_cast<arrow::StringArray>(array)->GetString(
+            row);
     case arrow::Type::BINARY:
     {
         auto bin_arr = std::static_pointer_cast<arrow::BinaryArray>(array);
@@ -47,7 +50,8 @@ ColumnValue arrayValueToVariant(const std::shared_ptr<arrow::Array>& array, int6
         auto list_array = std::static_pointer_cast<arrow::ListArray>(array);
         auto value_array = list_array->values();
         auto out_array = std::make_shared<ArrayData>();
-        for (int64_t i = list_array->value_offset(row); i < list_array->value_offset(row + 1); ++i)
+        for (int64_t i = list_array->value_offset(row);
+             i < list_array->value_offset(row + 1); ++i)
         {
             out_array->elements.push_back(arrayValueToVariant(value_array, i));
         }
@@ -59,8 +63,10 @@ ColumnValue arrayValueToVariant(const std::shared_ptr<arrow::Array>& array, int6
         auto out_row = std::make_shared<Row>();
         for (int i = 0; i < struct_array->num_fields(); ++i)
         {
-            out_row->column_names.push_back(struct_array->struct_type()->field(i)->name());
-            out_row->values.push_back(arrayValueToVariant(struct_array->field(i), row));
+            out_row->column_names.push_back(
+                struct_array->struct_type()->field(i)->name());
+            out_row->values.push_back(
+                arrayValueToVariant(struct_array->field(i), row));
         }
         return out_row;
     }
@@ -70,11 +76,13 @@ ColumnValue arrayValueToVariant(const std::shared_ptr<arrow::Array>& array, int6
         // Arrow Maps are structured as List<Struct<key, value>>
         // ------------------------------------------------------
         auto map_array = std::static_pointer_cast<arrow::MapArray>(array);
-        auto struct_array = std::static_pointer_cast<arrow::StructArray>(map_array->values());
+        auto struct_array =
+            std::static_pointer_cast<arrow::StructArray>(map_array->values());
         auto keys = struct_array->field(0);
         auto values = struct_array->field(1);
         auto out_map = std::make_shared<MapData>();
-        for (int64_t i = map_array->value_offset(row); i < map_array->value_offset(row + 1); ++i)
+        for (int64_t i = map_array->value_offset(row);
+             i < map_array->value_offset(row + 1); ++i)
         {
             out_map->keys.push_back(arrayValueToVariant(keys, i));
             out_map->values.push_back(arrayValueToVariant(values, i));
@@ -93,15 +101,18 @@ struct RowStringVisitor
 {
     std::ostream& os;
 
-    void operator()(std::monostate) const
+    void
+    operator()(std::monostate) const
     {
         os << "null";
     }
-    void operator()(const std::string& v) const
+    void
+    operator()(std::string const& v) const
     {
         os << "'" << v << "'";
     }
-    void operator()(bool v) const
+    void
+    operator()(bool v) const
     {
         os << (v ? "true" : "false");
     }
@@ -109,7 +120,8 @@ struct RowStringVisitor
     /**
      * @brief Binary Visualization (Hex Dump)
      */
-    void operator()(const std::vector<uint8_t>& v) const
+    void
+    operator()(std::vector<uint8_t> const& v) const
     {
         os << "0x" << std::hex << std::setfill('0');
         for (auto b : v)
@@ -120,7 +132,8 @@ struct RowStringVisitor
     /**
      * @brief Reset to decimal for subsequent prints
      */
-    void operator()(const std::shared_ptr<MapData>& v) const
+    void
+    operator()(std::shared_ptr<MapData> const& v) const
     {
         os << "{";
         for (size_t i = 0; i < v->keys.size(); ++i)
@@ -137,7 +150,8 @@ struct RowStringVisitor
     /**
      * @brief Map Support
      */
-    void operator()(const std::shared_ptr<Row>& v) const
+    void
+    operator()(std::shared_ptr<Row> const& v) const
     {
         if (v)
             os << *v;
@@ -148,7 +162,8 @@ struct RowStringVisitor
     /**
      *  @brief This handles Recursive Types such as Row and Array
      */
-    void operator()(const std::shared_ptr<ArrayData>& v) const
+    void
+    operator()(std::shared_ptr<ArrayData> const& v) const
     {
         if (!v)
         {
@@ -168,13 +183,16 @@ struct RowStringVisitor
     // -------------------------------------------------
     // Fallback for Primitives (int, double, etc.)
     // -------------------------------------------------
-    template <typename T> void operator()(const T& v) const
+    template <typename T>
+    void
+    operator()(T const& v) const
     {
         os << v;
     }
 };
 
-std::ostream& operator<<(std::ostream& os, const Row& row)
+std::ostream&
+operator<<(std::ostream& os, Row const& row)
 {
     os << "Row(";
     for (size_t i = 0; i < row.values.size(); ++i)
@@ -189,4 +207,3 @@ std::ostream& operator<<(std::ostream& os, const Row& row)
 }
 
 } // namespace spark::sql::types
-

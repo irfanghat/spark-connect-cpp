@@ -1,14 +1,12 @@
 #pragma once
 
+#include <grpcpp/grpcpp.h>
 #include <map>
 #include <memory>
 #include <optional>
+#include <spark/connect/base.grpc.pb.h>
 #include <string>
 #include <vector>
-
-#include <grpcpp/grpcpp.h>
-
-#include <spark/connect/base.grpc.pb.h>
 
 /**
  * @class RuntimeConfig
@@ -18,45 +16,47 @@
 class RuntimeConfig
 {
   public:
-    RuntimeConfig(std::shared_ptr<spark::connect::SparkConnectService::Stub> stub,
-                  const std::string& session_id, const std::string& user_id);
+    RuntimeConfig(
+        std::shared_ptr<spark::connect::SparkConnectService::Stub> stub,
+        std::string const& session_id, std::string const& user_id);
 
     /**
      * @brief Sets a config key to a string value.
      */
-    void set(const std::string& key, const std::string& value);
+    void set(std::string const& key, std::string const& value);
 
     /**
      * @brief Sets a config key to a boolean value ("true"/"false").
      */
-    void set(const std::string& key, bool value);
+    void set(std::string const& key, bool value);
 
     /**
      * @brief Sets a config key to a long value.
      */
-    void set(const std::string& key, int64_t value);
+    void set(std::string const& key, int64_t value);
 
     /**
      * @brief Sets a config key to a string value.
      */
-    void set(const std::string& key, const char* value);
+    void set(std::string const& key, char const* value);
 
     /**
      * @brief Gets a config value. Throws if the key is not set.
      */
-    std::string get(const std::string& key) const;
+    std::string get(std::string const& key) const;
 
     /**
      * @brief Gets a config value, returning a default if the key is not
      * set.
      */
-    std::string get(const std::string& key, const std::string& default_value) const;
+    std::string get(std::string const& key,
+                    std::string const& default_value) const;
 
     /**
      * @brief Gets a config value as an optional. Returns std::nullopt if
      * not set.
      */
-    std::optional<std::string> getOption(const std::string& key) const;
+    std::optional<std::string> getOption(std::string const& key) const;
 
     /**
      * @brief Returns all config key-value pairs visible to this session.
@@ -66,16 +66,16 @@ class RuntimeConfig
     /**
      * @brief Unsets a config key, reverting it to its default.
      */
-    void unset(const std::string& key);
+    void unset(std::string const& key);
 
     /**
      * @brief Returns true if the given key can be modified at runtime.
      */
-    bool isModifiable(const std::string& key) const;
+    bool isModifiable(std::string const& key) const;
 
   private:
-    spark::connect::ConfigResponse sendConfig(
-        const spark::connect::ConfigRequest::Operation& op) const;
+    spark::connect::ConfigResponse
+    sendConfig(spark::connect::ConfigRequest::Operation const& op) const;
 
     std::shared_ptr<spark::connect::SparkConnectService::Stub> stub_;
     std::string session_id_;

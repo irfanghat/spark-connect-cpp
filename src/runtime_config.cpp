@@ -3,14 +3,16 @@
 #include <sstream>
 #include <stdexcept>
 
-RuntimeConfig::RuntimeConfig(std::shared_ptr<spark::connect::SparkConnectService::Stub> stub,
-                             const std::string& session_id, const std::string& user_id)
+RuntimeConfig::RuntimeConfig(
+    std::shared_ptr<spark::connect::SparkConnectService::Stub> stub,
+    std::string const& session_id, std::string const& user_id)
     : stub_(std::move(stub)), session_id_(session_id), user_id_(user_id)
 {
 }
 
-spark::connect::ConfigResponse RuntimeConfig::sendConfig(
-    const spark::connect::ConfigRequest::Operation& op) const
+spark::connect::ConfigResponse
+RuntimeConfig::sendConfig(
+    spark::connect::ConfigRequest::Operation const& op) const
 {
     spark::connect::ConfigRequest request;
     request.set_session_id(session_id_);
@@ -22,12 +24,14 @@ spark::connect::ConfigResponse RuntimeConfig::sendConfig(
     grpc::Status status = stub_->Config(&context, request, &response);
 
     if (!status.ok())
-        throw std::runtime_error("Config RPC failed: " + status.error_message());
+        throw std::runtime_error("Config RPC failed: " +
+                                 status.error_message());
 
     return response;
 }
 
-void RuntimeConfig::set(const std::string& key, const std::string& value)
+void
+RuntimeConfig::set(std::string const& key, std::string const& value)
 {
     spark::connect::ConfigRequest::Operation op;
     auto* kv = op.mutable_set()->add_pairs();
@@ -36,22 +40,26 @@ void RuntimeConfig::set(const std::string& key, const std::string& value)
     sendConfig(op);
 }
 
-void RuntimeConfig::set(const std::string& key, bool value)
+void
+RuntimeConfig::set(std::string const& key, bool value)
 {
     set(key, value ? std::string("true") : std::string("false"));
 }
 
-void RuntimeConfig::set(const std::string& key, int64_t value)
+void
+RuntimeConfig::set(std::string const& key, int64_t value)
 {
     set(key, std::to_string(value));
 }
 
-void RuntimeConfig::set(const std::string& key, const char* value)
+void
+RuntimeConfig::set(std::string const& key, char const* value)
 {
     set(key, std::string(value));
 }
 
-std::string RuntimeConfig::get(const std::string& key) const
+std::string
+RuntimeConfig::get(std::string const& key) const
 {
     spark::connect::ConfigRequest::Operation op;
     op.mutable_get()->add_keys(key);
@@ -63,7 +71,9 @@ std::string RuntimeConfig::get(const std::string& key) const
     return response.pairs(0).value();
 }
 
-std::string RuntimeConfig::get(const std::string& key, const std::string& default_value) const
+std::string
+RuntimeConfig::get(std::string const& key,
+                   std::string const& default_value) const
 {
     spark::connect::ConfigRequest::Operation op;
     auto* gd = op.mutable_get_with_default()->add_pairs();
@@ -74,10 +84,12 @@ std::string RuntimeConfig::get(const std::string& key, const std::string& defaul
     if (response.pairs_size() == 0)
         return default_value;
 
-    return response.pairs(0).has_value() ? response.pairs(0).value() : default_value;
+    return response.pairs(0).has_value() ? response.pairs(0).value()
+                                         : default_value;
 }
 
-std::optional<std::string> RuntimeConfig::getOption(const std::string& key) const
+std::optional<std::string>
+RuntimeConfig::getOption(std::string const& key) const
 {
     spark::connect::ConfigRequest::Operation op;
     op.mutable_get_option()->add_keys(key);
@@ -89,7 +101,8 @@ std::optional<std::string> RuntimeConfig::getOption(const std::string& key) cons
     return response.pairs(0).value();
 }
 
-std::map<std::string, std::string> RuntimeConfig::getAll() const
+std::map<std::string, std::string>
+RuntimeConfig::getAll() const
 {
     spark::connect::ConfigRequest::Operation op;
 
@@ -100,7 +113,7 @@ std::map<std::string, std::string> RuntimeConfig::getAll() const
     auto response = sendConfig(op);
 
     std::map<std::string, std::string> result;
-    for (const auto& pair : response.pairs())
+    for (auto const& pair : response.pairs())
     {
         if (pair.has_value())
             result[pair.key()] = pair.value();
@@ -110,14 +123,16 @@ std::map<std::string, std::string> RuntimeConfig::getAll() const
     return result;
 }
 
-void RuntimeConfig::unset(const std::string& key)
+void
+RuntimeConfig::unset(std::string const& key)
 {
     spark::connect::ConfigRequest::Operation op;
     op.mutable_unset()->add_keys(key);
     sendConfig(op);
 }
 
-bool RuntimeConfig::isModifiable(const std::string& key) const
+bool
+RuntimeConfig::isModifiable(std::string const& key) const
 {
     spark::connect::ConfigRequest::Operation op;
     op.mutable_is_modifiable()->add_keys(key);

@@ -13,4 +13,3 @@ struct MapType
     bool value_contains_null;
 };
 } // namespace spark::sql::types
-

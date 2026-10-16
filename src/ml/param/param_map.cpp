@@ -1,16 +1,17 @@
-#include <sstream>
-
 #include "param_map.h"
 
-std::string ParamMap::toString() const
+#include <sstream>
+
+std::string
+ParamMap::toString() const
 {
     std::ostringstream out;
-    
+
     out << "{";
 
     bool first = true;
 
-    for (const auto& [key, value] : map_)
+    for (auto const& [key, value] : map_)
     {
         if (!first)
             out << ", ";
@@ -20,8 +21,7 @@ std::string ParamMap::toString() const
         out << key << "=";
 
         std::visit(
-            [&](auto&& v)
-            {
+            [&](auto&& v) {
                 using V = std::decay_t<decltype(v)>;
 
                 if constexpr (std::is_same_v<V, std::string>)
@@ -36,7 +36,7 @@ std::string ParamMap::toString() const
 
                     bool first_element = true;
 
-                    for (const auto& element : v)
+                    for (auto const& element : v)
                     {
                         if (!first_element)
                             out << ", ";
@@ -52,8 +52,7 @@ std::string ParamMap::toString() const
                 else
                     out << v;
             },
-            value
-        );
+            value);
     }
 
     out << "}";

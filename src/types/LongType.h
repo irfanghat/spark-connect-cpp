@@ -6,4 +6,3 @@ struct LongType
 {
 };
 } // namespace spark::sql::types
-

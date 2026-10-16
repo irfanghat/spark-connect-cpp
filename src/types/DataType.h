@@ -1,10 +1,5 @@
 #pragma once
 
-#include <memory>
-#include <string>
-#include <utility>
-#include <variant>
-
 #include "types/ArrayType.h"
 #include "types/BinaryType.h"
 #include "types/BooleanType.h"
@@ -25,6 +20,11 @@
 #include "types/TimestampType.h"
 #include "types/VarCharType.h"
 
+#include <memory>
+#include <string>
+#include <utility>
+#include <variant>
+
 namespace spark::connect
 {
 class DataType;
@@ -33,15 +33,18 @@ class DataType;
 namespace spark::sql::types
 {
 using DataTypeVariant =
-    std::variant<NullType, BooleanType, ByteType, ShortType, IntegerType, LongType, FloatType,
-                 DoubleType, StringType, BinaryType, DateType, TimestampType, TimestampNtzType,
-                 DecimalType, CharType, VarCharType, ArrayType, MapType, StructType>;
+    std::variant<NullType, BooleanType, ByteType, ShortType, IntegerType,
+                 LongType, FloatType, DoubleType, StringType, BinaryType,
+                 DateType, TimestampType, TimestampNtzType, DecimalType,
+                 CharType, VarCharType, ArrayType, MapType, StructType>;
 
 class DataType
 {
   public:
     DataTypeVariant kind;
-    DataType(DataTypeVariant k) : kind(std::move(k)) {}
+    DataType(DataTypeVariant k) : kind(std::move(k))
+    {
+    }
 
     /**
      * @brief Returns the JSON representation of the type, compatible with
@@ -59,7 +62,6 @@ class DataType
      * @brief Factory method to create a DataType from a Spark Connect
      * Protobuf message.
      */
-    static DataType from_proto(const spark::connect::DataType& proto);
+    static DataType from_proto(spark::connect::DataType const& proto);
 };
 } // namespace spark::sql::types
-

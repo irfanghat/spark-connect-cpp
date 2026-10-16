@@ -6,4 +6,3 @@ struct FloatType
 {
 };
 } // namespace spark::sql::types
-
