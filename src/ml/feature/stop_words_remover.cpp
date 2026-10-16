@@ -4,16 +4,19 @@
 
 #include <uuid/uuid.h>
 
-Relation StopWordsRemover::transform(const Relation& input_relation)
+Relation
+StopWordsRemover::transform(Relation const& input_relation)
 {
-    if (input_relation.rel_type_case() == spark::connect::Relation::REL_TYPE_NOT_SET)
+    if (input_relation.rel_type_case() ==
+        spark::connect::Relation::REL_TYPE_NOT_SET)
     {
         throw std::invalid_argument("Input relation has no rel_type set");
     }
 
     Relation output_relation;
 
-    output_relation.mutable_common()->set_plan_id(input_relation.common().plan_id());
+    output_relation.mutable_common()->set_plan_id(
+        input_relation.common().plan_id());
 
     // ----------------------------------------------------------------------
     // Set Ml Operator
@@ -43,12 +46,14 @@ Relation StopWordsRemover::transform(const Relation& input_relation)
     auto* transform_input = ml_transform->mutable_input();
 
     transform_input->CopyFrom(input_relation);
-    transform_input->mutable_common()->set_plan_id(input_relation.common().plan_id() + 1);
+    transform_input->mutable_common()->set_plan_id(
+        input_relation.common().plan_id() + 1);
 
     return output_relation;
 }
 
-DataFrame StopWordsRemover::transform(const DataFrame& input_df)
+DataFrame
+StopWordsRemover::transform(DataFrame const& input_df)
 {
     if (!input_df.plan().has_root())
     {
@@ -60,5 +65,6 @@ DataFrame StopWordsRemover::transform(const DataFrame& input_df)
     Plan plan;
     plan.mutable_root()->Swap(&transform_relation);
 
-    return DataFrame(input_df.stub(), std::move(plan), input_df.session_id(), input_df.user_id());
+    return DataFrame(input_df.stub(), std::move(plan), input_df.session_id(),
+                     input_df.user_id());
 }

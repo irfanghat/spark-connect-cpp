@@ -1,9 +1,10 @@
-#include <gmock/gmock-matchers.h>
-
-#include "spark/spark_fixture.h"
-#include "dataframe.h"
 #include "ml/feature/stop_words_remover.h"
+
+#include "dataframe.h"
 #include "ml/feature/tokenizer.h"
+#include "spark/spark_fixture.h"
+
+#include <gmock/gmock-matchers.h>
 
 using ::testing::ElementsAre;
 
@@ -49,6 +50,8 @@ TEST_F(SparkIntegrationTest, StopWordsRemoverCustomStopWords)
         )");
 
     StopWordsRemover remover("raw", "filtered");
+
+    std::cout << remover.input_col() << std::endl;
     remover.set_stop_words({"connect", "cpp"});
 
     auto transformed_df = remover.transform(df);

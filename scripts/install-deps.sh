@@ -114,7 +114,8 @@ sudo apt install -y -V \
     llvm \
     clang-format \
     gcovr \
-    llvm-18-tools
+    llvm-18-tools \
+    libclang-rt-19-dev
 
 echo ""
 echo "Cleaning up downloaded packages..."

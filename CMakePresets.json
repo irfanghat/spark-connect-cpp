@@ -15,7 +15,7 @@
       "name": "pr_pipeline",
       "displayName": "PR Pipeline",
       "inherits": "default",
-      "binaryDir": "${sourceDir}/build-pr",
+      "binaryDir": "${sourceDir}/build",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
         "CMAKE_C_FLAGS": "-fprofile-instr-generate -fcoverage-mapping -g -O0 -Wno-deprecated-declarations",
