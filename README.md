@@ -239,8 +239,8 @@ Run the sample application:
 
 For detailed development setup instructions, see:
 
-* [Setup Guide](https://github.com/irfanghat/spark-connect-cpp/blob/main/docs/SETUP.md)
-* [API Reference](https://github.com/irfanghat/spark-connect-cpp/blob/main/docs/API_REFERENCE.md)
+* [Setup Guide](/docs/SETUP.md)
+* [API Reference](/docs/API_REFERENCE.md)
 
 ## License
 
