@@ -1,0 +1,29 @@
+name: Compatibility Issue
+description: Report compatibility issues, and proposals
+title: "[COMP] "
+labels: ["compatibility"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Help improve compatibility by sharing the details below.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Description
+      placeholder: What's missing, incorrect, or inconsistent?
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested Improvements
+      placeholder: Suggested Improvements, clarifications, or implementation examples.
+      render: markdown
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
