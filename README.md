@@ -15,7 +15,7 @@ The library is intended for environments where:
 
 **Status:** *Work in Progress*
 
-![Architecture Diagram](https://github.com/irfanghat/spark-connect-cpp/blob/branch-4.1/docs/ARICHITECTURE_DIAGRAM.png)
+![Architecture Diagram](https://github.com/irfanghat/spark-connect-cpp/blob/branch-4.1/docs/ARCHITECTURE_DIAGRAM.png)
 
 
 ## Design Goals
