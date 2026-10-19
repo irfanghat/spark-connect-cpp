@@ -43,7 +43,6 @@ spark-connect-cpp/
 └── hooks/
 ```
 
----
 
 ## Installing Dependencies
 
@@ -52,6 +51,13 @@ Run the provided script to install all core libraries:
 ```bash
 chmod u+x scripts/install-deps.sh
 ./install-deps.sh
+```
+
+### Enable Git Hooks
+The pre-configured hooks will check your work locally before running against the CI pipeline:
+```bash
+chmod u+x scripts/install-hooks.sh
+./install-hooks.sh
 ```
 
 ### Contributing

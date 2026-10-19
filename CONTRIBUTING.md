@@ -55,7 +55,7 @@ great places to start.
 
 #### IMPORTANT
 
-Exercise cautious use of AI tools. 
+> Exercise cautious use of AI tools. 
 **AI generated code** should be **thoroughly reviewed** to ensure
 standards are maintained.
 
@@ -95,10 +95,8 @@ standards are maintained.
    git push origin feature/your-feature-name
    ```
 
-2. Open a Pull Request against the `main` branch.
-
+2. Open a Pull Request against the main branch (`branch-4.1-stable` if working on **v4.x.x** features and `branch-3.5-stable` if working on **v3.x.x** features).
 3. Fill out the PR template completely.
-
 4. Wait for review. We aim to respond within 7 days.
 
 ### PR Checklist
@@ -147,6 +145,7 @@ Does this introduce a user-facing change?
 - `refactor`: Code change that neither fixes a bug nor adds a feature
 - `test`: Adding missing tests
 - `chore`: Maintenance tasks
+- `compatibility`: Changes that improve compatibility and API parity with the rest of the ecosystem.
 
 ### Code Style
 
@@ -201,7 +200,7 @@ cmake --build --preset local
 ## Managing Dependencies
 
 ### 1. Installing Libraries
-Contributors are responsible for installing the development versions of required libraries. These must provide `.pc` metadata files for `pkg-config` to provide the necessary compilation and linking flags.
+Contributors are responsible for installing the development versions of required libraries. These must provide `.pc` metadata files for `pkg-config` to provide the necessary compilation and linking flags. *See: [Reference](https://github.com/irfanghat/spark-connect-cpp/blob/branch-4.1-stable/spark_connect_cpp.pc.in)*
 
 ### 2. Adding a New Dependency
 If you introduce a new dependency to the project:
@@ -217,5 +216,4 @@ If you introduce a new dependency to the project:
 
 ## Recognition
 
-Contributors are added to our [CONTRIBUTORS.md](CONTRIBUTORS.md) file 
-and mentioned in release notes for significant contributions.
+Contributors are added and mentioned in release notes for significant contributions.

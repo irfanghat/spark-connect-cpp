@@ -17,7 +17,6 @@ The library is intended for environments where:
 
 ![Architecture Diagram](https://github.com/irfanghat/spark-connect-cpp/blob/branch-4.1/docs/ARICHITECTURE_DIAGRAM.png)
 
----
 
 ## Design Goals
 
@@ -29,39 +28,33 @@ The library is intended for environments where:
 * Predictable performance characteristics suitable for production systems
 * Minimal runtime dependencies outside standard native infrastructure
 
----
 
 ## Use Cases
 
 ### Native Data Producers and High-Throughput Pipelines
 
-Enable high-performance C++ services to submit ingestion workloads and push structured datasets to Spark.
+Enable C++ services to run Spark workfloads.
 
 ### Integration with Legacy, Industrial, and Scientific Systems
 
-Connect existing C++ infrastructure such as industrial control systems, financial engines, robotics platforms, HPC pipelines, or scientific instrumentation directly to Spark for large-scale analytics.
+Connect existing C++ infrastructure such as Industrial Control Systems, Financial Engines, Robotics Platforms, HPC pipelines, or Scientific Instrumentation directly to Spark for large-scale analytics.
 
 ### AI/ML and Inference Pipelines
 
 Run high-speed inference using native libraries (e.g., TensorRT, ONNX Runtime, CUDA pipelines) and stream features, embeddings, or predictions into Spark for downstream analytics, feature engineering, and training workflows (Distributed ML).
 
-### Custom High-Performance Data Connectors
+### Distributed Graph Processing
 
-Build specialized connectors for proprietary data stores, binary protocols, in-memory engines, or high-throughput messaging systems that benefit from native execution and fine-grained memory control.
+Run Distributed Graph Algorithms at scale with [GraphFrames](https://graphframes.io/) natively.
 
 ### Interactive Analytics Clients
 
 Develop native dashboards, monitoring tools, and backend services that execute Spark SQL queries through Spark Connect with minimal client-side overhead.
 
-### Edge Gateways and Data Aggregation Services
+### Edge Gateways and Data Aggregation Services (IOT)
 
-Use C++ aggregation services or gateway nodes to collect telemetry from distributed environments and forward structured datasets to centralized Spark clusters for processing.
+Use C++ aggregation services or gateway nodes to collect telemetry from distributed environments and forward metrics to remote Spark clusters for processing.
 
-### Performance Testing and Systems Benchmarking
-
-Evaluate Spark Connect performance characteristics such as serialization overhead, network latency, query planning costs, and concurrent client behavior using native workloads.
-
----
 
 ## When Should You Use the C++ Client?
 
@@ -75,13 +68,12 @@ The Spark Connect C++ client is **not a replacement** for Python or Scala Spark 
 * You require integration with:
 
   * HPC systems
-  * scientific computing pipelines
-  * robotics or industrial platforms
-  * embedded gateways or native backend services
+  * Scientific Computing pipelines
+  * Robotics or Industrial Platforms
+  * Embedded gateways or Native backend services
 
-* You run **AI/ML inference pipelines** in C++ and need to forward structured outputs into Spark
-* You are implementing proprietary data connectors or binary protocols
-* You require precise control over memory layout and data transfer efficiency
+* You run **AI/ML inference pipelines** in C++ and need to forward structured outputs into Spark (Most common use case)
+* You are implementing Proprietary Data Connectors or Binary Protocols
 
 ### Prefer Python or Scala Spark APIs When
 
@@ -91,32 +83,30 @@ The Spark Connect C++ client is **not a replacement** for Python or Scala Spark 
 * Rapid prototyping is more important than native performance
 * Your applications already run comfortably in JVM or Python environments
 
----
-
-## Architecture Deep Dive
+## Architecture Overview
 
 The Spark Connect C++ client follows the Spark Connect execution model:
 
 ### Client API Layer
 
-Applications use a native C++ API to construct DataFrame operations and Spark SQL queries. These operations are translated into logical execution plans rather than executed locally.
+Applications use a native C++ API to construct DataFrame operations and Spark SQL queries. These operations are translated into **Logical Execution Plans** rather than executed locally.
 
 ### Logical Plan Construction
 
-The client builds Spark logical plans representing transformations, queries, and actions. No distributed computation occurs inside the client process.
+The client builds Spark Logical Plans representing Transformations, Queries, and Actions. No computation occurs inside the client process.
 
 ### Serialization Layer
 
-Logical plans and data batches are serialized using:
+Logical Plans and data batches are serialized using:
 
-* Protobuf for query plans and RPC communication
-* Apache Arrow for efficient columnar data transfer
+* *Protobuf* for query plans and RPC communication
+* *Apache Arrow* for efficient columnar data transfer
 
 ### Transport Layer
 
 Communication with the Spark Connect server occurs via:
 
-* gRPC streaming RPCs
+* [gRPC](https://grpc.io/) streaming RPCs
 * bidirectional execution channels
 * Arrow batch streaming
 
@@ -124,12 +114,12 @@ Communication with the Spark Connect server occurs via:
 
 The Spark Connect server:
 
-* receives logical plans
+* receives Logical Plans
 * executes distributed workloads
-* performs query planning and optimization
-* returns Arrow-encoded results to the client
+* performs Query Planning and Optimization
+* returns *Arrow-encoded* results to the client
 
-The separation enables native applications to leverage Spark’s distributed engine without embedding Spark or JVM runtimes locally.
+**The separation enables native applications to leverage Spark’s distributed engine without embedding Spark or JVM runtimes locally.**
 
 ### Installation & Usage
 
@@ -251,8 +241,6 @@ For detailed development setup instructions, see:
 
 * [Setup Guide](https://github.com/irfanghat/spark-connect-cpp/blob/main/docs/SETUP.md)
 * [API Reference](https://github.com/irfanghat/spark-connect-cpp/blob/main/docs/API_REFERENCE.md)
-
----
 
 ## License
 
