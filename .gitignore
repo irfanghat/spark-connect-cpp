@@ -68,3 +68,7 @@ vcpkg_toolchain/
 
 # Clang
 .cache
+
+# LLVM
+default.profraw
+*.profraw
