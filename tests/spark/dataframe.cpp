@@ -311,7 +311,95 @@ TEST_F(SparkIntegrationTest, DropDuplicates)
 
     EXPECT_EQ(subset_deduped.count(), 2);
 }
+TEST_F(SparkIntegrationTest, DropSingleColumn)
+{
+    auto df = spark->sql(R"(
+        SELECT * FROM VALUES
+            (14, 'Tom'),
+            (23, 'Alice'),
+            (16, 'Bob')
+        AS people(age, name)
+    )");
 
+    auto dropped = df.drop("age");
+    dropped.show();
+
+    EXPECT_THAT(dropped.columns(), ElementsAre("name"));
+    EXPECT_EQ(dropped.count(), 3);
+
+    auto rows = dropped.collect();
+    EXPECT_EQ(rows[0].get<std::string>("name"), "Tom");
+    EXPECT_EQ(rows[1].get<std::string>("name"), "Alice");
+    EXPECT_EQ(rows[2].get<std::string>("name"), "Bob");
+}
+
+TEST_F(SparkIntegrationTest, DropMultipleColumns)
+{
+    auto df = spark->sql("SELECT 1 AS a, 2 AS b, 3 AS c, 4 AS d");
+
+    EXPECT_THAT(df.drop({"b", "d"}).columns(), ElementsAre("a", "c"));
+
+    std::vector<std::string> to_drop = {"a", "c"};
+    EXPECT_THAT(df.drop(to_drop).columns(), ElementsAre("b", "d"));
+}
+
+TEST_F(SparkIntegrationTest, DropNonexistentColumnIsNoOp)
+{
+    auto df = spark->sql("SELECT 1 AS a, 2 AS b");
+
+    auto dropped = df.drop("does_not_exist");
+
+    EXPECT_NO_THROW(dropped.show());
+    EXPECT_THAT(dropped.columns(), ElementsAre("a", "b"));
+}
+
+TEST_F(SparkIntegrationTest, DropEmptyListReturnsSameColumns)
+{
+    auto df = spark->sql("SELECT 1 AS a, 2 AS b");
+
+    auto dropped = df.drop(std::vector<std::string>{});
+
+    EXPECT_THAT(dropped.columns(), ElementsAre("a", "b"));
+}
+
+TEST_F(SparkIntegrationTest, DropDoesNotMutateOriginal)
+{
+    auto df = spark->sql("SELECT 1 AS a, 2 AS b");
+
+    auto dropped = df.drop("a");
+
+    EXPECT_THAT(df.columns(), ElementsAre("a", "b"));
+    EXPECT_THAT(dropped.columns(), ElementsAre("b"));
+}
+
+TEST_F(SparkIntegrationTest, DropChainedWithSelectAndFilter)
+{
+    auto df = spark->read()
+                  .option("header", "true")
+                  .option("inferSchema", "true")
+                  .csv("datasets/people.csv");
+
+    auto result = df.drop("salary").filter("age > 20").select({"name", "age"});
+
+    EXPECT_NO_THROW(result.show());
+    EXPECT_THAT(result.columns(), ElementsAre("name", "age"));
+}
+
+TEST_F(SparkIntegrationTest, DropColumnExpression)
+{
+    auto df = spark->sql("SELECT 1 AS a, 2 AS b, 3 AS c");
+
+    auto dropped = df.drop(col("b"));
+
+    EXPECT_THAT(dropped.columns(), ElementsAre("a", "c"));
+}
+
+TEST_F(SparkIntegrationTest, DropAllColumns)
+{
+    auto df = spark->sql("SELECT 1 AS a, 2 AS b");
+
+    EXPECT_TRUE(df.drop({"a", "b"}).columns().empty());
+}
 TEST_F(SparkIntegrationTest, DataFrameCollect)
 {
     auto df = spark->read()

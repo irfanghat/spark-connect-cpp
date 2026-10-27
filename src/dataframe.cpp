@@ -616,6 +616,62 @@ DataFrame::select(std::initializer_list<std::string> cols) const
 }
 
 DataFrame
+DataFrame:: drop(std::vector<std::string> const& cols) const
+{
+    if (cols.empty())
+        return *this;
+
+    Plan plan;
+    auto* drop_rel = plan.mutable_root()->mutable_drop();
+
+    if (this->plan_.has_root())
+    {
+        drop_rel->mutable_input()->CopyFrom(this->plan_.root());
+    }
+
+    for (auto const& name : cols)
+    {
+        drop_rel->add_column_names(name);
+    }
+
+    return DataFrame(stub_, plan, session_id_, user_id_);
+
+}
+
+DataFrame
+DataFrame::drop(std::string const& col) const
+{
+    return drop(std::vector<std::string>{col});
+}
+
+DataFrame
+DataFrame::drop(std::initializer_list<std::string> cols) const
+{
+    return drop(std::vector<std::string>(cols));
+}
+
+DataFrame
+DataFrame::drop(spark::sql::functions::Column const& col) const
+{
+    if(!col.expr)
+        throw std::runtime_error("Drop column contains a null expression");
+
+
+    Plan plan;
+    auto* drop_rel = plan.mutable_root()->mutable_drop();
+
+    if(this->plan_.has_root())
+    {
+        drop_rel->mutable_input()->CopyFrom(this->plan_.root());
+    }
+
+    drop_rel->add_columns()->CopyFrom(*col.expr);
+
+    return DataFrame(stub_, plan, session_id_, user_id_);
+}
+
+
+DataFrame
 DataFrame::limit(int n) const
 {
     Plan plan;
