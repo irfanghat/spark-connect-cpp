@@ -31,7 +31,7 @@ jobs:
 
       - name: Install Spark
         run: |
-          curl -fL https://dlcdn.apache.org/spark/spark-4.0.3/spark-4.0.3-bin-hadoop3.tgz -o spark.tgz
+          curl -fL https://dlcdn.apache.org/spark/spark-4.3.0/spark-4.3.0-bin-hadoop3.tgz    -o spark.tgz
           tar -xzf spark.tgz
           mv spark-4.0.3-bin-hadoop3 $HOME/spark
 
