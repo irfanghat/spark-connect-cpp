@@ -20,11 +20,11 @@ using ::testing::ElementsAre;
 
 TEST_F(SparkIntegrationTest, ReadingJson)
 {
-    auto df = spark->read().json("datasets/people.json");
+    auto df = spark->read().json("compose/datasets/people.json");
     // ------------------------------------------------------------------------------------
     // Using the fully qualified class name (JSON is usually built-in)
     // auto df =
-    // spark->read().format("org.apache.spark.sql.execution.datasources.json.JsonFileFormat").load({"datasets/people.json"});
+    // spark->read().format("org.apache.spark.sql.execution.datasources.json.JsonFileFormat").load({"compose/datasets/people.json"});
     // ------------------------------------------------------------------------------------
     df.show();
 }
@@ -34,14 +34,14 @@ TEST_F(SparkIntegrationTest, ReadJsonWithOptions)
     auto df = spark->read()
                   .option("header", "true")
                   .option("inferSchema", "true")
-                  .json("datasets/people.json");
+                  .json("compose/datasets/people.json");
 
     EXPECT_NO_THROW(df.show(5));
 }
 
 TEST_F(SparkIntegrationTest, ReadingCsv)
 {
-    auto df = spark->read().csv("datasets/people.csv");
+    auto df = spark->read().csv("compose/datasets/people.csv");
     EXPECT_NO_THROW(df.show(163));
 }
 
@@ -50,14 +50,14 @@ TEST_F(SparkIntegrationTest, ReadCsvWithOptions)
     auto df = spark->read()
                   .option("header", "true")
                   .option("inferSchema", "true")
-                  .csv("datasets/people.csv");
+                  .csv("compose/datasets/people.csv");
 
     EXPECT_NO_THROW(df.show());
 }
 
 TEST_F(SparkIntegrationTest, ReadTextFile)
 {
-    auto df = spark->read().text("datasets/people.txt");
+    auto df = spark->read().text("compose/datasets/people.txt");
     EXPECT_NO_THROW(df.show());
 }
 
@@ -67,7 +67,7 @@ TEST_F(SparkIntegrationTest, ReadTextFileWithOptions)
                   .option("wholetext", "false")
                   .option("lineSep", "\n")
                   .format("text")
-                  .load({"datasets/people.txt"});
+                  .load({"compose/datasets/people.txt"});
 
     // -------------------------------------------------------------------------------------------
     // Reading text files is a straightforward way to ingest unstructured or
@@ -78,7 +78,7 @@ TEST_F(SparkIntegrationTest, ReadTextFileWithOptions)
     //               .option("wholetext", "true")
     //               .option("lineSep", "\n")
     //               .format("text")
-    //               .load({"datasets/people.txt"});
+    //               .load({"compose/datasets/people.txt"});
     // -------------------------------------------------------------------------------------------
 
     EXPECT_NO_THROW(df.show());
@@ -86,7 +86,7 @@ TEST_F(SparkIntegrationTest, ReadTextFileWithOptions)
 
 TEST_F(SparkIntegrationTest, ReadParquet)
 {
-    auto df = spark->read().parquet("datasets/flights.parquet");
+    auto df = spark->read().parquet("compose/datasets/flights.parquet");
     EXPECT_NO_THROW(df.show(1000));
 }
 
@@ -99,7 +99,7 @@ TEST_F(SparkIntegrationTest, ReadParquetWithOptions)
     // results in expensive operations "datetimeRebaseMode" - Handles legacy
     // dates from older Spark versions
     // ----------------------------------------------------------------------------
-    auto df = spark->read().option("mergeSchema", "true").parquet("datasets/flights.parquet");
+    auto df = spark->read().option("mergeSchema", "true").parquet("compose/datasets/flights.parquet");
 
     EXPECT_NO_THROW(df.show(10));
 }
@@ -108,7 +108,7 @@ TEST_F(SparkIntegrationTest, ReadWithDdlSchema)
 {
     auto df = spark->read()
                   .schema("name STRING, age INT, salary INT")
-                  .csv("datasets/people_no_header.csv");
+                  .csv("compose/datasets/people_no_header.csv");
 
     EXPECT_NO_THROW(df.show(4));
 }
@@ -116,7 +116,7 @@ TEST_F(SparkIntegrationTest, ReadWithDdlSchema)
 TEST_F(SparkIntegrationTest, SchemaEvaluation)
 {
     std::string ddl = "name STRING, age INT, salary INT";
-    auto df = spark->read().schema(ddl).csv("datasets/people_no_header.csv");
+    auto df = spark->read().schema(ddl).csv("compose/datasets/people_no_header.csv");
 
     auto schema = df.schema();
 
@@ -138,7 +138,7 @@ TEST_F(SparkIntegrationTest, SchemaEvaluation)
 
 TEST_F(SparkIntegrationTest, HandleMissingFile)
 {
-    auto df = spark->read().csv("datasets/non_existent.csv");
+    auto df = spark->read().csv("compose/datasets/non_existent.csv");
 
     // -----------------------------------------------------------------------------
     // Show triggers an ExecutePlan gRPC call which should fail in this
@@ -152,13 +152,13 @@ TEST_F(SparkIntegrationTest, OptionEvaluation)
     // -------------------------------------------------------------------------
     // Read without header option (should have column name "value" or "_c0")
     // -------------------------------------------------------------------------
-    auto df1 = spark->read().csv("datasets/people.csv");
+    auto df1 = spark->read().csv("compose/datasets/people.csv");
     df1.show(2);
 
     // -----------------------------------
     // Read with header option
     // -----------------------------------
-    auto df2 = spark->read().option("header", "true").csv("datasets/people.csv");
+    auto df2 = spark->read().option("header", "true").csv("compose/datasets/people.csv");
     df2.show(2);
 
     // --------------------------------------
@@ -211,7 +211,7 @@ TEST_F(SparkIntegrationTest, ReaderOptions_VerifySchema)
     std::map<std::string, std::string> config = {
         {"header", "true"}, {"inferSchema", "true"}, {"delimiter", ","}};
 
-    auto df = spark->read().options(config).format("csv").load({"datasets/people.csv"});
+    auto df = spark->read().options(config).format("csv").load({"compose/datasets/people.csv"});
 
     auto cols = df.columns();
 
@@ -227,7 +227,7 @@ TEST_F(SparkIntegrationTest, ReaderOptions_InferredTypes)
 {
     std::map<std::string, std::string> config = {{"header", "true"}, {"inferSchema", "true"}};
 
-    auto df = spark->read().options(config).format("csv").load({"datasets/people.csv"});
+    auto df = spark->read().options(config).format("csv").load({"compose/datasets/people.csv"});
     auto schema = df.schema();
 
     // ----------------------------------------------------
@@ -248,7 +248,7 @@ TEST_F(SparkIntegrationTest, ReaderOptions_CorrectValueParsing)
 {
     std::map<std::string, std::string> config = {
         {"header", "true"}, {"delimiter", ","}, {"inferSchema", "true"}};
-    auto df = spark->read().options(config).format("csv").load({"datasets/people.csv"});
+    auto df = spark->read().options(config).format("csv").load({"compose/datasets/people.csv"});
 
     auto first_row = df.head();
     ASSERT_TRUE(first_row.has_value());
@@ -262,7 +262,7 @@ TEST_F(SparkIntegrationTest, ReaderOptions_CorrectValueParsing)
 
 TEST_F(SparkIntegrationTest, ReadOrc)
 {
-    auto df = spark->read().orc("datasets/types.orc");
+    auto df = spark->read().orc("compose/datasets/types.orc");
     EXPECT_NO_THROW(df.show(10));
 }
 
