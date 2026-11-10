@@ -72,3 +72,7 @@ vcpkg_toolchain/
 # LLVM
 default.profraw
 *.profraw
+
+# Conan
+.venv/
+venv/

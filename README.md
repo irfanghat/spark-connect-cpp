@@ -1,8 +1,6 @@
 # Spark Connect C++
 
-## Overview
-
-This repository provides a **C++ client for Apache Spark** via **Spark Connect**, enabling C++ applications to execute Spark SQL workloads against remote Spark clusters without requiring JVM dependencies.
+A **C++ client for Apache Spark** via **Spark Connect**, enabling C++ applications to execute Spark SQL workloads against remote Spark clusters without requiring JVM dependencies.
 
 Spark Connect introduced a **decoupled client–server architecture** for Apache Spark, where client applications construct logical query plans that are executed remotely by a Spark server. This project delivers an **idiomatic, high-performance C++ interface** for building and submitting Spark queries, with efficient **Apache Arrow–based columnar data exchange** over gRPC.
 
@@ -21,7 +19,7 @@ The library is intended for environments where:
 ## Design Goals
 
 * Native-first Spark integration for C++ ecosystems
-* Efficient Arrow-based columnar data transfer
+* ~~Efficient Arrow-based columnar data transfer~~ _Spark 4.x.x^ will natively support Arrow.._
 * Clear separation between client logic and remote Spark execution
 * Compatibility with evolving Spark Connect protocols
 * Compatibility with Spark versions **3.x.x** - **4.x.x**
@@ -83,45 +81,56 @@ The Spark Connect C++ client is **not a replacement** for Python or Scala Spark 
 * Rapid prototyping is more important than native performance
 * Your applications already run comfortably in JVM or Python environments
 
-## Architecture Overview
+# Installation & Usage
 
-The Spark Connect C++ client follows the Spark Connect execution model:
+## Conan
+### Installation (Linux - Ubuntu, Debian)
 
-### Client API Layer
+Running the following commands will install & verify conan:
 
-Applications use a native C++ API to construct DataFrame operations and Spark SQL queries. These operations are translated into **Logical Execution Plans** rather than executed locally.
+```sh
+python3 -m venv .venv
+source .venv/bin/activate
 
-### Logical Plan Construction
+pip install conan
+conan --version
 
-The client builds Spark Logical Plans representing Transformations, Queries, and Actions. No computation occurs inside the client process.
+# ---------------------------
+# Conan version 2.3
+# ---------------------------
+```
 
-### Serialization Layer
+Verify Conan profile:
 
-Logical Plans and data batches are serialized using:
+```sh
+conan profile show
+```
 
-* *Protobuf* for query plans and RPC communication
-* *Apache Arrow* for efficient columnar data transfer
+Update Conan profile to target C++ 20:
 
-### Transport Layer
+```sh
+ nano ~/.conan2/profiles/default
 
-Communication with the Spark Connect server occurs via:
+# -----------------------------------------
+# [settings]
+# arch=x86_64
+# build_type=Release
+# compiler=gcc
+# compiler.cppstd=20
+# compiler.libcxx=libstdc++11
+# compiler.version=13
+# os=Linux
+# -----------------------------------------
+```
 
-* [gRPC](https://grpc.io/) streaming RPCs
-* bidirectional execution channels
-* Arrow batch streaming
+Create a Conan build:
 
-### Spark Server Execution
+```sh
+conan install . --output-folder=build/conan --build=missing
+```
 
-The Spark Connect server:
 
-* receives Logical Plans
-* executes distributed workloads
-* performs Query Planning and Optimization
-* returns *Arrow-encoded* results to the client
-
-**The separation enables native applications to leverage Spark’s distributed engine without embedding Spark or JVM runtimes locally.**
-
-### Installation & Usage
+## Standard installation
 
 ```sh
 mkdir -p build && cd build

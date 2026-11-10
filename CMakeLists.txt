@@ -3,10 +3,18 @@ cmake_minimum_required(VERSION 3.15)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-
 set(PROJECT_NAME "spark_connect_cpp")
 
-project(${PROJECT_NAME})
+project(
+        ${PROJECT_NAME}
+        VERSION 0.1.0
+        DESCRIPTION "Spark Connect C++. Making Apache Spark easily accessible to C++ developers."
+        LANGUAGES CXX
+)
+
+
+option(SPARK_CONNECT_CPP_BUILD_TESTS
+       "Build Spark Connect C++ tests" ON)
 
 
 ######################################################################
@@ -92,35 +100,45 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 # TEST ARTIFACT
 # Integration tests using GTest
 ######################################################################
-message("Project tests with GTest")
 
-file(GLOB_RECURSE TEST_SRC_FILES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/tests/*.cpp")
+if(SPARK_CONNECT_CPP_BUILD_TESTS)
+        find_package(PkgConfig REQUIRED)
+        pkg_check_modules(GTEST REQUIRED IMPORTED_TARGET gtest_main gmock)
 
-add_executable(${PROJECT_NAME}_test ${TEST_SRC_FILES})
+        message("Project tests with GTest")
 
-target_link_libraries(${PROJECT_NAME}_test PRIVATE
-        ${PROJECT_NAME}
-        PkgConfig::GTEST
-)
+        file(GLOB_RECURSE TEST_SRC_FILES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/tests/*.cpp")
 
-target_include_directories(${PROJECT_NAME}_test PRIVATE
-        "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/tests>"
-)
+        add_executable(${PROJECT_NAME}_test ${TEST_SRC_FILES})
 
-include(GoogleTest)
+        target_link_libraries(${PROJECT_NAME}_test PRIVATE
+                ${PROJECT_NAME}
+                PkgConfig::GTEST
+        )
 
-enable_testing()
+        target_include_directories(${PROJECT_NAME}_test PRIVATE
+                "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/tests>"
+        )
 
-gtest_discover_tests(${PROJECT_NAME}_test)
+        include(GoogleTest)
+
+        enable_testing()
+
+        gtest_discover_tests(${PROJECT_NAME}_test)
+endif()
+
 
 ######################################################################
 # PROJECT INSTALLATION
 ######################################################################
 include(GNUInstallDirs)
 
-install(TARGETS ${PROJECT_NAME}
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+install(TARGETS
+    ${PROJECT_NAME}
+    ${SPARK_CONNECT_PROTO_LIB}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
 install(DIRECTORY src/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME})
