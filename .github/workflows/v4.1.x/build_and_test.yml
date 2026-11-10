@@ -1,4 +1,4 @@
-name: Build, Test & Coverage
+name: Build, Test & Coverage (Spark v4.1.x)
 
 permissions:
   contents: read
@@ -6,6 +6,12 @@ permissions:
 on:
   push:
   pull_request:
+    branches:
+      - branch-4.1-dev
+      - branch-4.1-stable
+    branches:
+      - branch-4.1-dev
+      - branch-4.1-stable
   workflow_dispatch:
 
 jobs:

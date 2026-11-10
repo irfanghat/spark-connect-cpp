@@ -46,10 +46,10 @@ services:
           sleep 1
         done
         echo "Spark Connect Server is ready."
-        cd build
-        cmake ..
-        cmake --build .
-        ctest --output-on-failure
+        mv CMakeUserPresets.template.json CMakeUserPresets.json
+        cmake --preset local
+        cmake --build --preset local
+        ctest --test-dir ./build --output-on-failure --verbose
     networks:
       - default
 
