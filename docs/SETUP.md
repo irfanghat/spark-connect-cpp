@@ -35,8 +35,10 @@ spark-connect-cpp/
 ├── src/
 ├── tests/
 ├── build/            
-├── datasets/            
-├── docker-compose.yaml
+├── compose/            
+    ├── datasets/
+    ├── v4.x.x/
+        ├── docker-compose.yaml
 ├── spark_connect_cpp.pc.in
 ├── scripts/install-deps.sh
 ├── .vscode/           # Should be created manually
@@ -99,6 +101,7 @@ cmake --build --preset local
 ### Run Tests
 Ensure an instance of Spark is running locally, e.g. via docker:
 ```bash
+cd compose/v4.x.x
 docker compose up spark --build -d
 ctest --preset test_local_spark_coverage --verbose --output-on-failure
 

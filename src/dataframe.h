@@ -171,12 +171,6 @@ class DataFrame
      * @brief Filters rows using the given SQL condition string.
      * @param condition SQL expression (e.g., "age > 3")
      */
-
-    DataFrame drop(std::string const& col) const;
-    DataFrame drop(std::vector<std::string> const& cols) const;
-    DataFrame drop(std::initializer_list<std::string> cols) const;
-    DataFrame drop(spark::sql::functions::Column const& col) const;
-
     DataFrame filter(std::string const& condition) const;
 
     /**
