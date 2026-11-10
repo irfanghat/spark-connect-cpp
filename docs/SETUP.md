@@ -8,7 +8,7 @@ This guide walks you through setting up your development environment for **Spark
 Before you begin, ensure the following tools are installed (These can be installed by running the `scripts/install-deps.sh` script on Linux):
 
 ### Build Tools
-* **CMake** (≥ 3.16 recommended)
+* **CMake** (≥ 3.23 recommended)
 * **make** or **ninja**
 * **clang/clang++** (C++20 support required)
 * **g++** (C++20 support required)
@@ -58,6 +58,11 @@ The pre-configured hooks will check your work locally before running against the
 ```bash
 chmod u+x scripts/install-hooks.sh
 ./install-hooks.sh
+```
+
+### Alternatively, Update all script permissions
+```bash
+chmod u+x scripts/*.sh
 ```
 
 ### Contributing

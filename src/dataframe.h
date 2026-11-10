@@ -158,6 +158,16 @@ class DataFrame
     DataFrame select(std::initializer_list<std::string> cols) const;
 
     /**
+     * @brief Returns a new `DataFrame` without specified columns. This
+     * is a no-op if the schema doesn't contain the given column name(s).
+     * @param col A name of the column, or the :class:`Column` to be dropped.
+     */
+    DataFrame drop(std::string const& col) const;
+    DataFrame drop(std::vector<std::string> const& cols) const;
+    DataFrame drop(std::initializer_list<std::string> cols) const;
+    DataFrame drop(spark::sql::functions::Column const& col) const;
+
+    /**
      * @brief Filters rows using the given SQL condition string.
      * @param condition SQL expression (e.g., "age > 3")
      */
@@ -170,7 +180,7 @@ class DataFrame
     DataFrame filter(std::string const& condition) const;
 
     /**
-     * @brief Filters rows using a Column expression.
+     * @brief Filters rows using the given condition.
      * @param condition Column expression (e.g., col("age") > lit(21))
      */
     DataFrame filter(spark::sql::functions::Column const& condition) const;

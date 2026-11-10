@@ -1,0 +1,80 @@
+name: Build, Test & Coverage (Spark v4.1.x)
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches:
+      - branch-4.1-dev
+  pull_request:
+    branches:
+      - branch-4.1-dev
+      - branch-4.1-stable
+    branches:
+      - branch-4.1-dev
+      - branch-4.1-stable
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup CMake 4.x
+        uses: jwlawson/actions-setup-cmake@v2
+        with:
+          cmake-version: '4.2.2'
+
+      - name: Verify CMake version
+        run: cmake --version
+
+      - name: Install Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Install Spark
+        run: |
+          curl -fL https://dlcdn.apache.org/spark/spark-4.0.5/spark-4.0.5-bin-hadoop3.tgz -o spark.tgz
+          tar -xzf spark.tgz
+          mv spark-4.0.5-bin-hadoop3 $HOME/spark
+
+      - name: Start Spark Connect Server
+        run: |
+          $HOME/spark/sbin/start-connect-server.sh \
+            --packages "org.apache.spark:spark-connect_2.13:4.0.5,io.delta:delta-spark_2.13:4.0.0,io.graphframes:graphframes-spark4_2.13:0.10.0,io.graphframes:graphframes-connect-spark4_2.13:0.10.0" \
+            --conf "spark.connect.extensions.relation.classes=org.apache.spark.sql.graphframes.GraphFramesConnect" \
+            --conf "spark.driver.extraJavaOptions=-Divy.cache.dir=/tmp -Divy.home=/tmp -XX:+UseG1GC -XX:+HeapDumpOnOutOfMemoryError" \
+            --conf "spark.sql.extensions=io.delta.sql.DeltaSparkSessionExtension" \
+            --conf "spark.sql.catalog.spark_catalog=org.apache.spark.sql.delta.catalog.DeltaCatalog" \
+            --conf "spark.driver.memory=4g" \
+            --conf "spark.executor.memory=4g" \
+            --conf "spark.memory.fraction=0.8" \
+            --conf "spark.memory.storageFraction=0.3" \
+            --conf "spark.sql.shuffle.partitions=8" \
+            --conf "spark.default.parallelism=8" \
+            --conf "spark.driver.maxResultSize=2g"
+
+          # wait for server
+          sleep 15
+
+      - name: Install dependencies
+        run: |
+          cd scripts
+          chmod +x install-deps.sh
+          ./install-deps.sh
+
+      - name: Configure
+        run: cmake --preset pr_pipeline
+
+      - name: Build
+        run: cmake --build --preset pr_pipeline
+
+      - name: Test
+        run: |
+          export SPARK_REMOTE=sc://localhost
+          ctest --preset test_pr_pipeline_spark_coverage

@@ -115,7 +115,11 @@ sudo apt install -y -V \
     clang-format \
     gcovr \
     llvm-18-tools \
-    libclang-rt-19-dev
+    libclang-rt-19-dev \
+    pkg-config \
+    tar \
+    zip \
+    unzip
 
 echo ""
 echo "Cleaning up downloaded packages..."

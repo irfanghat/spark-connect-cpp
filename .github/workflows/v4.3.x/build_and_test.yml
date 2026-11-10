@@ -1,11 +1,19 @@
-name: Build, Test & Coverage
+name: Build, Test & Coverage (Spark v4.3.x)
 
 permissions:
   contents: read
 
 on:
   push:
+    branches:
+      - branch-4.3-dev
   pull_request:
+    branches:
+      - branch-4.3-dev
+      - branch-4.3-stable
+    branches:
+      - branch-4.3-dev
+      - branch-4.3-stable
   workflow_dispatch:
 
 jobs:
@@ -31,14 +39,14 @@ jobs:
 
       - name: Install Spark
         run: |
-          curl -fL https://dlcdn.apache.org/spark/spark-4.0.3/spark-4.0.3-bin-hadoop3.tgz -o spark.tgz
+          curl -fL https://dlcdn.apache.org/spark/spark-4.3.0/spark-4.3.0-bin-hadoop3.tgz    -o spark.tgz
           tar -xzf spark.tgz
-          mv spark-4.0.3-bin-hadoop3 $HOME/spark
+          mv spark-4.3.0-bin-hadoop3 $HOME/spark
 
       - name: Start Spark Connect Server
         run: |
           $HOME/spark/sbin/start-connect-server.sh \
-            --packages "org.apache.spark:spark-connect_2.13:4.0.3,io.delta:delta-spark_2.13:4.0.0,io.graphframes:graphframes-spark4_2.13:0.10.0,io.graphframes:graphframes-connect-spark4_2.13:0.10.0" \
+            --packages "org.apache.spark:spark-connect_2.13:4.3.0,io.delta:delta-spark_2.13:4.0.0,io.graphframes:graphframes-spark4_2.13:0.10.0,io.graphframes:graphframes-connect-spark4_2.13:0.10.0" \
             --conf "spark.connect.extensions.relation.classes=org.apache.spark.sql.graphframes.GraphFramesConnect" \
             --conf "spark.driver.extraJavaOptions=-Divy.cache.dir=/tmp -Divy.home=/tmp -XX:+UseG1GC -XX:+HeapDumpOnOutOfMemoryError" \
             --conf "spark.sql.extensions=io.delta.sql.DeltaSparkSessionExtension" \
