@@ -1,0 +1,59 @@
+services:
+  spark:
+    image: "apache/spark:4.0.0-scala2.13-java17-python3-ubuntu"
+    command: >
+      /opt/spark/sbin/start-connect-server.sh
+      --packages "org.apache.spark:spark-connect_2.13:4.0.0,io.delta:delta-spark_2.13:4.0.0,io.graphframes:graphframes-spark4_2.13:0.10.0,io.graphframes:graphframes-connect-spark4_2.13:0.10.0"
+      --conf "spark.connect.extensions.relation.classes=org.apache.spark.sql.graphframes.GraphFramesConnect"
+      --conf "spark.driver.extraJavaOptions=-Divy.cache.dir=/tmp -Divy.home=/tmp -XX:+UseG1GC -XX:+HeapDumpOnOutOfMemoryError"
+      --conf "spark.sql.extensions=io.delta.sql.DeltaSparkSessionExtension"
+      --conf "spark.sql.catalog.spark_catalog=org.apache.spark.sql.delta.catalog.DeltaCatalog"
+      --conf "spark.driver.memory=4g"
+      --conf "spark.executor.memory=4g"
+      --conf "spark.memory.fraction=0.8"
+      --conf "spark.memory.storageFraction=0.3"
+      --conf "spark.sql.shuffle.partitions=8"
+      --conf "spark.default.parallelism=8"
+      --conf "spark.driver.maxResultSize=2g"
+    environment:
+      - SPARK_NO_DAEMONIZE=true
+    ports:
+      - "4040:4040"
+      - "15002:15002"
+    volumes:
+      - ../datasets:/opt/spark/work-dir/datasets
+    deploy:
+      resources:
+        limits:
+          memory: 8g
+        reservations:
+          memory: 4g
+    networks:
+      - default
+
+  spark_client:
+    build: 
+      context: .
+    depends_on:
+      - spark
+    command:
+      - /bin/sh
+      - -c
+      - |
+        echo "Waiting for Spark Connect Server to start..."
+        until nc -z spark 15002; do
+          echo "Spark Connect Server is not ready yet. Retrying in 1 second..."
+          sleep 1
+        done
+        echo "Spark Connect Server is ready."
+        mv CMakeUserPresets.template.json CMakeUserPresets.json
+        cmake --preset local
+        cmake --build --preset local
+        ctest --test-dir ./build --output-on-failure --verbose
+    networks:
+      - default
+
+networks:
+  default:
+    driver: bridge
+    name: spark_connect_cpp
