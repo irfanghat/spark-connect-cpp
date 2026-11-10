@@ -11,9 +11,6 @@ on:
     branches:
       - branch-4.3-dev
       - branch-4.3-stable
-    branches:
-      - branch-4.3-dev
-      - branch-4.3-stable
   workflow_dispatch:
 
 jobs:
