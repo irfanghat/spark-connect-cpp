@@ -5,6 +5,8 @@ permissions:
 
 on:
   push:
+    branches:
+      - branch-4.3-dev
   pull_request:
     branches:
       - branch-4.3-dev
