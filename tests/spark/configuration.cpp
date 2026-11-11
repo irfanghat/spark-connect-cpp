@@ -1,13 +1,11 @@
+#include "dataframe.h"
+#include "runtime_config.h"
+#include "session.h"
+
 #include <gmock/gmock-matchers.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-
-#include "runtime_config.h"
-
 #include <sstream>
-
-#include "dataframe.h"
-#include "session.h"
 
 using ::testing::Contains;
 using ::testing::Pair;
@@ -17,7 +15,8 @@ class SparkConfigurationIntegrationTest : public ::testing::Test
   protected:
     static SparkSession* spark;
 
-    static void SetUpTestSuite()
+    static void
+    SetUpTestSuite()
     {
         // ------------------------------------------------------------------
         // Exercise builder.config() at session creation time
@@ -31,11 +30,13 @@ class SparkConfigurationIntegrationTest : public ::testing::Test
                      .appName("SparkConnectCppGTest")
                      .config("spark.sql.shuffle.partitions", int64_t(42))
                      .config("spark.sql.ansi.enabled", true)
-                     .config("spark.sql.session.timeZone", std::string("America/New_York"))
+                     .config("spark.sql.session.timeZone",
+                             std::string("America/New_York"))
                      .getOrCreate();
     }
 
-    static void TearDownTestSuite()
+    static void
+    TearDownTestSuite()
     {
         if (spark)
             spark->stop();
@@ -44,7 +45,8 @@ class SparkConfigurationIntegrationTest : public ::testing::Test
     // -----------------------------------------------------------------
     // Restore keys touched by tests so each test starts clean
     // -----------------------------------------------------------------
-    void TearDown() override
+    void
+    TearDown() override
     {
         try
         {
@@ -91,24 +93,30 @@ TEST_F(SparkConfigurationIntegrationTest, BuilderConfigAppliedAtCreation)
 {
     EXPECT_EQ(spark->conf().get("spark.sql.shuffle.partitions"), "42");
     EXPECT_EQ(spark->conf().get("spark.sql.ansi.enabled"), "true");
-    EXPECT_EQ(spark->conf().get("spark.sql.session.timeZone"), "America/New_York");
+    EXPECT_EQ(spark->conf().get("spark.sql.session.timeZone"),
+              "America/New_York");
 }
 
-TEST_F(SparkConfigurationIntegrationTest, BuilderConfigFlushesOnSubsequentGetOrCreate)
+TEST_F(SparkConfigurationIntegrationTest,
+       BuilderConfigFlushesOnSubsequentGetOrCreate)
 {
     // ------------------------------------------------------------------
     // builder.config() on an already-running singleton still flushes —
     // getOrCreate() applies runtime_configs regardless of whether the
     // session was just created or already existed.
     // ------------------------------------------------------------------
-    SparkSession::builder().config("spark.sql.shuffle.partitions", int64_t(99)).getOrCreate();
+    SparkSession::builder()
+        .config("spark.sql.shuffle.partitions", int64_t(99))
+        .getOrCreate();
 
     EXPECT_EQ(spark->conf().get("spark.sql.shuffle.partitions"), "99");
 }
 
 TEST_F(SparkConfigurationIntegrationTest, BuilderConfigRawIntOverloading)
 {
-    SparkSession::builder().config("spark.sql.shuffle.partitions", 99).getOrCreate();
+    SparkSession::builder()
+        .config("spark.sql.shuffle.partitions", 99)
+        .getOrCreate();
 
     EXPECT_EQ(spark->conf().get("spark.sql.shuffle.partitions"), "99");
 }
@@ -136,7 +144,8 @@ TEST_F(SparkConfigurationIntegrationTest, BuilderConfigMapOverload)
         .getOrCreate();
 
     EXPECT_EQ(spark->conf().get("spark.sql.shuffle.partitions"), "12");
-    EXPECT_EQ(spark->conf().get("spark.sql.session.timeZone"), "America/Chicago");
+    EXPECT_EQ(spark->conf().get("spark.sql.session.timeZone"),
+              "America/Chicago");
 }
 
 // ----------------------------------------------------------------------------------
@@ -155,7 +164,8 @@ TEST_F(SparkConfigurationIntegrationTest, BuilderConfigMapOverload)
 TEST_F(SparkConfigurationIntegrationTest, SetAndGetString)
 {
     spark->conf().set("spark.sql.session.timeZone", "America/New_York");
-    EXPECT_EQ(spark->conf().get("spark.sql.session.timeZone"), "America/New_York");
+    EXPECT_EQ(spark->conf().get("spark.sql.session.timeZone"),
+              "America/New_York");
 }
 
 TEST_F(SparkConfigurationIntegrationTest, SetBoolTrue)
@@ -282,7 +292,8 @@ TEST_F(SparkConfigurationIntegrationTest, SetCheckpointDirIsNotModifiable)
 
 TEST_F(SparkConfigurationIntegrationTest, SetCheckpointDirThrows)
 {
-    EXPECT_THROW(spark->setCheckpointDir("/tmp/cpp-test-checkpoints"), std::runtime_error);
+    EXPECT_THROW(spark->setCheckpointDir("/tmp/cpp-test-checkpoints"),
+                 std::runtime_error);
 }
 
 // ----------------------------------------------------------------------------------
@@ -290,5 +301,6 @@ TEST_F(SparkConfigurationIntegrationTest, SetCheckpointDirThrows)
 // ----------------------------------------------------------------------------------
 TEST_F(SparkConfigurationIntegrationTest, GetUnknownKeyThrows)
 {
-    EXPECT_THROW(spark->conf().get("spark.cpp.test.nonexistent.key"), std::runtime_error);
+    EXPECT_THROW(spark->conf().get("spark.cpp.test.nonexistent.key"),
+                 std::runtime_error);
 }

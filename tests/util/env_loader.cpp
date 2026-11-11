@@ -1,9 +1,11 @@
 #include "env_loader.h"
+
 #include <algorithm>
 #include <fstream>
 #include <sstream>
 
-static inline std::string trim(const std::string& s)
+static inline std::string
+trim(std::string const& s)
 {
     auto start = s.find_first_not_of(" \t\r\n");
     auto end = s.find_last_not_of(" \t\r\n");
@@ -12,7 +14,8 @@ static inline std::string trim(const std::string& s)
     return s.substr(start, end - start + 1);
 }
 
-void load_env(const std::string& path)
+void
+load_env(std::string const& path)
 {
     std::ifstream file(path);
 

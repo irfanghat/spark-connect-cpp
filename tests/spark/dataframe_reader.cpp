@@ -1,15 +1,15 @@
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
-#include <iostream>
-#include <map>
-
 #include "config.h"
 #include "dataframe.h"
 #include "reader.h"
 #include "session.h"
 #include "spark_fixture.h"
 #include "writer.h"
+
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
+#include <iostream>
+#include <map>
+
 
 // ----------------------------------------------------------------
 // The following suite tests reading from various file formats i.e.
@@ -99,7 +99,9 @@ TEST_F(SparkIntegrationTest, ReadParquetWithOptions)
     // results in expensive operations "datetimeRebaseMode" - Handles legacy
     // dates from older Spark versions
     // ----------------------------------------------------------------------------
-    auto df = spark->read().option("mergeSchema", "true").parquet("datasets/flights.parquet");
+    auto df = spark->read()
+                  .option("mergeSchema", "true")
+                  .parquet("datasets/flights.parquet");
 
     EXPECT_NO_THROW(df.show(10));
 }
@@ -128,12 +130,12 @@ TEST_F(SparkIntegrationTest, SchemaEvaluation)
     // -------------------------------------------------------
     // Check if the variant holds the correct type
     // -------------------------------------------------------
-    EXPECT_TRUE(
-        std::holds_alternative<spark::sql::types::StringType>(schema.fields[0].data_type->kind));
-    EXPECT_TRUE(
-        std::holds_alternative<spark::sql::types::IntegerType>(schema.fields[1].data_type->kind));
-    EXPECT_TRUE(
-        std::holds_alternative<spark::sql::types::IntegerType>(schema.fields[2].data_type->kind));
+    EXPECT_TRUE(std::holds_alternative<spark::sql::types::StringType>(
+        schema.fields[0].data_type->kind));
+    EXPECT_TRUE(std::holds_alternative<spark::sql::types::IntegerType>(
+        schema.fields[1].data_type->kind));
+    EXPECT_TRUE(std::holds_alternative<spark::sql::types::IntegerType>(
+        schema.fields[2].data_type->kind));
 }
 
 TEST_F(SparkIntegrationTest, HandleMissingFile)
@@ -158,7 +160,8 @@ TEST_F(SparkIntegrationTest, OptionEvaluation)
     // -----------------------------------
     // Read with header option
     // -----------------------------------
-    auto df2 = spark->read().option("header", "true").csv("datasets/people.csv");
+    auto df2 =
+        spark->read().option("header", "true").csv("datasets/people.csv");
     df2.show(2);
 
     // --------------------------------------
@@ -211,7 +214,8 @@ TEST_F(SparkIntegrationTest, ReaderOptions_VerifySchema)
     std::map<std::string, std::string> config = {
         {"header", "true"}, {"inferSchema", "true"}, {"delimiter", ","}};
 
-    auto df = spark->read().options(config).format("csv").load({"datasets/people.csv"});
+    auto df = spark->read().options(config).format("csv").load(
+        {"datasets/people.csv"});
 
     auto cols = df.columns();
 
@@ -225,30 +229,34 @@ TEST_F(SparkIntegrationTest, ReaderOptions_VerifySchema)
 
 TEST_F(SparkIntegrationTest, ReaderOptions_InferredTypes)
 {
-    std::map<std::string, std::string> config = {{"header", "true"}, {"inferSchema", "true"}};
+    std::map<std::string, std::string> config = {{"header", "true"},
+                                                 {"inferSchema", "true"}};
 
-    auto df = spark->read().options(config).format("csv").load({"datasets/people.csv"});
+    auto df = spark->read().options(config).format("csv").load(
+        {"datasets/people.csv"});
     auto schema = df.schema();
 
     // ----------------------------------------------------
     // Find the 'age' field and verify it's an Integer
     // ----------------------------------------------------
     auto it = std::find_if(schema.fields.begin(), schema.fields.end(),
-                           [](const auto& f) { return f.name == "age"; });
+                           [](auto const& f) { return f.name == "age"; });
 
     ASSERT_NE(it, schema.fields.end()) << "Column 'age' not found";
 
     // -------------------------------------------------
     // Check if the variant holds IntegerType
     // -------------------------------------------------
-    EXPECT_TRUE(std::holds_alternative<spark::sql::types::IntegerType>(it->data_type->kind));
+    EXPECT_TRUE(std::holds_alternative<spark::sql::types::IntegerType>(
+        it->data_type->kind));
 }
 
 TEST_F(SparkIntegrationTest, ReaderOptions_CorrectValueParsing)
 {
     std::map<std::string, std::string> config = {
         {"header", "true"}, {"delimiter", ","}, {"inferSchema", "true"}};
-    auto df = spark->read().options(config).format("csv").load({"datasets/people.csv"});
+    auto df = spark->read().options(config).format("csv").load(
+        {"datasets/people.csv"});
 
     auto first_row = df.head();
     ASSERT_TRUE(first_row.has_value());
@@ -298,8 +306,10 @@ TEST_F(SparkIntegrationTest, ReadFromDelta)
         .format("delta")
         .save("output/delta_people");
 
-    auto read_df =
-        spark->read().option("inferSchema", "true").format("delta").load({"output/delta_people"});
+    auto read_df = spark->read()
+                       .option("inferSchema", "true")
+                       .format("delta")
+                       .load({"output/delta_people"});
 
     EXPECT_EQ(read_df.count(), df.count());
     EXPECT_THAT(read_df.columns(), ElementsAre("id", "name", "age"));

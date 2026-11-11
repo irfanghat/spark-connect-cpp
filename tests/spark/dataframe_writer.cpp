@@ -1,15 +1,14 @@
-#include <gmock/gmock-matchers.h>
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
-#include <iostream>
-#include <map>
-
 #include "config.h"
 #include "dataframe.h"
 #include "session.h"
 #include "spark_fixture.h"
 #include "writer.h"
+
+#include <gmock/gmock-matchers.h>
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
+#include <iostream>
+#include <map>
 
 using ::testing::ElementsAre;
 
@@ -40,22 +39,27 @@ TEST_F(SparkIntegrationTest, ParquetReadAndWrite)
 
     df.write()
         .mode("overwrite")
-        .option("compression",
-                "snappy") // snappy is faster when compared to gzip. See:
-                          // https://parquet.apache.org/docs/file-format/data-pages/compression/
+        .option(
+            "compression",
+            "snappy") // snappy is faster when compared to gzip. See:
+                      // https://parquet.apache.org/docs/file-format/data-pages/compression/
         .parquet("output/iot_intrusion_data");
 
-    auto iot_data_columns = spark->read().parquet("output/iot_intrusion_data").columns();
+    auto iot_data_columns =
+        spark->read().parquet("output/iot_intrusion_data").columns();
 
-    EXPECT_THAT(iot_data_columns,
-                ElementsAre("flow_duration", "Header_Length", "Protocol Type", "Duration", "Rate",
-                            "Srate", "Drate", "fin_flag_number", "syn_flag_number",
-                            "rst_flag_number", "psh_flag_number", "ack_flag_number",
-                            "ece_flag_number", "cwr_flag_number", "ack_count", "syn_count",
-                            "fin_count", "urg_count", "rst_count", "HTTP", "HTTPS", "DNS", "Telnet",
-                            "SMTP", "SSH", "IRC", "TCP", "UDP", "DHCP", "ARP", "ICMP", "IPv", "LLC",
-                            "Tot sum", "Min", "Max", "AVG", "Std", "Tot size", "IAT", "Number",
-                            "Magnitue", "Radius", "Covariance", "Variance", "Weight", "label"));
+    EXPECT_THAT(
+        iot_data_columns,
+        ElementsAre("flow_duration", "Header_Length", "Protocol Type",
+                    "Duration", "Rate", "Srate", "Drate", "fin_flag_number",
+                    "syn_flag_number", "rst_flag_number", "psh_flag_number",
+                    "ack_flag_number", "ece_flag_number", "cwr_flag_number",
+                    "ack_count", "syn_count", "fin_count", "urg_count",
+                    "rst_count", "HTTP", "HTTPS", "DNS", "Telnet", "SMTP",
+                    "SSH", "IRC", "TCP", "UDP", "DHCP", "ARP", "ICMP", "IPv",
+                    "LLC", "Tot sum", "Min", "Max", "AVG", "Std", "Tot size",
+                    "IAT", "Number", "Magnitue", "Radius", "Covariance",
+                    "Variance", "Weight", "label"));
 }
 
 TEST_F(SparkIntegrationTest, IOTSecurityAnalysisScenario)
@@ -71,7 +75,8 @@ TEST_F(SparkIntegrationTest, IOTSecurityAnalysisScenario)
     // report.
     // -----------------------------------------------------------------------------------
     auto analysis_df =
-        df.filter("Rate > 0.2").select({"label", "Rate", "Protocol Type", "flow_duration", "IAT"});
+        df.filter("Rate > 0.2")
+            .select({"label", "Rate", "Protocol Type", "flow_duration", "IAT"});
 
     analysis_df.write()
         .mode("overwrite")
@@ -84,13 +89,15 @@ TEST_F(SparkIntegrationTest, IOTSecurityAnalysisScenario)
     // Validate that filter and projection were preserved
     // --------------------------------------------------------
     auto result_cols = result_df.columns();
-    EXPECT_THAT(result_cols, ElementsAre("label", "Rate", "Protocol Type", "flow_duration", "IAT"));
+    EXPECT_THAT(result_cols, ElementsAre("label", "Rate", "Protocol Type",
+                                         "flow_duration", "IAT"));
 
     // ---------------------------------------------------------------
     // Get count of the detected incidents in filtered result
     // ---------------------------------------------------------------
     int64_t incident_count = result_df.count();
-    std::cout << "Detected " << incident_count << " high-rate traffic incidents." << std::endl;
+    std::cout << "Detected " << incident_count
+              << " high-rate traffic incidents." << std::endl;
 
     result_df.show(5);
 
@@ -108,7 +115,10 @@ TEST_F(SparkIntegrationTest, CsvWriteWithOptions)
         .option("delimiter", ";")
         .csv(csv_path);
 
-    auto read_df = spark->read().option("header", "true").option("delimiter", ";").csv(csv_path);
+    auto read_df = spark->read()
+                       .option("header", "true")
+                       .option("delimiter", ";")
+                       .csv(csv_path);
 
     EXPECT_EQ(read_df.count(), 50);
     EXPECT_THAT(read_df.columns(), ElementsAre("id"));
@@ -116,7 +126,8 @@ TEST_F(SparkIntegrationTest, CsvWriteWithOptions)
 
 TEST_F(SparkIntegrationTest, WriteToText)
 {
-    auto write_df = spark->sql("SELECT 'a' AS alphabets UNION ALL SELECT 'b' AS alphabets");
+    auto write_df =
+        spark->sql("SELECT 'a' AS alphabets UNION ALL SELECT 'b' AS alphabets");
 
     write_df.write().mode("overwrite").text("output/text_write");
 
@@ -164,7 +175,8 @@ TEST_F(SparkIntegrationTest, MultiColumnPartitioning)
     // Verify columns exist (Partition columns move to the end in Spark)
     // ----------------------------------------------------------------------
     auto cols = read_df.columns();
-    bool has_protocol = std::find(cols.begin(), cols.end(), "Protocol Type") != cols.end();
+    bool has_protocol =
+        std::find(cols.begin(), cols.end(), "Protocol Type") != cols.end();
     bool has_label = std::find(cols.begin(), cols.end(), "label") != cols.end();
 
     EXPECT_TRUE(has_protocol);
@@ -201,7 +213,8 @@ TEST_F(SparkIntegrationTest, JsonReadWrite)
     auto read_df = spark->read().format("json").load({"output/test_json"});
 
     EXPECT_EQ(read_df.count(), 1);
-    EXPECT_THAT(read_df.columns(), ::testing::UnorderedElementsAre("id", "name", "nested"));
+    EXPECT_THAT(read_df.columns(),
+                ::testing::UnorderedElementsAre("id", "name", "nested"));
 }
 
 TEST_F(SparkIntegrationTest, PartitionedWriteToParquet)
@@ -248,8 +261,10 @@ TEST_F(SparkIntegrationTest, WriteToDelta)
         .format("delta")
         .save("output/delta_people");
 
-    auto read_df =
-        spark->read().option("inferSchema", "true").format("delta").load({"output/delta_people"});
+    auto read_df = spark->read()
+                       .option("inferSchema", "true")
+                       .format("delta")
+                       .load({"output/delta_people"});
 
     EXPECT_EQ(read_df.count(), df.count());
     EXPECT_THAT(read_df.columns(), ElementsAre("id", "name", "age"));

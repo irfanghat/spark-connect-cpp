@@ -1,15 +1,15 @@
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
-#include <iostream>
-#include <sstream>
+#include "dataframe.h"
 
 #include "config.h"
-#include "dataframe.h"
 #include "functions.h"
 #include "session.h"
 #include "spark_fixture.h"
 #include "types.h"
+
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
+#include <iostream>
+#include <sstream>
 
 using namespace spark::sql::functions;
 using namespace spark::sql::types;
@@ -186,7 +186,7 @@ TEST_F(SparkIntegrationTest, Head)
 
     auto rows = df.head(1);
     ASSERT_FALSE(rows.empty());
-    const auto& row = rows[0];
+    auto const& row = rows[0];
     std::stringstream ss;
     ss << row;
 
@@ -250,7 +250,8 @@ TEST_F(SparkIntegrationTest, Filter)
     // --------------------------------------------
     // Complex Logical Operators (AND, OR, NOT)
     // --------------------------------------------
-    auto complex_logic = df.filter("age > 20 AND name LIKE 'J%' OR salary = 130000");
+    auto complex_logic =
+        df.filter("age > 20 AND name LIKE 'J%' OR salary = 130000");
     complex_logic.show();
 
     // ----------------------------------------
@@ -461,10 +462,10 @@ TEST_F(SparkIntegrationTest, DataFrameDistinct)
     auto rows = distinct_df.collect();
     std::set<std::string> unique_rows;
 
-    for (const auto& row : rows)
+    for (auto const& row : rows)
     {
-        std::string row_str =
-            std::get<std::string>(row["name"]) + std::to_string(row.get_long("id"));
+        std::string row_str = std::get<std::string>(row["name"]) +
+                              std::to_string(row.get_long("id"));
         unique_rows.insert(row_str);
     }
 
@@ -501,13 +502,15 @@ TEST_F(SparkIntegrationTest, DataFrameDescribe)
 
     EXPECT_EQ(std::get<std::string>(df_stats[0]["weight"]), "3");
     EXPECT_EQ(std::get<std::string>(df_stats[1]["weight"]), "40.73333");
-    EXPECT_EQ(std::get<std::string>(df_stats[2]["weight"]), "3.1722757341273704");
+    EXPECT_EQ(std::get<std::string>(df_stats[2]["weight"]),
+              "3.1722757341273704");
     EXPECT_EQ(std::get<std::string>(df_stats[3]["weight"]), "37.8");
     EXPECT_EQ(std::get<std::string>(df_stats[4]["weight"]), "44.1");
 
     EXPECT_EQ(std::get<std::string>(df_stats[0]["height"]), "3");
     EXPECT_EQ(std::get<std::string>(df_stats[1]["height"]), "145.00000");
-    EXPECT_EQ(std::get<std::string>(df_stats[2]["height"]), "4.763402145525822");
+    EXPECT_EQ(std::get<std::string>(df_stats[2]["height"]),
+              "4.763402145525822");
     EXPECT_EQ(std::get<std::string>(df_stats[3]["height"]), "142.2");
     EXPECT_EQ(std::get<std::string>(df_stats[4]["height"]), "150.5");
 }
@@ -588,7 +591,7 @@ TEST_F(SparkIntegrationTest, DefaultInnerJoinOnCommonColumns)
     EXPECT_EQ(rows.size(), 2);
 
     std::set<std::string> names;
-    for (const auto& row : rows)
+    for (auto const& row : rows)
         names.insert(row.get<std::string>("name"));
 
     EXPECT_TRUE(names.count("Alice") == 1);
@@ -750,7 +753,8 @@ TEST_F(SparkIntegrationTest, JoinOnExpressionOuter)
     EXPECT_EQ(rows.size(), 3);
 }
 
-DataFrame MultiplyColumn(const DataFrame& df, std::string col_name, int factor)
+DataFrame
+MultiplyColumn(DataFrame const& df, std::string col_name, int factor)
 {
     return df.select({col(col_name) * lit(factor)});
 }
@@ -774,7 +778,8 @@ TEST_F(SparkIntegrationTest, DataFrameTransform)
     // 50");
     // --------------------------------------------------------------------
 
-    auto results = df.transform(MultiplyColumn, "id", 10).filter("(id * 10) > 50");
+    auto results =
+        df.transform(MultiplyColumn, "id", 10).filter("(id * 10) > 50");
 
     EXPECT_NO_THROW(results.show());
 
@@ -817,22 +822,25 @@ TEST_F(SparkIntegrationTest, ChainedDataFrameTransforms)
 
     EXPECT_NO_THROW(raw_df.show());
 
-    auto add_full_name = [](const DataFrame& df)
-    {
-        return df.withColumn("full_name",
-                             spark::sql::functions::concat_ws(" ", {col("first"), col("last")}));
+    auto add_full_name = [](DataFrame const& df) {
+        return df.withColumn(
+            "full_name",
+            spark::sql::functions::concat_ws(" ", {col("first"), col("last")}));
     };
 
-    auto clean_email = [](const DataFrame& df)
-    { return df.withColumn("email", lower(col("email"))); };
-
-    auto add_status = [](const DataFrame& df)
-    {
-        return df.withColumn("status",
-                             when(col("age") > lit(18), lit("adult")).otherwise(lit("minor")));
+    auto clean_email = [](DataFrame const& df) {
+        return df.withColumn("email", lower(col("email")));
     };
 
-    auto df = raw_df.transform(add_full_name).transform(clean_email).transform(add_status);
+    auto add_status = [](DataFrame const& df) {
+        return df.withColumn(
+            "status",
+            when(col("age") > lit(18), lit("adult")).otherwise(lit("minor")));
+    };
+
+    auto df = raw_df.transform(add_full_name)
+                  .transform(clean_email)
+                  .transform(add_status);
 
     EXPECT_NO_THROW(df.show());
 
@@ -854,11 +862,13 @@ TEST_F(SparkIntegrationTest, DataFrameAlias)
     auto df_as1 = df.alias("df_as1");
     auto df_as2 = df.alias("df_as2");
 
-    auto joined_df = df_as1.join_on_expression(df_as2, "df_as1.name = df_as2.name", "inner");
+    auto joined_df =
+        df_as1.join_on_expression(df_as2, "df_as1.name = df_as2.name", "inner");
 
     EXPECT_NO_THROW(joined_df.show());
 
-    EXPECT_NO_THROW(joined_df.select({"df_as1.name", "df_as2.name", "df_as2.age"}).show());
+    EXPECT_NO_THROW(
+        joined_df.select({"df_as1.name", "df_as2.name", "df_as2.age"}).show());
 
     auto rows = joined_df.collect();
 
