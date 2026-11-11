@@ -1,5 +1,11 @@
 # Spark Connect C++
 
+[![CodeQL](https://github.com/irfanghat/spark-connect-cpp/actions/workflows/github-code-scanning/codeql/badge.svg?branch=branch-4.1-stable)](https://github.com/irfanghat/spark-connect-cpp/actions/workflows/github-code-scanning/codeql)
+
+[![Build, Test & Coverage (Spark v4.1.x)](https://github.com/irfanghat/spark-connect-cpp/actions/workflows/build_and_test_v4.1.x.yml/badge.svg?branch=branch-4.1-stable)](https://github.com/irfanghat/spark-connect-cpp/actions/workflows/build_and_test_v4.1.x.yml)
+
+[![Build, Test & Coverage (Spark v4.3.x)](https://github.com/irfanghat/spark-connect-cpp/actions/workflows/build_and_test_v4.3.x.yml/badge.svg?branch=branch-4.3-stable)](https://github.com/irfanghat/spark-connect-cpp/actions/workflows/build_and_test_v4.3.x.yml)
+
 A **C++ client for Apache Spark** via **Spark Connect**, enabling C++ applications to execute Spark SQL workloads against remote Spark clusters without requiring JVM dependencies.
 
 Spark Connect introduced a **decoupled client–server architecture** for Apache Spark, where client applications construct logical query plans that are executed remotely by a Spark server. This project delivers an **idiomatic, high-performance C++ interface** for building and submitting Spark queries, with efficient **Apache Arrow–based columnar data exchange** over gRPC.
