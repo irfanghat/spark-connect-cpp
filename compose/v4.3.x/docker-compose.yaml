@@ -21,7 +21,7 @@ services:
       - "4040:4040"
       - "15002:15002"
     volumes:
-      - ../datasets:/opt/spark/work-dir/datasets
+      - ../../datasets:/opt/spark/work-dir/datasets
     deploy:
       resources:
         limits:
