@@ -1,7 +1,3 @@
-#include <gmock/gmock-matchers.h>
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
 #include "config.h"
 #include "dataframe.h"
 #include "functions.h"
@@ -9,6 +5,10 @@
 #include "session.h"
 #include "spark_fixture.h"
 #include "types.h"
+
+#include <gmock/gmock-matchers.h>
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
 
 using namespace spark::sql::functions;
 using namespace spark::sql::types;

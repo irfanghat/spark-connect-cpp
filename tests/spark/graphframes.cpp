@@ -1,16 +1,17 @@
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
 #include "dataframe.h"
 #include "functions.h"
 #include "graphframe.h"
 #include "session.h"
 
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
+
 using namespace graphframes;
 using namespace spark::sql::functions;
 using ::testing::Contains;
 
-static std::vector<std::string> gfColumns(DataFrame df)
+static std::vector<std::string>
+gfColumns(DataFrame df)
 {
     auto rows = df.collect();
     if (rows.empty())
@@ -18,12 +19,15 @@ static std::vector<std::string> gfColumns(DataFrame df)
     return rows[0].column_names;
 }
 
-static int64_t gfCount(DataFrame df)
+static int64_t
+gfCount(DataFrame df)
 {
     return static_cast<int64_t>(df.collect().size());
 }
 
-template <typename T> static std::vector<T> gfColumn(DataFrame df, const std::string& col)
+template <typename T>
+static std::vector<T>
+gfColumn(DataFrame df, std::string const& col)
 {
     auto rows = df.collect();
     std::vector<T> out;
@@ -61,7 +65,8 @@ class SparkGraphFramesIntegrationTest : public ::testing::Test
     static DataFrame* vertices;
     static DataFrame* edges;
 
-    static void SetUpTestSuite()
+    static void
+    SetUpTestSuite()
     {
         spark = &SparkSession::builder()
                      .master("sc://localhost")
@@ -87,14 +92,16 @@ class SparkGraphFramesIntegrationTest : public ::testing::Test
         )"));
     }
 
-    static void TearDownTestSuite()
+    static void
+    TearDownTestSuite()
     {
         delete vertices;
         delete edges;
         spark->stop();
     }
 
-    GraphFrame gf() const
+    GraphFrame
+    gf() const
     {
         return GraphFrame(*vertices, *edges);
     }
@@ -125,7 +132,8 @@ TEST_F(SparkGraphFramesIntegrationTest, PageRankAllValuesPositive)
         EXPECT_GT(r, 0.0);
 }
 
-TEST_F(SparkGraphFramesIntegrationTest, PageRankThrowsWhenBothMaxIterAndTolProvided)
+TEST_F(SparkGraphFramesIntegrationTest,
+       PageRankThrowsWhenBothMaxIterAndTolProvided)
 {
     EXPECT_THROW(gf().pageRank(0.15, 5, 0.01), std::invalid_argument);
 }
@@ -155,7 +163,8 @@ TEST_F(SparkGraphFramesIntegrationTest, FindTriangleReturnsThreeRotations)
     // The single triangle 1 -> 2 -> 3 -> 1 produces 3 rows:
     //   (a=1,b=2,c=3), (a=2,b=3,c=1), (a=3,b=1,c=2)
     // ----------------------------------------------------------------
-    EXPECT_EQ(gfCount(gf().find("(a)-[e1]->(b); (b)-[e2]->(c); (c)-[e3]->(a)")), 3);
+    EXPECT_EQ(gfCount(gf().find("(a)-[e1]->(b); (b)-[e2]->(c); (c)-[e3]->(a)")),
+              3);
 }
 
 TEST_F(SparkGraphFramesIntegrationTest, FindTwoHopReturnsResults)
@@ -207,7 +216,8 @@ TEST_F(SparkGraphFramesIntegrationTest, FilterEdgesSQLKeepsFriendEdges)
 
 TEST_F(SparkGraphFramesIntegrationTest, FilterEdgesColumnKeepsFriendEdges)
 {
-    EXPECT_EQ(gfCount(gf().filterEdges(col("relationship") == lit("friend"))), 2);
+    EXPECT_EQ(gfCount(gf().filterEdges(col("relationship") == lit("friend"))),
+              2);
 }
 
 TEST_F(SparkGraphFramesIntegrationTest, FilterEdgesNoMatchReturnsEmpty)
@@ -249,7 +259,8 @@ TEST_F(SparkGraphFramesIntegrationTest, FilterVerticesShow)
 // --------------------------------------------------------------------------
 // dropIsolatedVertices()
 // --------------------------------------------------------------------------
-TEST_F(SparkGraphFramesIntegrationTest, DropIsolatedVerticesKeepsAllWhenNoneIsolated)
+TEST_F(SparkGraphFramesIntegrationTest,
+       DropIsolatedVerticesKeepsAllWhenNoneIsolated)
 {
     EXPECT_EQ(gfCount(gf().dropIsolatedVertices()), 4);
 }
@@ -265,7 +276,8 @@ TEST_F(SparkGraphFramesIntegrationTest, DropIsolatedVerticesRemovesIsolatedNode)
             (99, 'Ghost',  99)
         AS people(id, name, age)
     )");
-    EXPECT_EQ(gfCount(GraphFrame(v_with_isolated, *edges).dropIsolatedVertices()), 4);
+    EXPECT_EQ(
+        gfCount(GraphFrame(v_with_isolated, *edges).dropIsolatedVertices()), 4);
 }
 
 TEST_F(SparkGraphFramesIntegrationTest, DropIsolatedVerticesShow)
@@ -291,7 +303,8 @@ TEST_F(SparkGraphFramesIntegrationTest, BFSNoPathInDirectedGraph)
 
 TEST_F(SparkGraphFramesIntegrationTest, BFSWithEdgeFilter)
 {
-    EXPECT_GT(gfCount(gf().bfs("id = 1", "id = 2", "relationship = 'friend'")), 0);
+    EXPECT_GT(gfCount(gf().bfs("id = 1", "id = 2", "relationship = 'friend'")),
+              0);
 }
 
 TEST_F(SparkGraphFramesIntegrationTest, BFSWithColumnExpression)
@@ -310,7 +323,8 @@ TEST_F(SparkGraphFramesIntegrationTest, BFSShow)
 // We set use_local_checkpoints=true so no checkpoint directory
 // needs to be configured on the Spark server.
 // --------------------------------------------------------------------------
-TEST_F(SparkGraphFramesIntegrationTest, ConnectedComponentsReturnsOneRowPerVertex)
+TEST_F(SparkGraphFramesIntegrationTest,
+       ConnectedComponentsReturnsOneRowPerVertex)
 {
     EXPECT_EQ(gfCount(gf().connectedComponents()), 4);
 }
@@ -342,7 +356,8 @@ TEST_F(SparkGraphFramesIntegrationTest, SCCReturnsOneRowPerVertex)
 
 TEST_F(SparkGraphFramesIntegrationTest, SCCHasComponentColumn)
 {
-    EXPECT_THAT(gfColumns(gf().stronglyConnectedComponents()), Contains("component"));
+    EXPECT_THAT(gfColumns(gf().stronglyConnectedComponents()),
+                Contains("component"));
 }
 
 TEST_F(SparkGraphFramesIntegrationTest, SCCProducesMultipleComponents)
@@ -351,7 +366,8 @@ TEST_F(SparkGraphFramesIntegrationTest, SCCProducesMultipleComponents)
     // Triangle 1 - 2 - 3 is one SCC
     // vertex 4 (leaf) is its own SCC
     // -------------------------------------------------------------
-    auto comps = gfColumn<int64_t>(gf().stronglyConnectedComponents(), "component");
+    auto comps =
+        gfColumn<int64_t>(gf().stronglyConnectedComponents(), "component");
     std::set<int64_t> unique(comps.begin(), comps.end());
     EXPECT_GT(unique.size(), 1u);
 }
@@ -371,7 +387,8 @@ TEST_F(SparkGraphFramesIntegrationTest, ShortestPathsReturnsOneRowPerVertex)
 
 TEST_F(SparkGraphFramesIntegrationTest, ShortestPathsHasDistancesColumn)
 {
-    EXPECT_THAT(gfColumns(gf().shortestPaths(std::vector<int32_t>{1})), Contains("distances"));
+    EXPECT_THAT(gfColumns(gf().shortestPaths(std::vector<int32_t>{1})),
+                Contains("distances"));
 }
 
 TEST_F(SparkGraphFramesIntegrationTest, ShortestPathsShow)

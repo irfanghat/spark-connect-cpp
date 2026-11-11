@@ -4,6 +4,7 @@
 #include "session.h"
 #include "spark_fixture.h"
 #include "types.h"
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <iostream>
@@ -35,8 +36,8 @@ TEST_F(SparkIntegrationTest, ColumnExpressions)
     // We alias it to "age_plus_one" so we can find it in the resulting Row
     // -----------------------------------------------------------------------
 
-    auto filtered_df =
-        df.filter(col("name") == lit("Alice")).select({col("name"), _col.alias("age_plus_one")});
+    auto filtered_df = df.filter(col("name") == lit("Alice"))
+                           .select({col("name"), _col.alias("age_plus_one")});
 
     filtered_df.show();
 

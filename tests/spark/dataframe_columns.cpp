@@ -1,3 +1,6 @@
+#include "dataframe.h"
+#include "session.h"
+
 #include <algorithm>
 #include <gmock/gmock-matchers.h>
 #include <gmock/gmock.h>
@@ -5,9 +8,6 @@
 #include <memory>
 #include <string>
 #include <vector>
-
-#include "dataframe.h"
-#include "session.h"
 
 using ::testing::ElementsAre;
 using ::testing::HasSubstr;
@@ -18,7 +18,8 @@ class ColumnTest : public ::testing::Test
   protected:
     static SparkSession* spark;
 
-    static void SetUpTestSuite()
+    static void
+    SetUpTestSuite()
     {
         spark = &SparkSession::builder()
                      .master("sc://localhost")
@@ -26,7 +27,8 @@ class ColumnTest : public ::testing::Test
                      .getOrCreate();
     }
 
-    static void TearDownTestSuite()
+    static void
+    TearDownTestSuite()
     {
         if (spark)
             spark->stop();
@@ -103,13 +105,16 @@ TEST_F(ColumnTest, SchemaComparison)
 
 TEST_F(ColumnTest, SpecialCharactersInNames)
 {
-    auto df = spark->sql("SELECT 1 AS `user.id`, 2 AS `count(*)`, 3 AS `col with spaces`");
-    EXPECT_THAT(df.columns(), ElementsAre("user.id", "count(*)", "col with spaces"));
+    auto df = spark->sql(
+        "SELECT 1 AS `user.id`, 2 AS `count(*)`, 3 AS `col with spaces`");
+    EXPECT_THAT(df.columns(),
+                ElementsAre("user.id", "count(*)", "col with spaces"));
 }
 
 TEST_F(ColumnTest, ColumnsAfterTransformation)
 {
-    auto df_selected = spark->sql("SELECT b, a FROM (SELECT 1 AS a, 2 AS b, 3 AS c)");
+    auto df_selected =
+        spark->sql("SELECT b, a FROM (SELECT 1 AS a, 2 AS b, 3 AS c)");
     EXPECT_THAT(df_selected.columns(), ElementsAre("b", "a"));
 }
 
@@ -139,7 +144,8 @@ TEST_F(ColumnTest, ColumnDataTypesValidation)
 
     EXPECT_THAT(schema_str, HasSubstr(R"("name":"int_col","type":"integer")"));
     EXPECT_THAT(schema_str, HasSubstr(R"("name":"str_col","type":"string")"));
-    EXPECT_THAT(schema_str, HasSubstr(R"("name":"double_col","type":"double")"));
+    EXPECT_THAT(schema_str,
+                HasSubstr(R"("name":"double_col","type":"double")"));
     EXPECT_THAT(schema_str, HasSubstr(R"("name":"date_col","type":"date")"));
     EXPECT_THAT(schema_str, HasSubstr(R"("name":"bool_col","type":"boolean")"));
 }
@@ -160,13 +166,13 @@ TEST_F(ColumnTest, ComplexTypeDetection)
     // Check Array
     // ---------------------------
     EXPECT_EQ(schema.fields[0].name, "int_array");
-    EXPECT_TRUE(
-        std::holds_alternative<spark::sql::types::ArrayType>(schema.fields[0].data_type->kind));
+    EXPECT_TRUE(std::holds_alternative<spark::sql::types::ArrayType>(
+        schema.fields[0].data_type->kind));
 
     // ---------------------------
     // Check Map
     // ---------------------------
     EXPECT_EQ(schema.fields[1].name, "string_int_map");
-    EXPECT_TRUE(
-        std::holds_alternative<spark::sql::types::MapType>(schema.fields[1].data_type->kind));
+    EXPECT_TRUE(std::holds_alternative<spark::sql::types::MapType>(
+        schema.fields[1].data_type->kind));
 }
